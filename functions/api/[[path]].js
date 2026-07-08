@@ -1,7 +1,8 @@
 // functions/api/[[path]].js
 // ============================================================
-//  Email Extractor Pro - Cloudflare Pages API Router
-//  With in-memory fallback when KV is not available.
+//  Email & SMS Marketing Pro - Cloudflare Pages API Router
+//  Handles authentication, scraping, email & SMS campaigns,
+//  API key management (Email + SMS), dashboard stats, and audit logs.
 // ============================================================
 
 import { KVMANAGER } from '../helpers/kv-manager.js';
@@ -37,16 +38,14 @@ export async function onRequest(context) {
   }
 
   // ---------- Initialize KV with fallback ----------
-  // If SECRETS_KV is not bound, use an in-memory store (for local dev)
   const kv = new KVMANAGER(env.SECRETS_KV || null);
-
   const auditLogger = new AuditLogger(kv);
   const rateLimiter = new RateLimiter(kv);
 
   // Environment variables
   const ADMIN_USERNAME = env.ADMIN_USERNAME || 'admin';
   const ADMIN_PASSWORD = env.ADMIN_PASSWORD || 'admin123';
-  const BREVO_API_KEY = env.BREVO_API_KEY || '';
+  const BREVO_API_KEY = env.BREVO_API_KEY || ''; // fallback for email
 
   // ==================== AUTHENTICATION ====================
 
@@ -147,13 +146,18 @@ export async function onRequest(context) {
     }
 
     // ---------- API KEY MANAGEMENT ----------
+    // GET stats for a specific API (email/brevo or sms)
     if (path === '/api/api-keys/stats' && method === 'GET') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
         return jsonResponse({ success: false, error: auth.error }, 401);
       }
       const apiName = url.searchParams.get('apiName') || 'brevo';
-      const limits = { abstract: 250, brevo: 300 };
+      const limits = {
+        brevo: 300,
+        sms: 100, // default SMS daily limit, can be overridden by config
+        abstract: 250,
+      };
       const limit = limits[apiName] || 100;
       const today = new Date().toISOString().split('T')[0];
       const usageKey = `api:usage:${apiName}:${today}`;
@@ -170,13 +174,14 @@ export async function onRequest(context) {
       });
     }
 
+    // Save API key (for email or sms)
     if (path === '/api/api-keys/save' && method === 'POST') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
         return jsonResponse({ success: false, error: auth.error }, 401);
       }
       const body = await request.json().catch(() => ({}));
-      const { apiName, apiKey } = body;
+      const { apiName, apiKey, provider, baseUrl, defaultSender } = body;
       if (!apiName || !apiKey) {
         return jsonResponse(
           { success: false, error: 'apiName and apiKey are required' },
@@ -184,20 +189,32 @@ export async function onRequest(context) {
         );
       }
       const key = `api:key:${apiName}`;
-      await kv.put(key, JSON.stringify({ key: apiKey, updatedAt: new Date().toISOString() }));
-      await auditLogger.log('API_KEY_UPDATED', { username: auth.username, apiName });
+      const config = { key: apiKey, updatedAt: new Date().toISOString() };
+      if (apiName === 'sms') {
+        // Additional SMS config
+        config.provider = provider || 'custom';
+        config.baseUrl = baseUrl || '';
+        config.defaultSender = defaultSender || '';
+      }
+      await kv.put(key, JSON.stringify(config));
+      await auditLogger.log('API_KEY_UPDATED', {
+        username: auth.username,
+        apiName,
+        provider: provider || 'default',
+      });
       return jsonResponse({
         success: true,
-        message: `${apiName} API key saved`,
+        message: `${apiName} API configuration saved`,
       });
     }
 
+    // List API keys (optional)
     if (path === '/api/api-keys/list' && method === 'GET') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
         return jsonResponse({ success: false, error: auth.error }, 401);
       }
-      const apiNames = ['abstract', 'brevo'];
+      const apiNames = ['brevo', 'sms', 'abstract'];
       const result = {};
       for (const name of apiNames) {
         const data = await kv.get(`api:key:${name}`);
@@ -208,13 +225,13 @@ export async function onRequest(context) {
       return jsonResponse({ success: true, data: result });
     }
 
-  // ---------- SCRAPING ----------
+    // ---------- SCRAPING ----------
     if ((path === '/api/scrape/emails' || path === '/api/scrape/phones') && method === 'POST') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
         return jsonResponse({ success: false, error: auth.error }, 401);
       }
-      
+
       const body = await request.json().catch(() => ({}));
       let { url, limit = 50, force = false } = body;
       const type = path.includes('emails') ? 'emails' : 'phones';
@@ -227,12 +244,10 @@ export async function onRequest(context) {
         return jsonResponse({ success: false, error: 'Invalid URL' }, 400);
       }
 
-      // Cache Logic: Check if we already scraped this URL recently
       const cacheKey = `cache:scrape:${type}:${url}`;
       if (!force) {
         const cachedData = await kv.getJSON(cacheKey);
         if (cachedData) {
-          // If cached, just return it without fetching again
           return jsonResponse({
             success: true,
             url,
@@ -244,7 +259,6 @@ export async function onRequest(context) {
         }
       }
 
-      // Improved Fetch with better Headers to prevent blocking
       const fetchWithRetry = async (retries = 2) => {
         for (let i = 0; i <= retries; i++) {
           try {
@@ -254,18 +268,16 @@ export async function onRequest(context) {
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.5',
                 'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1'
+                'Upgrade-Insecure-Requests': '1',
               },
-              // Adding timeout to prevent infinite spinning
-              signal: AbortSignal.timeout(10000) 
+              signal: AbortSignal.timeout(10000),
             });
-            
             if (response.status === 403) throw new Error(`Access Denied (403). The site might be blocking scrapers.`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return await response.text();
           } catch (err) {
             if (i === retries) throw err;
-            await new Promise(r => setTimeout(r, 1000 * (i + 1))); // wait before retry
+            await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
           }
         }
       };
@@ -277,22 +289,18 @@ export async function onRequest(context) {
         if (type === 'emails') {
           const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
           const matches = html.match(emailRegex) || [];
-          results = [...new Set(matches.map(e => e.toLowerCase()))];
+          results = [...new Set(matches.map((e) => e.toLowerCase()))];
         } else {
           const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g;
           const matches = html.match(phoneRegex) || [];
           results = [...new Set(
-            matches.map(p => p.trim().replace(/[^\d+]/g, '')).filter(p => p.length >= 10)
+            matches.map((p) => p.trim().replace(/[^\d+]/g, '')).filter((p) => p.length >= 10)
           )];
         }
 
-        // Apply Logic: Slice the array to respect the user's limit
         results = results.slice(0, parseInt(limit, 10));
 
-        // Save to KV Storage
         await kv.pushToList(`contacts:${type}`, results);
-        
-        // Save to Cache for 24 hours (86400 seconds) so we don't scrape again soon
         if (results.length > 0) {
           await kv.putJSON(cacheKey, results, { expirationTtl: 86400 });
         }
@@ -311,7 +319,6 @@ export async function onRequest(context) {
           cached: false,
           scrapedAt: new Date().toISOString(),
         });
-
       } catch (error) {
         await auditLogger.log('SCRAPE_ERROR', {
           username: auth.username,
@@ -325,101 +332,42 @@ export async function onRequest(context) {
       }
     }
 
-    if (path === '/api/scrape/phones' && method === 'POST') {
-      const auth = await requireAuth(request);
-      if (!auth.valid) {
-        return jsonResponse({ success: false, error: auth.error }, 401);
-      }
-      const body = await request.json().catch(() => ({}));
-      let { url } = body;
-      if (!url) {
-        return jsonResponse({ success: false, error: 'URL required' }, 400);
-      }
-      url = validateUrl(url);
-      if (!url) {
-        return jsonResponse({ success: false, error: 'Invalid URL' }, 400);
-      }
-
-      const fetchWithRetry = async (retries = 2) => {
-        for (let i = 0; i <= retries; i++) {
-          try {
-            const response = await fetch(url, {
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              },
-              timeout: 10000,
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return await response.text();
-          } catch (err) {
-            if (i === retries) throw err;
-            await new Promise(r => setTimeout(r, 1000 * (i + 1)));
-          }
-        }
-      };
-
-      try {
-        const html = await fetchWithRetry();
-        const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g;
-        const matches = html.match(phoneRegex) || [];
-        const phones = [...new Set(
-          matches.map(p => p.trim().replace(/[^\d+]/g, '')).filter(p => p.length >= 10)
-        )];
-
-        await kv.pushToList('contacts:phones', phones);
-        await auditLogger.log('SCRAPE_PHONES', {
-          username: auth.username,
-          url,
-          count: phones.length,
-        });
-
-        return jsonResponse({
-          success: true,
-          url,
-          phoneCount: phones.length,
-          phones,
-          scrapedAt: new Date().toISOString(),
-        });
-      } catch (error) {
-        await auditLogger.log('SCRAPE_ERROR', {
-          username: auth.username,
-          url,
-          error: error.message,
-        });
-        return jsonResponse(
-          { success: false, error: `Scraping failed: ${error.message}` },
-          500
-        );
-      }
-    }
-
-    // ---------- CAMPAIGN ----------
+    // ---------- CAMPAIGN SEND (Email & SMS) ----------
     if (path === '/api/campaigns/send' && method === 'POST') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
         return jsonResponse({ success: false, error: auth.error }, 401);
       }
       const body = await request.json().catch(() => ({}));
-      const { subject, htmlContent, recipientFilter } = body;
-      if (!subject || !htmlContent || !recipientFilter) {
+      const { type, recipientFilter, subject, htmlContent, message, sender } = body;
+
+      if (!recipientFilter) {
         return jsonResponse(
-          { success: false, error: 'Subject, HTML content, and recipient filter required' },
+          { success: false, error: 'Recipient filter is required' },
           400
         );
       }
 
+      // Determine which contacts to use
       let recipients = [];
       const allEmails = await kv.getList('contacts:emails') || [];
+      const allPhones = await kv.getList('contacts:phones') || [];
+
+      // For email campaigns, use emails; for SMS, use phones
+      const contactList = type === 'sms' ? allPhones : allEmails;
       if (recipientFilter === 'all') {
-        recipients = allEmails;
+        recipients = contactList;
       } else if (recipientFilter === 'b2b') {
-        recipients = allEmails.filter(e => e.endsWith('.com'));
+        recipients = contactList.filter((c) => c.endsWith('.com'));
       } else if (recipientFilter === 'b2c') {
-        recipients = allEmails.filter(e => !e.endsWith('.com'));
+        recipients = contactList.filter((c) => !c.endsWith('.com'));
       } else if (recipientFilter === 'verified') {
-        recipients = allEmails.slice(0, Math.floor(allEmails.length / 2));
+        recipients = contactList.slice(0, Math.floor(contactList.length / 2));
       } else {
-        return jsonResponse({ success: false, error: 'Invalid recipient filter' }, 400);
+        return jsonResponse(
+          { success: false, error: 'Invalid recipient filter' },
+          400
+        );
       }
 
       if (recipients.length === 0) {
@@ -429,33 +377,74 @@ export async function onRequest(context) {
         );
       }
 
-      const brevoKey = await kv.get('api:key:brevo').then(d => d ? JSON.parse(d).key : null);
-      if (!brevoKey && !BREVO_API_KEY) {
+      // Validate campaign data
+      if (type === 'email') {
+        if (!subject || !htmlContent) {
+          return jsonResponse(
+            { success: false, error: 'Subject and HTML content required for email' },
+            400
+          );
+        }
+      } else if (type === 'sms') {
+        if (!message) {
+          return jsonResponse(
+            { success: false, error: 'Message content required for SMS' },
+            400
+          );
+        }
+      } else {
         return jsonResponse(
-          { success: false, error: 'Brevo API key not configured' },
+          { success: false, error: 'Invalid campaign type. Use "email" or "sms"' },
           400
         );
       }
-      const apiKey = brevoKey || BREVO_API_KEY;
 
-      // Simulate sending
-      const results = recipients.map(email => ({
-        email,
-        success: Math.random() > 0.1,
-        messageId: `msg_${Math.random().toString(36).substr(2, 9)}`,
-      }));
-      const successCount = results.filter(r => r.success).length;
+      // Retrieve API keys
+      const apiKeyData = await kv.getJSON(`api:key:${type === 'email' ? 'brevo' : 'sms'}`);
+      let apiKey = apiKeyData?.key || (type === 'email' ? BREVO_API_KEY : null);
+      if (!apiKey) {
+        return jsonResponse(
+          { success: false, error: `${type} API key not configured` },
+          400
+        );
+      }
 
-      await auditLogger.log('SEND_EMAILS', {
+      // For SMS, we might need additional config
+      let smsConfig = {};
+      if (type === 'sms') {
+        smsConfig = {
+          provider: apiKeyData?.provider || 'custom',
+          baseUrl: apiKeyData?.baseUrl || '',
+          defaultSender: apiKeyData?.defaultSender || sender || 'Marketing',
+        };
+      }
+
+      // Simulate sending (in production, integrate with actual API)
+      const results = recipients.map((contact) => {
+        const success = Math.random() > 0.1; // 90% success rate
+        return {
+          [type === 'email' ? 'email' : 'phone']: contact,
+          success,
+          messageId: success ? `msg_${Math.random().toString(36).substr(2, 9)}` : null,
+          error: success ? null : 'Simulated failure',
+        };
+      });
+
+      const successCount = results.filter((r) => r.success).length;
+
+      // Log the campaign
+      const action = type === 'email' ? 'SEND_EMAILS' : 'SEND_SMS';
+      await auditLogger.log(action, {
         username: auth.username,
-        subject,
+        subject: subject || 'SMS Campaign',
         recipientFilter,
         total: recipients.length,
         successCount,
       });
 
+      // Update usage stats
       const today = new Date().toISOString().split('T')[0];
-      const usageKey = `api:usage:brevo:${today}`;
+      const usageKey = `api:usage:${type === 'email' ? 'brevo' : 'sms'}:${today}`;
       const currentUsage = parseInt(await kv.get(usageKey) || '0', 10);
       await kv.put(usageKey, String(currentUsage + recipients.length));
 
@@ -495,7 +484,7 @@ export async function onRequest(context) {
       const search = url.searchParams.get('search') || '';
       let list = await kv.getList(`contacts:${type}`) || [];
       if (search) {
-        list = list.filter(item => item.includes(search));
+        list = list.filter((item) => item.includes(search));
       }
       const paginated = list.slice(0, 100);
       return jsonResponse({
@@ -519,7 +508,7 @@ export async function onRequest(context) {
           400
         );
       }
-      const validItems = data.filter(item => {
+      const validItems = data.filter((item) => {
         if (type === 'emails') return validateEmail(item);
         if (type === 'phones') return validatePhone(item);
         return false;
@@ -568,15 +557,27 @@ export async function onRequest(context) {
         return jsonResponse({ success: false, error: auth.error }, 401);
       }
       const today = new Date().toISOString().split('T')[0];
-      const scrapeLogs = await auditLogger.getLogsForDate(today);
-      const todayEmails = scrapeLogs
-        .filter(l => l.action === 'SCRAPE_EMAILS')
+      const logs = await auditLogger.getLogsForDate(today);
+
+      // Emails extracted today
+      const todayEmails = logs
+        .filter((l) => l.action === 'SCRAPE_EMAILS')
         .reduce((sum, l) => sum + (l.details?.count || 0), 0);
-      const sendLogs = scrapeLogs.filter(l => l.action === 'SEND_EMAILS');
-      const todaySent = sendLogs.reduce((sum, l) => sum + (l.details?.successCount || 0), 0);
+
+      // Emails sent today
+      const emailSendLogs = logs.filter((l) => l.action === 'SEND_EMAILS');
+      const todaySent = emailSendLogs.reduce((sum, l) => sum + (l.details?.successCount || 0), 0);
+
+      // SMS sent today
+      const smsSendLogs = logs.filter((l) => l.action === 'SEND_SMS');
+      const todaySms = smsSendLogs.reduce((sum, l) => sum + (l.details?.successCount || 0), 0);
+
+      // Brevo remaining
       const brevoUsage = await kv.get(`api:usage:brevo:${today}`) || '0';
       const brevoLimit = 300;
-      const remaining = Math.max(0, brevoLimit - parseInt(brevoUsage, 10));
+      const brevoRemaining = Math.max(0, brevoLimit - parseInt(brevoUsage, 10));
+
+      // Total contacts
       const emails = await kv.getList('contacts:emails') || [];
       const phones = await kv.getList('contacts:phones') || [];
       const totalContacts = emails.length + phones.length;
@@ -586,12 +587,15 @@ export async function onRequest(context) {
         stats: {
           emailsToday: todayEmails,
           emailsSentToday: todaySent,
-          brevoRemaining: remaining,
+          smsSentToday: todaySms,
+          brevoRemaining,
+          brevoLimit,
           totalContacts,
         },
       });
     }
 
+    // Charts (7-day activity)
     if (path === '/api/dashboard/charts' && method === 'GET') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
@@ -603,9 +607,9 @@ export async function onRequest(context) {
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
         const logs = await auditLogger.getLogsForDate(dateStr);
-        const extracted = logs.filter(l => l.action === 'SCRAPE_EMAILS')
+        const extracted = logs.filter((l) => l.action === 'SCRAPE_EMAILS')
           .reduce((sum, l) => sum + (l.details?.count || 0), 0);
-        const sent = logs.filter(l => l.action === 'SEND_EMAILS')
+        const sent = logs.filter((l) => l.action === 'SEND_EMAILS')
           .reduce((sum, l) => sum + (l.details?.successCount || 0), 0);
         chartData.push({ date: dateStr, extracted, sent });
       }
@@ -638,10 +642,12 @@ export async function onRequest(context) {
         return jsonResponse({ success: false, error: auth.error }, 401);
       }
       const brevoKey = await kv.get('api:key:brevo');
+      const smsKey = await kv.get('api:key:sms');
       const abstractKey = await kv.get('api:key:abstract');
       const settings = {
         adminUsername: ADMIN_USERNAME,
         brevoConfigured: !!(brevoKey || BREVO_API_KEY),
+        smsConfigured: !!smsKey,
         abstractConfigured: !!abstractKey,
         rateLimitLogin: '5 per 15 minutes',
         retentionDays: 90,
