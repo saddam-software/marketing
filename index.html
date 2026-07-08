@@ -471,6 +471,37 @@
                             </h3>
                             <div class="space-y-4">
                                 <div>
+
+                                    
+
+
+<div class="card p-6 mt-6 fade-in">
+    <div class="flex justify-between items-center mb-4">
+        <div>
+            <h3 class="text-xl font-bold">Bulk Text Extractor</h3>
+            <p class="text-sm text-slate-400">যেকোনো টেক্সট এখানে পেস্ট করুন, সিস্টেম স্বয়ংক্রিয়ভাবে ইমেইল এবং মোবাইল নাম্বার আলাদা করবে।</p>
+        </div>
+    </div>
+    
+    <textarea id="rawTextInput" rows="6" class="w-full p-3 rounded bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-blue-500 mb-4" placeholder="আপনার বিশাল টেক্সট এখানে পেস্ট করুন..."></textarea>
+    
+    <button id="extractTextBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold transition-colors flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        Extract Data
+    </button>
+
+    <div id="extractResults" class="mt-4 text-sm hidden bg-slate-800 p-4 rounded border border-slate-700">
+        <p class="text-green-400 font-semibold mb-2">✅ Extraction Successful!</p>
+        <p>Found Emails: <span id="extEmailCount" class="font-bold text-white">0</span></p>
+        <p>Found Phones: <span id="extPhoneCount" class="font-bold text-white">0</span></p>
+    </div>
+</div>
+
+
+
+                                    
                                     <label class="block text-sm font-semibold text-slate-700 mb-2">Website URL</label>
                                     <input type="url" id="scraperUrl" placeholder="https://example.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
                                 </div>
