@@ -1,534 +1,828 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Email Extractor Pro | Admin Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Extractor Pro · Admin</title>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Chart.js (Analytics) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- CryptoJS for MD5 hashing (Gravatar) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- CryptoJS (for Gravatar / hashing) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
-    <!-- Custom Styles -->
-    <style>
-        /* ===== ANIMATIONS ===== */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+  <style>
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
 
-        .fade-in {
-            animation: fadeIn 0.3s ease-out;
-        }
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* ===== SCROLLBAR STYLING ===== */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
+    /* ===== SPINNER ===== */
+    .spinner {
+      border: 3px solid #e2e8f0;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* ===== TABLE HOVER ===== */
-        .result-row:hover {
-            background: #f8fafc;
-        }
+    /* ===== PROGRESS BAR ===== */
+    .progress-bar-fill { transition: width 0.3s ease; }
 
-        /* ===== LOADING SPINNER ===== */
-        .spinner {
-            border: 3px solid #e2e8f0;
-            border-top: 3px solid #3b82f6;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
+    /* ===== TABS ===== */
+    .tab-button {
+      @apply px-4 py-2 font-medium text-slate-600 border-b-2 border-transparent hover:border-blue-400 transition-all;
+    }
+    .tab-button.active {
+      @apply text-blue-600 border-blue-600;
+    }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+    /* ===== MODAL OVERLAY ===== */
+    .modal-overlay { background-color: rgba(0,0,0,0.5); }
 
-        /* ===== PROGRESS BAR ===== */
-        .progress-bar-fill {
-            transition: width 0.3s ease;
-        }
+    /* ===== RESPONSIVE TABLE ===== */
+    @media (max-width: 768px) {
+      .grid-cols-12 { grid-template-columns: 0.5fr 0.5fr 1fr 1.5fr 1fr 0.8fr 0.8fr 0.8fr !important; }
+    }
 
-        /* ===== TAB STYLING ===== */
-        .tab-button {
-            @apply px-4 py-2 font-medium text-slate-600 border-b-2 border-transparent hover:border-blue-400 transition-all;
-        }
-
-        .tab-button.active {
-            @apply text-blue-600 border-blue-600;
-        }
-
-        /* ===== MODAL ===== */
-        .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            .grid-cols-12 {
-                grid-template-columns: 0.5fr 0.5fr 1fr 1.5fr 1fr 0.8fr 0.8fr 0.8fr !important;
-            }
-        }
-    </style>
+    /* ===== CUSTOM ===== */
+    .result-row:hover { background: #f8fafc; }
+    .sticky-top-24 { position: sticky; top: 96px; z-index: 30; }
+  </style>
 </head>
-
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
 
-    <!-- ===== LOGIN PAGE ===== -->
-    <div id="loginPage" class="fixed inset-0 bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md fade-in">
-            <div class="text-center mb-8">
-                <svg class="w-12 h-12 text-blue-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                <h1 class="text-3xl font-bold text-blue-600">Email Extractor</h1>
-                <p class="text-slate-500 text-sm mt-1">Admin Panel v2.1</p>
-            </div>
+  <!-- ===== LOGIN PAGE ===== -->
+  <div id="loginPage" class="fixed inset-0 bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center z-50">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md fade-in">
+      <div class="text-center mb-8">
+        <svg class="w-12 h-12 text-blue-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        <h1 class="text-3xl font-bold text-blue-600">Email Extractor</h1>
+        <p class="text-slate-500 text-sm mt-1">Admin Panel v3.0</p>
+      </div>
 
-            <form id="loginForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">ইউজারনেম</label>
-                    <input type="text" id="loginUsername" placeholder="আপনার ইউজারনেম" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">পাসওয়ার্ড</label>
-                    <input type="password" id="loginPassword" placeholder="আপনার পাসওয়ার্ড" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
-                </div>
-
-                <div id="loginError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
-
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                    </svg>
-                    লগইন করুন
-                </button>
-            </form>
-
-            <p class="text-center text-xs text-slate-500 mt-6">
-                Default: admin / admin123
-            </p>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Username</label>
+          <input type="text" id="loginUsername" placeholder="Enter your username" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
         </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter your password" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
+        </div>
+        <div id="loginError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
+          Login
+        </button>
+      </form>
+      <p class="text-center text-xs text-slate-500 mt-6">Default: admin / admin123</p>
     </div>
+  </div>
 
-    <!-- ===== MAIN DASHBOARD ===== -->
-    <div id="dashboardPage" class="hidden min-h-screen bg-slate-50">
+  <!-- ===== DASHBOARD ===== -->
+  <div id="dashboardPage" class="hidden min-h-screen bg-slate-50">
 
-        <!-- ===== HEADER ===== -->
-        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <div>
-                        <h1 class="text-xl sm:text-2xl font-bold text-blue-600">Email Extractor</h1>
-                        <p class="text-xs sm:text-sm text-slate-500">Admin Panel</p>
-                    </div>
+    <!-- HEADER -->
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+          <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-blue-600">Email Extractor</h1>
+            <p class="text-xs sm:text-sm text-slate-500">Admin Panel</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="userBadge" class="text-sm px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full font-medium">—</span>
+          <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+      <!-- TABS -->
+      <div class="flex gap-2 border-b border-slate-200 mb-6 overflow-x-auto">
+        <button class="tab-button active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab-button" data-tab="scraper">🔍 Scraper</button>
+        <button class="tab-button" data-tab="email-campaign">✉️ Email Campaign</button>
+        <button class="tab-button" data-tab="api-settings">⚙️ API Settings</button>
+        <button class="tab-button" data-tab="audit-logs">📋 Audit Logs</button>
+      </div>
+
+      <!-- TAB 1: DASHBOARD -->
+      <div id="dashboardTab" class="tab-content space-y-6">
+        <!-- Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Emails Extracted Today</p>
+            <p class="text-3xl font-bold text-blue-600" id="statEmailsToday">0</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Emails Sent Today</p>
+            <p class="text-3xl font-bold text-emerald-600" id="statEmailsSent">0</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Brevo Remaining</p>
+            <p class="text-3xl font-bold text-indigo-600" id="statBrevoRemaining">0</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Total Contacts</p>
+            <p class="text-3xl font-bold text-cyan-600" id="statTotalContacts">0</p>
+          </div>
+        </div>
+        <!-- Chart -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 Today's Activity</h2>
+          <canvas id="analyticsChart" height="80"></canvas>
+        </div>
+        <!-- Recent Activities -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+          <h2 class="text-lg font-semibold text-slate-800 mb-4">🕐 Recent Events</h2>
+          <div id="recentActivities" class="space-y-3 max-h-64 overflow-y-auto">
+            <div class="text-sm text-slate-500 text-center py-6">No activity yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: SCRAPER -->
+      <div id="scraperTab" class="tab-content hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Input -->
+          <div class="lg:col-span-1">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
+              <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                Scraper Control
+              </h3>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-semibold text-slate-700 mb-2">Website URL</label>
+                  <input type="url" id="scraperUrl" placeholder="https://example.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
                 </div>
-                <div class="flex items-center gap-3">
-                    <span id="userBadge" class="text-sm px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full font-medium">—</span>
-                    <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all">
-                        লগআউট
-                    </button>
+                <div>
+                  <label class="block text-sm font-semibold text-slate-700 mb-2">Extract</label>
+                  <div class="space-y-2">
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="scraperMode" value="emails" checked class="w-4 h-4 text-blue-600" /> <span class="text-sm text-slate-700">📧 Emails</span></label>
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="scraperMode" value="phones" class="w-4 h-4 text-blue-600" /> <span class="text-sm text-slate-700">📱 Phone Numbers</span></label>
+                  </div>
                 </div>
-            </div>
-        </header>
-
-        <!-- ===== MAIN CONTENT ===== -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-
-            <!-- ===== TABS ===== -->
-            <div class="flex gap-2 border-b border-slate-200 mb-6 overflow-x-auto">
-                <button class="tab-button active" data-tab="dashboard">
-                    📊 ড্যাশবোর্ড
+                <button id="scrapeBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  Start
                 </button>
-                <button class="tab-button" data-tab="scraper">
-                    🔍 স্ক্র্যাপার
+              </div>
+            </div>
+          </div>
+          <!-- Results -->
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
+              <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-xl">
+                <h3 class="font-semibold text-slate-800">Scraped Data</h3>
+                <div class="flex gap-2">
+                  <button id="exportScraperBtn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">Download</button>
+                  <button id="clearScraperBtn" class="px-3 py-1.5 bg-slate-300 hover:bg-slate-400 text-slate-700 text-xs font-medium rounded-lg transition-all">Clear</button>
+                </div>
+              </div>
+              <div id="scraperProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
+                <div class="flex justify-between text-sm mb-2">
+                  <span id="scraperProgressLabel" class="font-medium text-slate-700">Processing…</span>
+                  <span id="scraperProgressText" class="text-blue-600 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                  <div id="scraperProgressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div>
+                </div>
+              </div>
+              <div id="scraperResults" class="flex-1 overflow-y-auto p-4">
+                <div class="text-sm text-slate-500 text-center py-12">No data. Enter a URL and start scraping.</div>
+              </div>
+              <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center">
+                <span id="scraperResultCount">0 items found</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: EMAIL CAMPAIGN -->
+      <div id="emailCampaignTab" class="tab-content hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-1">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
+              <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                Create Campaign
+              </h3>
+              <div class="space-y-4">
+                <div><label class="block text-sm font-semibold text-slate-700 mb-2">Subject</label><input type="text" id="campaignSubject" placeholder="Email subject" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" /></div>
+                <div><label class="block text-sm font-semibold text-slate-700 mb-2">HTML Content</label><textarea id="campaignHtmlContent" rows="8" placeholder="<h1>Hello</h1><p>Your content here</p>" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-y font-mono text-xs"></textarea></div>
+                <div>
+                  <label class="block text-sm font-semibold text-slate-700 mb-2">Recipients</label>
+                  <select id="campaignRecipients" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                    <option value="">— Select recipient group —</option>
+                    <option value="all">All Contacts</option>
+                    <option value="b2b">B2B only</option>
+                    <option value="b2c">B2C only</option>
+                    <option value="verified">Verified only</option>
+                  </select>
+                </div>
+                <button id="sendCampaignBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                  Send
                 </button>
-                <button class="tab-button" data-tab="email-campaign">
-                    ✉️ ইমেইল ক্যাম্পেইন
-                </button>
-                <button class="tab-button" data-tab="api-settings">
-                    ⚙️ API সেটিংস
-                </button>
-                <button class="tab-button" data-tab="audit-logs">
-                    📋 অডিট লগ
-                </button>
+              </div>
             </div>
-
-            <!-- ===== TAB 1: DASHBOARD ===== -->
-            <div id="dashboardTab" class="tab-content space-y-6">
-
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">আজ এক্সট্র্যাক্ট করা ইমেইল</p>
-                        <p class="text-3xl font-bold text-blue-600" id="statEmailsToday">0</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">আজ পাঠানো ইমেইল</p>
-                        <p class="text-3xl font-bold text-emerald-600" id="statEmailsSent">0</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Brevo লিমিট (বাকি)</p>
-                        <p class="text-3xl font-bold text-indigo-600" id="statBrevoRemaining">250</p>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">কন্টাক্ট লিস্ট</p>
-                        <p class="text-3xl font-bold text-cyan-600" id="statTotalContacts">0</p>
-                    </div>
-                </div>
-
-                <!-- Analytics Chart -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 আজকের কার্যকলাপ</h2>
-                    <canvas id="analyticsChart" height="80"></canvas>
-                </div>
-
-                <!-- Recent Activities -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-semibold text-slate-800 mb-4">🕐 সম্প্রতি ঘটনা</h2>
-                    <div id="recentActivities" class="space-y-3 max-h-64 overflow-y-auto">
-                        <div class="text-sm text-slate-500 text-center py-6">কোনো কার্যকলাপ এখনও নেই</div>
-                    </div>
-                </div>
-
+          </div>
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
+              <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl"><h3 class="font-semibold text-slate-800">Send Results</h3></div>
+              <div id="campaignProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
+                <div class="flex justify-between text-sm mb-2"><span id="campaignProgressLabel" class="font-medium text-slate-700">Sending…</span><span id="campaignProgressText" class="text-indigo-600 font-bold">0%</span></div>
+                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden"><div id="campaignProgressBar" class="bg-indigo-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div></div>
+              </div>
+              <div id="campaignResults" class="flex-1 overflow-y-auto p-4 space-y-2"><div class="text-sm text-slate-500 text-center py-12">Results will appear here</div></div>
+              <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center"><span id="campaignResultCount">0 emails sent</span></div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- ===== TAB 2: SCRAPER ===== -->
-            <div id="scraperTab" class="tab-content hidden space-y-6">
-
-                <!-- Email Scraper Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                    <!-- Input Card -->
-                    <div class="lg:col-span-1">
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-24">
-                            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                                স্ক্র্যাপার কন্ট্রোল
-                            </h3>
-
-                            <div class="space-y-4">
-                                <!-- URL Input -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-700 mb-2">ওয়েবসাইট URL</label>
-                                    <input type="url" id="scraperUrl" placeholder="https://example.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
-                                </div>
-
-                                <!-- Mode Selection -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-700 mb-2">এক্সট্র্যাক্ট করুন</label>
-                                    <div class="space-y-2">
-                                        <label class="flex items-center gap-2 cursor-pointer">
-                                            <input type="radio" name="scraperMode" value="emails" checked class="w-4 h-4 text-blue-600" />
-                                            <span class="text-sm text-slate-700">📧 ইমেইল</span>
-                                        </label>
-                                        <label class="flex items-center gap-2 cursor-pointer">
-                                            <input type="radio" name="scraperMode" value="phones" class="w-4 h-4 text-blue-600" />
-                                            <span class="text-sm text-slate-700">📱 ফোন নম্বর</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Buttons -->
-                                <div class="space-y-2 pt-2">
-                                    <button id="scrapeBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                        </svg>
-                                        শুরু করুন
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Results Card -->
-                    <div class="lg:col-span-2">
-                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
-
-                            <!-- Header -->
-                            <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-xl">
-                                <h3 class="font-semibold text-slate-800">স্ক্র্যাপ করা ডেটা</h3>
-                                <div class="flex gap-2">
-                                    <button id="exportScraperBtn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                                        ডাউনলোড
-                                    </button>
-                                    <button id="clearScraperBtn" class="px-3 py-1.5 bg-slate-300 hover:bg-slate-400 text-slate-700 text-xs font-medium rounded-lg transition-all">
-                                        সাফ করুন
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Progress Bar -->
-                            <div id="scraperProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
-                                <div class="flex justify-between text-sm mb-2">
-                                    <span id="scraperProgressLabel" class="font-medium text-slate-700">প্রসেস করছে…</span>
-                                    <span id="scraperProgressText" class="text-blue-600 font-bold">0%</span>
-                                </div>
-                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                                    <div id="scraperProgressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div>
-                                </div>
-                            </div>
-
-                            <!-- Results Table -->
-                            <div id="scraperResults" class="flex-1 overflow-y-auto p-4">
-                                <div class="text-sm text-slate-500 text-center py-12">
-                                    কোনো ডেটা নেই। URL এন্টার করে স্ক্র্যাপ শুরু করুন।
-                                </div>
-                            </div>
-
-                            <!-- Footer -->
-                            <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center">
-                                <span id="scraperResultCount">0 টি আইটেম পাওয়া গেছে</span>
-                            </div>
-
-                        </div>
-                    </div>
-
+      <!-- TAB 4: API SETTINGS -->
+      <div id="apiSettingsTab" class="tab-content hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Abstract -->
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              Abstract API (Email Verification)
+            </h3>
+            <div class="space-y-4">
+              <div><label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label><input type="password" id="abstractApiKey" placeholder="Your Abstract API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-xs" /></div>
+              <button id="saveAbstractApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save</button>
+              <div id="abstractStats" class="hidden p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div><p class="text-2xl font-bold text-blue-600" id="abstractUsed">0</p><p class="text-xs text-slate-500">Used</p></div>
+                  <div><p class="text-2xl font-bold text-emerald-600" id="abstractRemaining">250</p><p class="text-xs text-slate-500">Remaining</p></div>
+                  <div><p class="text-2xl font-bold text-slate-600" id="abstractLimit">250</p><p class="text-xs text-slate-500">Limit</p></div>
                 </div>
-
+              </div>
             </div>
-
-            <!-- ===== TAB 3: EMAIL CAMPAIGN ===== -->
-            <div id="emailCampaignTab" class="tab-content hidden space-y-6">
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                    <!-- Campaign Form -->
-                    <div class="lg:col-span-1">
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-24">
-                            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                ক্যাম্পেইন তৈরি করুন
-                            </h3>
-
-                            <div class="space-y-4">
-                                <!-- Subject -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-700 mb-2">বিষয়</label>
-                                    <input type="text" id="campaignSubject" placeholder="ইমেইল বিষয়" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" />
-                                </div>
-
-                                <!-- HTML Content -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-700 mb-2">HTML কন্টেন্ট</label>
-                                    <textarea id="campaignHtmlContent" rows="8" placeholder="<h1>Hello</h1><p>Your content here</p>" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-y font-mono text-xs"></textarea>
-                                </div>
-
-                                <!-- Recipients Selection -->
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-700 mb-2">প্রাপকরা</label>
-                                    <select id="campaignRecipients" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
-                                        <option value="">— সব কন্টাক্ট নির্বাচন করুন —</option>
-                                        <option value="all">সব কন্টাক্ট</option>
-                                        <option value="b2b">শুধু B2B</option>
-                                        <option value="b2c">শুধু B2C</option>
-                                        <option value="verified">শুধু যাচাইকৃত</option>
-                                    </select>
-                                </div>
-
-                                <!-- Send Button -->
-                                <button id="sendCampaignBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                    </svg>
-                                    পাঠান
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Campaign Results -->
-                    <div class="lg:col-span-2">
-                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
-
-                            <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl">
-                                <h3 class="font-semibold text-slate-800">প্রেরণ ফলাফল</h3>
-                            </div>
-
-                            <!-- Progress -->
-                            <div id="campaignProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
-                                <div class="flex justify-between text-sm mb-2">
-                                    <span id="campaignProgressLabel" class="font-medium text-slate-700">পাঠাচ্ছে…</span>
-                                    <span id="campaignProgressText" class="text-indigo-600 font-bold">0%</span>
-                                </div>
-                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                                    <div id="campaignProgressBar" class="bg-indigo-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div>
-                                </div>
-                            </div>
-
-                            <!-- Results -->
-                            <div id="campaignResults" class="flex-1 overflow-y-auto p-4 space-y-2">
-                                <div class="text-sm text-slate-500 text-center py-12">
-                                    ফলাফল এখানে দেখা যাবে
-                                </div>
-                            </div>
-
-                            <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center">
-                                <span id="campaignResultCount">0 টি ইমেইল পাঠানো হয়েছে</span>
-                            </div>
-
-                        </div>
-                    </div>
-
+          </div>
+          <!-- Brevo -->
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              Brevo API (Email Sending)
+            </h3>
+            <div class="space-y-4">
+              <div><label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label><input type="password" id="brevoApiKey" placeholder="Your Brevo API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-mono text-xs" /></div>
+              <div><label class="block text-sm font-semibold text-slate-700 mb-2">Sender Email</label><input type="email" id="brevoSenderEmail" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" /></div>
+              <button id="saveBrevoApiBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save</button>
+              <div id="brevoStats" class="hidden p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div><p class="text-2xl font-bold text-indigo-600" id="brevoUsed">0</p><p class="text-xs text-slate-500">Sent</p></div>
+                  <div><p class="text-2xl font-bold text-emerald-600" id="brevoRemaining">300</p><p class="text-xs text-slate-500">Remaining</p></div>
+                  <div><p class="text-2xl font-bold text-slate-600" id="brevoLimit">300</p><p class="text-xs text-slate-500">Limit</p></div>
                 </div>
-
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- ===== TAB 4: API SETTINGS ===== -->
-            <div id="apiSettingsTab" class="tab-content hidden space-y-6">
+      <!-- TAB 5: AUDIT LOGS -->
+      <div id="auditLogsTab" class="tab-content hidden space-y-6">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[600px]">
+          <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-xl">
+            <h3 class="font-semibold text-slate-800">All Audit Logs</h3>
+            <button id="refreshAuditLogsBtn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">Refresh</button>
+          </div>
+          <div id="auditLogsList" class="flex-1 overflow-y-auto p-4"><div class="text-sm text-slate-500 text-center py-12">Loading…</div></div>
+          <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center"><span id="auditLogsCount">0 events</span></div>
+        </div>
+      </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    </main>
+  </div>
 
-                    <!-- Abstract API -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            Abstract API (ইমেইল যাচাই)
-                        </h3>
+  <!-- ===== JAVASCRIPT ===== -->
+  <script>
+    (function() {
+      'use strict';
 
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label>
-                                <input type="password" id="abstractApiKey" placeholder="আপনার Abstract API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-xs" />
-                            </div>
+      // ========== CONFIG ==========
+      const API_BASE = window.location.origin + '/api';
+      const STORAGE_TOKEN = 'emailExtractorToken';
+      const STORAGE_USER = 'emailExtractorUsername';
 
-                            <button id="saveAbstractApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all">
-                                সংরক্ষণ করুন
-                            </button>
+      // ========== DOM REFS ==========
+      const loginPage = document.getElementById('loginPage');
+      const dashboardPage = document.getElementById('dashboardPage');
+      const loginForm = document.getElementById('loginForm');
+      const loginUsername = document.getElementById('loginUsername');
+      const loginPassword = document.getElementById('loginPassword');
+      const loginError = document.getElementById('loginError');
+      const userBadge = document.getElementById('userBadge');
+      const logoutBtn = document.getElementById('logoutBtn');
 
-                            <!-- Stats -->
-                            <div id="abstractStats" class="hidden p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                <p class="text-xs text-slate-600 mb-2 font-semibold">আজকের ব্যবহার</p>
-                                <div class="grid grid-cols-3 gap-2 text-center">
-                                    <div>
-                                        <p class="text-2xl font-bold text-blue-600" id="abstractUsed">0</p>
-                                        <p class="text-xs text-slate-500">ব্যবহৃত</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-2xl font-bold text-emerald-600" id="abstractRemaining">250</p>
-                                        <p class="text-xs text-slate-500">বাকি</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-2xl font-bold text-slate-600" id="abstractLimit">250</p>
-                                        <p class="text-xs text-slate-500">সীমা</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+      const tabButtons = document.querySelectorAll('.tab-button');
+      const tabContents = document.querySelectorAll('.tab-content');
 
-                    <!-- Brevo API -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            Brevo API (ইমেইল পাঠানো)
-                        </h3>
+      const statEmailsToday = document.getElementById('statEmailsToday');
+      const statEmailsSent = document.getElementById('statEmailsSent');
+      const statBrevoRemaining = document.getElementById('statBrevoRemaining');
+      const statTotalContacts = document.getElementById('statTotalContacts');
+      const recentActivities = document.getElementById('recentActivities');
+      const analyticsChart = document.getElementById('analyticsChart');
 
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label>
-                                <input type="password" id="brevoApiKey" placeholder="আপনার Brevo API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-mono text-xs" />
-                            </div>
+      const scraperUrl = document.getElementById('scraperUrl');
+      const scraperMode = document.querySelectorAll('input[name="scraperMode"]');
+      const scrapeBtn = document.getElementById('scrapeBtn');
+      const scraperProgressContainer = document.getElementById('scraperProgressContainer');
+      const scraperProgressBar = document.getElementById('scraperProgressBar');
+      const scraperProgressText = document.getElementById('scraperProgressText');
+      const scraperProgressLabel = document.getElementById('scraperProgressLabel');
+      const scraperResults = document.getElementById('scraperResults');
+      const scraperResultCount = document.getElementById('scraperResultCount');
+      const exportScraperBtn = document.getElementById('exportScraperBtn');
+      const clearScraperBtn = document.getElementById('clearScraperBtn');
 
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Sender Email</label>
-                                <input type="email" id="brevoSenderEmail" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" />
-                            </div>
+      const campaignSubject = document.getElementById('campaignSubject');
+      const campaignHtmlContent = document.getElementById('campaignHtmlContent');
+      const campaignRecipients = document.getElementById('campaignRecipients');
+      const sendCampaignBtn = document.getElementById('sendCampaignBtn');
+      const campaignProgressContainer = document.getElementById('campaignProgressContainer');
+      const campaignProgressBar = document.getElementById('campaignProgressBar');
+      const campaignProgressText = document.getElementById('campaignProgressText');
+      const campaignProgressLabel = document.getElementById('campaignProgressLabel');
+      const campaignResults = document.getElementById('campaignResults');
+      const campaignResultCount = document.getElementById('campaignResultCount');
 
-                            <button id="saveBrevoApiBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-all">
-                                সংরক্ষণ করুন
-                            </button>
+      const abstractApiKey = document.getElementById('abstractApiKey');
+      const saveAbstractApiBtn = document.getElementById('saveAbstractApiBtn');
+      const abstractStats = document.getElementById('abstractStats');
+      const abstractUsed = document.getElementById('abstractUsed');
+      const abstractRemaining = document.getElementById('abstractRemaining');
+      const abstractLimit = document.getElementById('abstractLimit');
 
-                            <!-- Stats -->
-                            <div id="brevoStats" class="hidden p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                <p class="text-xs text-slate-600 mb-2 font-semibold">আজকের ব্যবহার</p>
-                                <div class="grid grid-cols-3 gap-2 text-center">
-                                    <div>
-                                        <p class="text-2xl font-bold text-indigo-600" id="brevoUsed">0</p>
-                                        <p class="text-xs text-slate-500">পাঠানো</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-2xl font-bold text-emerald-600" id="brevoRemaining">300</p>
-                                        <p class="text-xs text-slate-500">বাকি</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-2xl font-bold text-slate-600" id="brevoLimit">300</p>
-                                        <p class="text-xs text-slate-500">সীমা</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+      const brevoApiKey = document.getElementById('brevoApiKey');
+      const brevoSenderEmail = document.getElementById('brevoSenderEmail');
+      const saveBrevoApiBtn = document.getElementById('saveBrevoApiBtn');
+      const brevoStats = document.getElementById('brevoStats');
+      const brevoUsed = document.getElementById('brevoUsed');
+      const brevoRemaining = document.getElementById('brevoRemaining');
+      const brevoLimit = document.getElementById('brevoLimit');
 
+      const auditLogsList = document.getElementById('auditLogsList');
+      const auditLogsCount = document.getElementById('auditLogsCount');
+      const refreshAuditLogsBtn = document.getElementById('refreshAuditLogsBtn');
+
+      // ========== STATE ==========
+      let authToken = localStorage.getItem(STORAGE_TOKEN);
+      let currentUser = localStorage.getItem(STORAGE_USER);
+      let scraperData = [];
+      let chartInstance = null;
+
+      // ========== HELPERS ==========
+      function showError(msg, el = loginError) {
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        console.error(msg);
+      }
+      function hideError(el = loginError) {
+        el.classList.add('hidden');
+      }
+      function setLoading(btn, loading) {
+        if (!btn) return;
+        if (loading) {
+          btn.disabled = true;
+          const orig = btn.innerHTML;
+          btn.innerHTML = '<div class="spinner"></div>';
+          btn.dataset.orig = orig;
+        } else {
+          btn.disabled = false;
+          if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
+        }
+      }
+      function formatNum(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+      function downloadFile(content, name, mime = 'text/plain') {
+        const blob = new Blob([content], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      async function apiCall(endpoint, method = 'GET', body = null, needAuth = true) {
+        const opts = {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+        };
+        if (needAuth && authToken) {
+          opts.headers.Authorization = `Bearer ${authToken}`;
+        }
+        if (body) opts.body = JSON.stringify(body);
+
+        const res = await fetch(API_BASE + endpoint, opts);
+        if (res.status === 401) {
+          logout();
+          return { success: false, error: 'Session expired' };
+        }
+        const data = await res.json();
+        if (!res.ok) {
+          return { success: false, error: data.error || 'Unknown error' };
+        }
+        return data;
+      }
+
+      function addActivity(action, details = '') {
+        const ts = new Date().toLocaleTimeString();
+        const html = `
+          <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 fade-in">
+            <div class="flex justify-between items-start gap-2">
+              <div><p class="text-sm font-semibold text-slate-800">${action}</p><p class="text-xs text-slate-600">${details}</p></div>
+              <p class="text-xs text-slate-400 whitespace-nowrap">${ts}</p>
+            </div>
+          </div>
+        `;
+        recentActivities.insertAdjacentHTML('afterbegin', html);
+        const children = recentActivities.querySelectorAll('> div');
+        if (children.length > 10) children[children.length - 1].remove();
+      }
+
+      // ========== AUTH ==========
+      async function handleLogin(e) {
+        e.preventDefault();
+        hideError();
+        const username = loginUsername.value.trim();
+        const password = loginPassword.value.trim();
+        if (!username || !password) {
+          showError('Username and password are required');
+          return;
+        }
+        setLoading(loginForm.querySelector('button'), true);
+        const result = await apiCall('/auth/login', 'POST', { username, password }, false);
+        setLoading(loginForm.querySelector('button'), false);
+        if (result.success) {
+          authToken = result.token;
+          currentUser = result.username;
+          localStorage.setItem(STORAGE_TOKEN, authToken);
+          localStorage.setItem(STORAGE_USER, currentUser);
+          showDashboard();
+          addActivity('Login successful', `User: ${username}`);
+          loadDashboardData();
+        } else {
+          showError(result.error || 'Login failed');
+        }
+      }
+
+      async function logout() {
+        await apiCall('/auth/logout', 'POST');
+        authToken = null;
+        currentUser = null;
+        localStorage.removeItem(STORAGE_TOKEN);
+        localStorage.removeItem(STORAGE_USER);
+        showLoginPage();
+      }
+
+      function showLoginPage() {
+        loginPage.classList.remove('hidden');
+        dashboardPage.classList.add('hidden');
+      }
+      function showDashboard() {
+        loginPage.classList.add('hidden');
+        dashboardPage.classList.remove('hidden');
+        userBadge.textContent = `👤 ${currentUser}`;
+      }
+
+      // ========== TABS ==========
+      function switchTab(name) {
+        tabContents.forEach(t => t.classList.add('hidden'));
+        tabButtons.forEach(b => b.classList.remove('active'));
+        const target = document.getElementById(name + 'Tab');
+        if (target) target.classList.remove('hidden');
+        const btn = document.querySelector(`[data-tab="${name}"]`);
+        if (btn) btn.classList.add('active');
+        if (name === 'dashboard') loadDashboardData();
+        else if (name === 'audit-logs') loadAuditLogs();
+        else if (name === 'api-settings') loadApiStats();
+      }
+
+      // ========== DASHBOARD ==========
+      async function loadDashboardData() {
+        await loadApiStats();
+        await loadAuditLogs();
+        // Load stats from /dashboard/stats
+        const stats = await apiCall('/dashboard/stats');
+        if (stats.success && stats.stats) {
+          statEmailsToday.textContent = formatNum(stats.stats.emailsToday || 0);
+          statEmailsSent.textContent = formatNum(stats.stats.emailsSentToday || 0);
+          statBrevoRemaining.textContent = formatNum(stats.stats.brevoRemaining || 0);
+          statTotalContacts.textContent = formatNum(stats.stats.totalContacts || 0);
+        }
+        // Load chart data
+        const chartData = await apiCall('/dashboard/charts');
+        if (chartData.success && chartData.data) {
+          initChart(chartData.data);
+        } else {
+          initChart([]);
+        }
+      }
+
+      function initChart(data) {
+        if (chartInstance) chartInstance.destroy();
+        const ctx = analyticsChart.getContext('2d');
+        const labels = data.length ? data.map(d => d.date.slice(5)) : ['No data'];
+        const extracted = data.length ? data.map(d => d.extracted) : [0];
+        const sent = data.length ? data.map(d => d.sent) : [0];
+
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              { label: 'Extracted', data: extracted, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 },
+              { label: 'Sent', data: sent, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
+      }
+
+      // ========== SCRAPER ==========
+      async function handleScrape() {
+        const url = scraperUrl.value.trim();
+        const mode = document.querySelector('input[name="scraperMode"]:checked').value;
+        if (!url) { showError('Please enter a URL', scraperResults); return; }
+
+        setLoading(scrapeBtn, true);
+        scraperProgressContainer.classList.remove('hidden');
+        scraperProgressBar.style.width = '0%';
+        scraperProgressText.textContent = '0%';
+        scraperProgressLabel.textContent = mode === 'emails' ? 'Extracting emails…' : 'Extracting phone numbers…';
+
+        const endpoint = mode === 'emails' ? '/scrape/emails' : '/scrape/phones';
+        const result = await apiCall(endpoint, 'POST', { url });
+
+        if (result.success) {
+          scraperData = mode === 'emails' ? result.emails : result.phones;
+          displayScraperResults(scraperData, mode);
+          addActivity(mode === 'emails' ? '✉️ Emails extracted' : '📱 Phones extracted',
+            `${result[mode === 'emails' ? 'emailCount' : 'phoneCount']} items found`);
+          // update stats
+          const stats = await apiCall('/dashboard/stats');
+          if (stats.success && stats.stats) {
+            statEmailsToday.textContent = formatNum(stats.stats.emailsToday || 0);
+          }
+        } else {
+          showError(result.error || 'Scraping failed', scraperResults);
+        }
+
+        scraperProgressContainer.classList.add('hidden');
+        setLoading(scrapeBtn, false);
+      }
+
+      function displayScraperResults(data, mode) {
+        if (!data || data.length === 0) {
+          scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data found</div>';
+          scraperResultCount.textContent = '0 items found';
+          return;
+        }
+        let html = '<div class="space-y-2">';
+        const limit = Math.min(100, data.length);
+        for (let i = 0; i < limit; i++) {
+          const item = data[i];
+          html += `
+            <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-all result-row">
+              <span class="text-sm font-mono text-slate-700 flex-1 break-all">${item}</span>
+              <button class="ml-2 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-all copy-btn" data-value="${item}">Copy</button>
+            </div>
+          `;
+        }
+        if (data.length > limit) html += `<div class="p-2 text-center text-sm text-blue-600 font-medium">… and ${data.length - limit} more</div>`;
+        html += '</div>';
+        scraperResults.innerHTML = html;
+        scraperResultCount.textContent = `${data.length} items found`;
+        // Copy functionality
+        scraperResults.querySelectorAll('.copy-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            navigator.clipboard.writeText(btn.dataset.value);
+            btn.textContent = '✓ Copied';
+            setTimeout(() => btn.textContent = 'Copy', 2000);
+          });
+        });
+      }
+
+      // ========== CAMPAIGN ==========
+      async function handleSendCampaign() {
+        const subject = campaignSubject.value.trim();
+        const htmlContent = campaignHtmlContent.value.trim();
+        const filter = campaignRecipients.value;
+        if (!subject || !htmlContent) { showError('Subject and content required'); return; }
+        if (!filter) { showError('Select recipient group'); return; }
+
+        setLoading(sendCampaignBtn, true);
+        campaignProgressContainer.classList.remove('hidden');
+        campaignProgressBar.style.width = '0%';
+        campaignProgressText.textContent = '0%';
+        campaignProgressLabel.textContent = 'Sending emails…';
+
+        const result = await apiCall('/campaigns/send', 'POST', { subject, htmlContent, recipientFilter: filter });
+        if (result.success) {
+          campaignResults.innerHTML = '<div class="space-y-2"></div>';
+          const container = campaignResults.querySelector('div');
+          for (const r of result.results) {
+            const statusColor = r.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+            const icon = r.success ? '✅' : '❌';
+            const text = r.success ? 'Sent' : 'Failed';
+            container.insertAdjacentHTML('beforeend', `
+              <div class="p-2.5 ${statusColor} rounded-lg border">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-mono">${r.email}</span>
+                  <span class="text-xs font-medium">${icon} ${text}</span>
                 </div>
+              </div>
+            `);
+          }
+          campaignResultCount.textContent = `${result.successCount}/${result.total} emails sent`;
+          addActivity('📧 Email campaign', `${result.successCount} sent successfully`);
+          // Update stats
+          const stats = await apiCall('/dashboard/stats');
+          if (stats.success && stats.stats) {
+            statEmailsSent.textContent = formatNum(stats.stats.emailsSentToday || 0);
+            statBrevoRemaining.textContent = formatNum(stats.stats.brevoRemaining || 0);
+          }
+        } else {
+          showError(result.error || 'Campaign failed');
+        }
 
-            </div>
+        setLoading(sendCampaignBtn, false);
+        setTimeout(() => campaignProgressContainer.classList.add('hidden'), 2000);
+      }
 
-            <!-- ===== TAB 5: AUDIT LOGS ===== -->
-            <div id="auditLogsTab" class="tab-content hidden space-y-6">
+      // ========== API SETTINGS ==========
+      async function loadApiStats() {
+        // Abstract
+        const abs = await apiCall('/api-keys/stats?apiName=abstract');
+        if (abs.success && abs.data) {
+          abstractUsed.textContent = formatNum(abs.data.used);
+          abstractRemaining.textContent = formatNum(abs.data.remaining);
+          abstractLimit.textContent = formatNum(abs.data.limit);
+          abstractStats.classList.remove('hidden');
+        }
+        // Brevo
+        const br = await apiCall('/api-keys/stats?apiName=brevo');
+        if (br.success && br.data) {
+          brevoUsed.textContent = formatNum(br.data.used);
+          brevoRemaining.textContent = formatNum(br.data.remaining);
+          brevoLimit.textContent = formatNum(br.data.limit);
+          brevoStats.classList.remove('hidden');
+          statBrevoRemaining.textContent = formatNum(br.data.remaining);
+        }
+      }
 
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[600px]">
+      async function handleSaveAbstract() {
+        const key = abstractApiKey.value.trim();
+        if (!key) { showError('API Key required'); return; }
+        setLoading(saveAbstractApiBtn, true);
+        const res = await apiCall('/api-keys/save', 'POST', { apiName: 'abstract', apiKey: key });
+        setLoading(saveAbstractApiBtn, false);
+        if (res.success) {
+          abstractApiKey.value = '';
+          addActivity('🔑 Abstract API key', 'Saved');
+          alert('API key saved successfully');
+          await loadApiStats();
+        } else {
+          showError(res.error || 'Save failed');
+        }
+      }
 
-                    <!-- Header -->
-                    <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-xl">
-                        <h3 class="font-semibold text-slate-800">সব অডিট লগ</h3>
-                        <button id="refreshAuditLogsBtn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">
-                            রিফ্রেশ করুন
-                        </button>
-                    </div>
+      async function handleSaveBrevo() {
+        const key = brevoApiKey.value.trim();
+        const sender = brevoSenderEmail.value.trim();
+        if (!key || !sender) { showError('API Key and Sender Email required'); return; }
+        setLoading(saveBrevoApiBtn, true);
+        const res = await apiCall('/api-keys/save', 'POST', { apiName: 'brevo', apiKey: key });
+        setLoading(saveBrevoApiBtn, false);
+        if (res.success) {
+          brevoApiKey.value = '';
+          brevoSenderEmail.value = '';
+          addActivity('🔑 Brevo API key', 'Saved');
+          alert('API key saved successfully');
+          await loadApiStats();
+        } else {
+          showError(res.error || 'Save failed');
+        }
+      }
 
-                    <!-- Logs Table -->
-                    <div id="auditLogsList" class="flex-1 overflow-y-auto p-4">
-                        <div class="text-sm text-slate-500 text-center py-12">
-                            লোড করছে…
-                        </div>
-                    </div>
+      // ========== AUDIT LOGS ==========
+      async function loadAuditLogs() {
+        const today = new Date().toISOString().split('T')[0];
+        const res = await apiCall(`/audit-logs?date=${today}`);
+        if (res.success && res.events) {
+          displayAuditLogs(res.events);
+          auditLogsCount.textContent = `${res.totalEvents} events`;
+        }
+      }
 
-                    <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center">
-                        <span id="auditLogsCount">0 টি ইভেন্ট</span>
-                    </div>
-
+      function displayAuditLogs(events) {
+        if (!events || events.length === 0) {
+          auditLogsList.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No logs found</div>';
+          return;
+        }
+        let html = '<div class="space-y-2">';
+        for (const ev of events.slice().reverse()) {
+          const ts = new Date(ev.timestamp).toLocaleTimeString();
+          const icon = getIcon(ev.action);
+          html += `
+            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-all">
+              <div class="flex justify-between items-start gap-2">
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-slate-800">${icon} ${ev.action}</p>
+                  <p class="text-xs text-slate-600">User: ${ev.username || 'system'}</p>
                 </div>
-
+                <p class="text-xs text-slate-400 whitespace-nowrap">${ts}</p>
+              </div>
             </div>
+          `;
+        }
+        html += '</div>';
+        auditLogsList.innerHTML = html;
+      }
 
-        </main>
+      function getIcon(action) {
+        const map = {
+          'LOGIN_SUCCESS': '🔓', 'LOGIN_FAILED': '❌', 'LOGOUT': '🔒',
+          'API_KEY_UPDATED': '🔑', 'SCRAPE_EMAILS': '✉️', 'SCRAPE_PHONES': '📱',
+          'SEND_EMAILS': '📧', 'SCRAPE_ERROR': '⚠️', 'CONTACTS_IMPORT': '📥'
+        };
+        return map[action] || '📋';
+      }
 
-    </div>
+      // ========== EVENT BINDINGS ==========
+      loginForm.addEventListener('submit', handleLogin);
+      logoutBtn.addEventListener('click', logout);
+      tabButtons.forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
-    <!-- ===== SCRIPT ===== -->
-    <script src="script.js"></script>
+      scrapeBtn.addEventListener('click', handleScrape);
+      exportScraperBtn.addEventListener('click', () => {
+        if (!scraperData.length) { showError('No data to export'); return; }
+        downloadFile(scraperData.join('\n'), 'extracted_data.txt');
+      });
+      clearScraperBtn.addEventListener('click', () => {
+        scraperData = [];
+        scraperUrl.value = '';
+        scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data</div>';
+        scraperResultCount.textContent = '0 items found';
+      });
 
+      sendCampaignBtn.addEventListener('click', handleSendCampaign);
+
+      saveAbstractApiBtn.addEventListener('click', handleSaveAbstract);
+      saveBrevoApiBtn.addEventListener('click', handleSaveBrevo);
+
+      refreshAuditLogsBtn.addEventListener('click', loadAuditLogs);
+
+      // ========== INIT ==========
+      function init() {
+        if (authToken && currentUser) {
+          showDashboard();
+          loadDashboardData();
+        } else {
+          showLoginPage();
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+
+      // Debug
+      window.__debug = { logout, loadDashboardData, loadAuditLogs, loadApiStats };
+      console.log('✅ Email Extractor Pro v3.0 initialized');
+    })();
+  </script>
 </body>
 </html>
