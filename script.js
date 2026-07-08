@@ -1,8 +1,8 @@
 // script.js
 // ============================================================
-//  Email Extractor Pro - Frontend Application Logic
-//  Handles authentication, dashboard, scraper, campaigns,
-//  API settings, and audit logs.
+//  Email & SMS Marketing Pro - Frontend Application Logic
+//  Handles authentication, dashboard, scraper, campaigns (Email/SMS),
+//  API settings (Email + SMS), and audit logs with filters & CSV export.
 //  Fully integrated with the Cloudflare Pages backend.
 // ============================================================
 
@@ -32,10 +32,12 @@
   // Dashboard
   const statEmailsToday = document.getElementById('statEmailsToday');
   const statEmailsSent = document.getElementById('statEmailsSent');
+  const statSmsSent = document.getElementById('statSmsSent');
   const statBrevoRemaining = document.getElementById('statBrevoRemaining');
   const statTotalContacts = document.getElementById('statTotalContacts');
   const recentActivities = document.getElementById('recentActivities');
   const analyticsChart = document.getElementById('analyticsChart');
+  const brevoUsageBar = document.getElementById('brevoUsageBar');
 
   // Scraper
   const scraperUrl = document.getElementById('scraperUrl');
@@ -49,27 +51,36 @@
   const scraperResultCount = document.getElementById('scraperResultCount');
   const exportScraperBtn = document.getElementById('exportScraperBtn');
   const clearScraperBtn = document.getElementById('clearScraperBtn');
+  const scraperLimit = document.getElementById('scraperLimit');
+  const forceScrape = document.getElementById('forceScrape');
 
   // Campaign
+  const campaignTypeToggle = document.getElementById('campaignTypeToggle');
+  const campaignTypeLabel = document.getElementById('campaignTypeLabel');
+  const campaignIcon = document.getElementById('campaignIcon');
+  const campaignTitle = document.getElementById('campaignTitle');
+  const emailFields = document.getElementById('emailFields');
+  const smsFields = document.getElementById('smsFields');
   const campaignSubject = document.getElementById('campaignSubject');
   const campaignHtmlContent = document.getElementById('campaignHtmlContent');
+  const campaignSmsContent = document.getElementById('campaignSmsContent');
+  const campaignSmsSender = document.getElementById('campaignSmsSender');
+  const smsCharCounter = document.getElementById('smsCharCounter');
+  const smsSegmentCounter = document.getElementById('smsSegmentCounter');
+  const smsCharProgress = document.getElementById('smsCharProgress');
   const campaignRecipients = document.getElementById('campaignRecipients');
   const sendCampaignBtn = document.getElementById('sendCampaignBtn');
+  const sendBtnText = document.getElementById('sendBtnText');
   const campaignProgressContainer = document.getElementById('campaignProgressContainer');
   const campaignProgressBar = document.getElementById('campaignProgressBar');
   const campaignProgressText = document.getElementById('campaignProgressText');
   const campaignProgressLabel = document.getElementById('campaignProgressLabel');
   const campaignResults = document.getElementById('campaignResults');
   const campaignResultCount = document.getElementById('campaignResultCount');
+  const campaignResultBadge = document.getElementById('campaignResultBadge');
 
-  // API Settings
-  const abstractApiKey = document.getElementById('abstractApiKey');
-  const saveAbstractApiBtn = document.getElementById('saveAbstractApiBtn');
-  const abstractStats = document.getElementById('abstractStats');
-  const abstractUsed = document.getElementById('abstractUsed');
-  const abstractRemaining = document.getElementById('abstractRemaining');
-  const abstractLimit = document.getElementById('abstractLimit');
-
+  // API Settings - Email
+  const emailProviderSelect = document.getElementById('emailProviderSelect');
   const brevoApiKey = document.getElementById('brevoApiKey');
   const brevoSenderEmail = document.getElementById('brevoSenderEmail');
   const saveBrevoApiBtn = document.getElementById('saveBrevoApiBtn');
@@ -78,204 +89,178 @@
   const brevoRemaining = document.getElementById('brevoRemaining');
   const brevoLimit = document.getElementById('brevoLimit');
 
+  // API Settings - SMS
+  const smsProviderSelect = document.getElementById('smsProviderSelect');
+  const smsApiKey = document.getElementById('smsApiKey');
+  const smsApiBaseUrl = document.getElementById('smsApiBaseUrl');
+  const smsDefaultSender = document.getElementById('smsDefaultSender');
+  const saveSmsApiBtn = document.getElementById('saveSmsApiBtn');
+  const smsStats = document.getElementById('smsStats');
+  const smsUsed = document.getElementById('smsUsed');
+  const smsRemaining = document.getElementById('smsRemaining');
+  const smsLimit = document.getElementById('smsLimit');
+
   // Audit Logs
-  const auditLogsList = document.getElementById('auditLogsList');
+  const auditLogsBody = document.getElementById('auditLogsBody');
   const auditLogsCount = document.getElementById('auditLogsCount');
   const refreshAuditLogsBtn = document.getElementById('refreshAuditLogsBtn');
+  const auditDateFilter = document.getElementById('auditDateFilter');
+  const auditActionFilter = document.getElementById('auditActionFilter');
+  const auditSearchFilter = document.getElementById('auditSearchFilter');
+  const applyAuditFiltersBtn = document.getElementById('applyAuditFiltersBtn');
+  const resetAuditFiltersBtn = document.getElementById('resetAuditFiltersBtn');
+  const exportAuditCsvBtn = document.getElementById('exportAuditCsvBtn');
 
   // ========== STATE ==========
   let authToken = localStorage.getItem(STORAGE_TOKEN);
   let currentUser = localStorage.getItem(STORAGE_USER);
   let scraperData = [];
   let chartInstance = null;
+  let allAuditLogs = [];
+  let filteredAuditLogs = [];
 
   // ========== HELPERS ==========
-
-  /**
-   * Display an error message in a given element.
-   */
-  function showError(message, element = loginError) {
-    element.textContent = message;
-    element.classList.remove('hidden');
-    console.error('[Error]', message);
+  function showError(msg, el = loginError) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    console.error(msg);
   }
 
-  /**
-   * Hide an error message element.
-   */
-  function hideError(element = loginError) {
-    element.classList.add('hidden');
+  function hideError(el = loginError) {
+    el.classList.add('hidden');
   }
 
-  /**
-   * Set loading state on a button (show spinner, disable).
-   */
-  function setLoading(button, isLoading) {
-    if (!button) return;
-    if (isLoading) {
-      button.disabled = true;
-      const originalHtml = button.innerHTML;
-      button.innerHTML = '<div class="spinner"></div>';
-      button.dataset.originalHtml = originalHtml;
+  function setLoading(btn, loading) {
+    if (!btn) return;
+    if (loading) {
+      btn.disabled = true;
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<div class="spinner spinner-sm"></div>';
+      btn.dataset.orig = orig;
     } else {
-      button.disabled = false;
-      if (button.dataset.originalHtml) {
-        button.innerHTML = button.dataset.originalHtml;
-      }
+      btn.disabled = false;
+      if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
     }
   }
 
-  /**
-   * Format a number with comma separators.
-   */
-  function formatNumber(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  function formatNum(n) {
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
 
-  /**
-   * Trigger a file download.
-   */
-  function downloadFile(content, filename, mimeType = 'text/plain') {
-    const blob = new Blob([content], { type: mimeType });
+  function downloadFile(content, name, mime = 'text/plain') {
+    const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
     URL.revokeObjectURL(url);
   }
 
-  /**
-   * Generic API call with automatic token handling and error parsing.
-   */
-  async function apiCall(endpoint, method = 'GET', body = null, requiresAuth = true) {
-    const options = {
+  async function apiCall(endpoint, method = 'GET', body = null, needAuth = true) {
+    const opts = {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     };
-
-    if (requiresAuth && authToken) {
-      options.headers.Authorization = `Bearer ${authToken}`;
+    if (needAuth && authToken) {
+      opts.headers.Authorization = `Bearer ${authToken}`;
     }
+    if (body) opts.body = JSON.stringify(body);
 
-    if (body) {
-      options.body = JSON.stringify(body);
+    const res = await fetch(API_BASE + endpoint, opts);
+    if (res.status === 401) {
+      logout();
+      return { success: false, error: 'Session expired' };
     }
-
-    try {
-      const response = await fetch(`${API_BASE}${endpoint}`, options);
-
-      // If unauthorized, clear session
-      if (response.status === 401) {
-        await logout();
-        return { success: false, error: 'Session expired. Please login again.' };
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        return { success: false, error: data.error || 'Request failed' };
-      }
-
-      return data;
-    } catch (error) {
-      console.error('[API Error]', error);
-      return { success: false, error: error.message || 'Network error' };
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, error: data.error || 'Unknown error' };
     }
+    return data;
   }
 
-  /**
-   * Add an activity entry to the recent activities list.
-   */
   function addActivity(action, details = '') {
-    const timestamp = new Date().toLocaleTimeString();
+    const ts = new Date().toLocaleTimeString();
     const html = `
       <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 fade-in">
         <div class="flex justify-between items-start gap-2">
-          <div>
-            <p class="text-sm font-semibold text-slate-800">${action}</p>
-            <p class="text-xs text-slate-600">${details}</p>
-          </div>
-          <p class="text-xs text-slate-400 whitespace-nowrap">${timestamp}</p>
+          <div><p class="text-sm font-semibold text-slate-800">${action}</p><p class="text-xs text-slate-600">${details}</p></div>
+          <p class="text-xs text-slate-400 whitespace-nowrap">${ts}</p>
         </div>
       </div>
     `;
     recentActivities.insertAdjacentHTML('afterbegin', html);
-
-    // Keep only the latest 10 activities
-    const children = recentActivities.querySelectorAll('> div');
-    if (children.length > 10) {
-      children[children.length - 1].remove();
+    if (recentActivities.children.length > 10) {
+      recentActivities.lastElementChild.remove();
     }
   }
 
+  function getActionIcon(action) {
+    const map = {
+      'LOGIN_SUCCESS': '🔓',
+      'LOGIN_FAILED': '❌',
+      'LOGOUT': '🔒',
+      'API_KEY_UPDATED': '🔑',
+      'SCRAPE_EMAILS': '✉️',
+      'SCRAPE_PHONES': '📱',
+      'SEND_EMAILS': '📧',
+      'SEND_SMS': '📱',
+      'SCRAPE_ERROR': '⚠️',
+      'CONTACTS_IMPORT': '📥'
+    };
+    return map[action] || '📋';
+  }
+
+  function getStatusBadge(status) {
+    const map = {
+      'success': 'success',
+      'failed': 'failed',
+      'pending': 'pending',
+      'info': 'info'
+    };
+    return map[status] || 'info';
+  }
+
   // ========== AUTHENTICATION ==========
-
-  /**
-   * Handle login form submission.
-   */
-  async function handleLogin(event) {
-    event.preventDefault();
+  async function handleLogin(e) {
+    e.preventDefault();
     hideError();
-
     const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
-
     if (!username || !password) {
-      showError('Username and password are required.');
+      showError('Username and password are required');
       return;
     }
-
     setLoading(loginForm.querySelector('button'), true);
-
     const result = await apiCall('/auth/login', 'POST', { username, password }, false);
-
     setLoading(loginForm.querySelector('button'), false);
-
     if (result.success) {
       authToken = result.token;
       currentUser = result.username;
       localStorage.setItem(STORAGE_TOKEN, authToken);
       localStorage.setItem(STORAGE_USER, currentUser);
-
       showDashboard();
       addActivity('Login successful', `User: ${username}`);
-      await loadDashboardData();
+      loadDashboardData();
     } else {
-      showError(result.error || 'Login failed.');
+      showError(result.error || 'Login failed');
     }
   }
 
-  /**
-   * Log out the current user.
-   */
   async function logout() {
-    // Notify server (optional)
     await apiCall('/auth/logout', 'POST');
-
     authToken = null;
     currentUser = null;
     localStorage.removeItem(STORAGE_TOKEN);
     localStorage.removeItem(STORAGE_USER);
-
     showLoginPage();
   }
 
-  /**
-   * Show the login page and hide dashboard.
-   */
   function showLoginPage() {
     loginPage.classList.remove('hidden');
     dashboardPage.classList.add('hidden');
   }
 
-  /**
-   * Show the dashboard and hide login.
-   */
   function showDashboard() {
     loginPage.classList.add('hidden');
     dashboardPage.classList.remove('hidden');
@@ -283,144 +268,74 @@
   }
 
   // ========== TAB NAVIGATION ==========
-
-  /**
-   * Switch to a specific tab.
-   */
-  function switchTab(tabName) {
-    // Hide all tabs
-    tabContents.forEach(tab => tab.classList.add('hidden'));
-    // Remove active class from buttons
-    tabButtons.forEach(btn => btn.classList.remove('active'));
-
-    // Show selected tab
-    const targetTab = document.getElementById(`${tabName}Tab`);
-    if (targetTab) targetTab.classList.remove('hidden');
-
-    // Activate button
-    const targetBtn = document.querySelector(`[data-tab="${tabName}"]`);
-    if (targetBtn) targetBtn.classList.add('active');
-
-    // Load data on demand
-    if (tabName === 'dashboard') loadDashboardData();
-    else if (tabName === 'audit-logs') loadAuditLogs();
-    else if (tabName === 'api-settings') loadApiStats();
+  function switchTab(name) {
+    tabContents.forEach(t => t.classList.add('hidden'));
+    tabButtons.forEach(b => b.classList.remove('active'));
+    const target = document.getElementById(name + 'Tab');
+    if (target) target.classList.remove('hidden');
+    const btn = document.querySelector(`[data-tab="${name}"]`);
+    if (btn) btn.classList.add('active');
+    if (name === 'dashboard') loadDashboardData();
+    else if (name === 'audit-logs') loadAuditLogs();
+    else if (name === 'api-settings') loadApiStats();
   }
 
   // ========== DASHBOARD ==========
-
-  /**
-   * Load all dashboard data: stats, chart, and recent activities.
-   */
   async function loadDashboardData() {
-    // Load API stats (for Brevo remaining)
     await loadApiStats();
-
-    // Load statistics
-    const statsResult = await apiCall('/dashboard/stats');
-    if (statsResult.success && statsResult.stats) {
-      const stats = statsResult.stats;
-      statEmailsToday.textContent = formatNumber(stats.emailsToday || 0);
-      statEmailsSent.textContent = formatNumber(stats.emailsSentToday || 0);
-      statBrevoRemaining.textContent = formatNumber(stats.brevoRemaining || 0);
-      statTotalContacts.textContent = formatNumber(stats.totalContacts || 0);
+    await loadAuditLogs();
+    const stats = await apiCall('/dashboard/stats');
+    if (stats.success && stats.stats) {
+      statEmailsToday.textContent = formatNum(stats.stats.emailsToday || 0);
+      statEmailsSent.textContent = formatNum(stats.stats.emailsSentToday || 0);
+      statSmsSent.textContent = formatNum(stats.stats.smsSentToday || 0);
+      statBrevoRemaining.textContent = formatNum(stats.stats.brevoRemaining || 0);
+      statTotalContacts.textContent = formatNum(stats.stats.totalContacts || 0);
+      const used = (stats.stats.brevoLimit || 300) - (stats.stats.brevoRemaining || 0);
+      const pct = Math.min(100, (used / (stats.stats.brevoLimit || 300)) * 100);
+      if (brevoUsageBar) brevoUsageBar.style.width = pct + '%';
     }
-
-    // Load chart data
-    const chartResult = await apiCall('/dashboard/charts');
-    if (chartResult.success && chartResult.data) {
-      initChart(chartResult.data);
+    const chartData = await apiCall('/dashboard/charts');
+    if (chartData.success && chartData.data) {
+      initChart(chartData.data);
     } else {
       initChart([]);
     }
-
-    // Load recent activities from audit logs (latest 5)
-    const today = new Date().toISOString().split('T')[0];
-    const auditResult = await apiCall(`/audit-logs?date=${today}&limit=5`);
-    if (auditResult.success && auditResult.events) {
-      // Clear existing activities
-      recentActivities.innerHTML = '';
-      // Add each as an activity
-      const events = auditResult.events.slice(0, 5);
-      for (const ev of events) {
-        const action = ev.action.replace(/_/g, ' ').toLowerCase();
-        const details = ev.details ? JSON.stringify(ev.details) : '';
-        addActivity(action, details);
-      }
-    }
   }
 
-  /**
-   * Initialize or update the Chart.js line chart.
-   */
   function initChart(data) {
-    if (chartInstance) {
-      chartInstance.destroy();
-      chartInstance = null;
-    }
-
+    if (chartInstance) chartInstance.destroy();
     const ctx = analyticsChart.getContext('2d');
-
-    // Prepare labels and datasets
-    const labels = data.length ? data.map(d => d.date.slice(5)) : ['No Data'];
+    const labels = data.length ? data.map(d => d.date.slice(5)) : ['No data'];
     const extracted = data.length ? data.map(d => d.extracted) : [0];
     const sent = data.length ? data.map(d => d.sent) : [0];
 
     chartInstance = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: labels,
+        labels,
         datasets: [
-          {
-            label: 'Extracted Emails',
-            data: extracted,
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.4,
-          },
-          {
-            label: 'Sent Emails',
-            data: sent,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.4,
-          },
-        ],
+          { label: 'Extracted', data: extracted, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 },
+          { label: 'Sent', data: sent, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 }
+        ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: true,
-        plugins: {
-          legend: {
-            position: 'top',
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-          },
-        },
-      },
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { beginAtZero: true } }
+      }
     });
   }
 
   // ========== SCRAPER ==========
-
-  /**
-   * Handle scraping request.
-   */
   async function handleScrape() {
     const url = scraperUrl.value.trim();
     const mode = document.querySelector('input[name="scraperMode"]:checked').value;
+    const limit = scraperLimit ? parseInt(scraperLimit.value, 10) : 50;
+    const force = forceScrape ? forceScrape.checked : false;
 
-    if (!url) {
-      showError('Please enter a valid URL.', scraperResults);
-      return;
-    }
+    if (!url) { showError('Please enter a URL', scraperResults); return; }
 
     setLoading(scrapeBtn, true);
     scraperProgressContainer.classList.remove('hidden');
@@ -429,41 +344,33 @@
     scraperProgressLabel.textContent = mode === 'emails' ? 'Extracting emails…' : 'Extracting phone numbers…';
 
     const endpoint = mode === 'emails' ? '/scrape/emails' : '/scrape/phones';
-    const result = await apiCall(endpoint, 'POST', { url });
+    const result = await apiCall(endpoint, 'POST', { url, limit, force });
 
     if (result.success) {
       scraperData = mode === 'emails' ? result.emails : result.phones;
       displayScraperResults(scraperData, mode);
-
       const count = mode === 'emails' ? result.emailCount : result.phoneCount;
-      addActivity(
-        mode === 'emails' ? '✉️ Emails extracted' : '📱 Phone numbers extracted',
-        `${count} items found from ${result.url}`
-      );
-
-      // Refresh dashboard stats
+      const cachedMsg = result.cached ? ' (Loaded from Cache)' : '';
+      addActivity(mode === 'emails' ? '✉️ Emails extracted' : '📱 Phones extracted',
+        `${count} items found${cachedMsg}`);
       const stats = await apiCall('/dashboard/stats');
       if (stats.success && stats.stats) {
-        statEmailsToday.textContent = formatNumber(stats.stats.emailsToday || 0);
+        statEmailsToday.textContent = formatNum(stats.stats.emailsToday || 0);
       }
     } else {
-      showError(result.error || 'Scraping failed.', scraperResults);
+      showError(result.error || 'Scraping failed', scraperResults);
     }
 
     scraperProgressContainer.classList.add('hidden');
     setLoading(scrapeBtn, false);
   }
 
-  /**
-   * Display scraped results in the results panel.
-   */
   function displayScraperResults(data, mode) {
     if (!data || data.length === 0) {
-      scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data found.</div>';
+      scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data found</div>';
       scraperResultCount.textContent = '0 items found';
       return;
     }
-
     let html = '<div class="space-y-2">';
     const limit = Math.min(100, data.length);
     for (let i = 0; i < limit; i++) {
@@ -475,100 +382,147 @@
         </div>
       `;
     }
-    if (data.length > limit) {
-      html += `<div class="p-2 text-center text-sm text-blue-600 font-medium">… and ${data.length - limit} more</div>`;
-    }
+    if (data.length > limit) html += `<div class="p-2 text-center text-sm text-blue-600 font-medium">… and ${data.length - limit} more</div>`;
     html += '</div>';
-
     scraperResults.innerHTML = html;
     scraperResultCount.textContent = `${data.length} items found`;
-
-    // Add copy functionality
     scraperResults.querySelectorAll('.copy-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const value = btn.dataset.value;
-        navigator.clipboard.writeText(value).then(() => {
-          btn.textContent = '✓ Copied';
-          setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
-        }).catch(() => {
-          // Fallback
-          const input = document.createElement('input');
-          input.value = value;
-          document.body.appendChild(input);
-          input.select();
-          document.execCommand('copy');
-          document.body.removeChild(input);
-          btn.textContent = '✓ Copied';
-          setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
-        });
+        navigator.clipboard.writeText(btn.dataset.value);
+        btn.textContent = '✓ Copied';
+        setTimeout(() => btn.textContent = 'Copy', 2000);
       });
     });
   }
 
-  // ========== EMAIL CAMPAIGN ==========
+  // ========== CAMPAIGN TOGGLE ==========
+  function updateCampaignUI() {
+    const isSms = campaignTypeToggle.checked;
+    if (isSms) {
+      emailFields.classList.add('hidden');
+      smsFields.classList.remove('hidden');
+      campaignTypeLabel.textContent = '📱 SMS Campaign';
+      campaignIcon.textContent = '📱';
+      campaignTitle.textContent = 'SMS Campaign';
+      sendBtnText.textContent = 'Send SMS';
+      sendCampaignBtn.className = 'w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2';
+      document.querySelector('#campaignProgressBar').className = 'bg-purple-600 h-2.5 rounded-full progress-bar-fill';
+    } else {
+      emailFields.classList.remove('hidden');
+      smsFields.classList.add('hidden');
+      campaignTypeLabel.textContent = '✉️ Email Campaign';
+      campaignIcon.textContent = '✉️';
+      campaignTitle.textContent = 'Email Campaign';
+      sendBtnText.textContent = 'Send Campaign';
+      sendCampaignBtn.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2';
+      document.querySelector('#campaignProgressBar').className = 'bg-blue-600 h-2.5 rounded-full progress-bar-fill';
+    }
+    campaignResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">Switch mode to start a new campaign.</div>';
+    campaignResultCount.textContent = '0 sent';
+    campaignResultBadge.textContent = 'Ready';
+    campaignResultBadge.className = 'text-xs bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full';
+    campaignProgressContainer.classList.add('hidden');
+  }
 
-  /**
-   * Send an email campaign.
-   */
+  // ========== SMS CHARACTER COUNTER ==========
+  function updateSmsCounter() {
+    const text = campaignSmsContent.value || '';
+    const len = text.length;
+    const maxPerSms = 160;
+    const segments = len <= maxPerSms ? 1 : Math.ceil(len / 153);
+    const pct = Math.min(100, (len / (maxPerSms * 3)) * 100);
+
+    smsCharCounter.textContent = `${len} / ${maxPerSms} characters`;
+    smsSegmentCounter.textContent = `${segments} segment${segments > 1 ? 's' : ''}`;
+
+    smsCharCounter.className = 'sms-counter';
+    if (len > maxPerSms * 2) smsCharCounter.classList.add('danger');
+    else if (len > maxPerSms) smsCharCounter.classList.add('warning');
+    else smsCharCounter.classList.add('safe');
+
+    smsCharProgress.style.width = Math.min(100, pct) + '%';
+    if (pct > 80) smsCharProgress.className = 'char-progress-fill bg-red-500';
+    else if (pct > 50) smsCharProgress.className = 'char-progress-fill bg-amber-500';
+    else smsCharProgress.className = 'char-progress-fill bg-emerald-500';
+  }
+
+  // ========== CAMPAIGN SEND ==========
   async function handleSendCampaign() {
-    const subject = campaignSubject.value.trim();
-    const htmlContent = campaignHtmlContent.value.trim();
+    const isSms = campaignTypeToggle.checked;
     const recipientFilter = campaignRecipients.value;
 
-    if (!subject || !htmlContent) {
-      showError('Subject and HTML content are required.');
+    if (!recipientFilter) {
+      showError('Select a recipient group', campaignResults);
       return;
     }
-    if (!recipientFilter) {
-      showError('Please select a recipient group.');
-      return;
+
+    let payload = { recipientFilter };
+
+    if (isSms) {
+      const message = campaignSmsContent.value.trim();
+      const sender = campaignSmsSender.value.trim() || 'Marketing';
+      if (!message) {
+        showError('SMS message is required', campaignResults);
+        return;
+      }
+      payload.type = 'sms';
+      payload.message = message;
+      payload.sender = sender;
+    } else {
+      const subject = campaignSubject.value.trim();
+      const htmlContent = campaignHtmlContent.value.trim();
+      if (!subject || !htmlContent) {
+        showError('Subject and HTML content are required', campaignResults);
+        return;
+      }
+      payload.type = 'email';
+      payload.subject = subject;
+      payload.htmlContent = htmlContent;
     }
 
     setLoading(sendCampaignBtn, true);
     campaignProgressContainer.classList.remove('hidden');
     campaignProgressBar.style.width = '0%';
     campaignProgressText.textContent = '0%';
-    campaignProgressLabel.textContent = 'Sending emails…';
+    campaignProgressLabel.textContent = isSms ? 'Sending SMS…' : 'Sending emails…';
+    campaignResultBadge.textContent = 'Sending…';
+    campaignResultBadge.className = 'text-xs bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full';
 
-    const result = await apiCall('/campaigns/send', 'POST', {
-      subject,
-      htmlContent,
-      recipientFilter,
-    });
+    const result = await apiCall('/campaigns/send', 'POST', payload);
 
     if (result.success) {
-      // Show results
       campaignResults.innerHTML = '<div class="space-y-2"></div>';
       const container = campaignResults.querySelector('div');
-      let sentCount = 0;
-
+      let successCount = 0;
       for (const r of result.results) {
         const statusColor = r.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
         const icon = r.success ? '✅' : '❌';
-        const statusText = r.success ? 'Sent' : 'Failed';
-        if (r.success) sentCount++;
-
+        const text = r.success ? 'Sent' : 'Failed';
+        if (r.success) successCount++;
         container.insertAdjacentHTML('beforeend', `
-          <div class="p-2.5 ${statusColor} rounded-lg border">
+          <div class="p-2.5 ${statusColor} rounded-lg border fade-in">
             <div class="flex justify-between items-center">
-              <span class="text-sm font-mono">${r.email}</span>
-              <span class="text-xs font-medium">${icon} ${statusText}</span>
+              <span class="text-sm font-mono">${r.email || r.phone || 'N/A'}</span>
+              <span class="text-xs font-medium">${icon} ${text}</span>
             </div>
           </div>
         `);
       }
+      campaignResultCount.textContent = `${successCount}/${result.total} ${isSms ? 'SMS' : 'emails'} sent`;
+      campaignResultBadge.textContent = '✅ Done';
+      campaignResultBadge.className = 'text-xs bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full';
+      addActivity(isSms ? '📱 SMS campaign' : '📧 Email campaign', `${successCount} sent successfully`);
 
-      campaignResultCount.textContent = `${sentCount}/${result.total} emails sent`;
-      addActivity('📧 Email campaign sent', `${sentCount} successful`);
-
-      // Update stats
       const stats = await apiCall('/dashboard/stats');
       if (stats.success && stats.stats) {
-        statEmailsSent.textContent = formatNumber(stats.stats.emailsSentToday || 0);
-        statBrevoRemaining.textContent = formatNumber(stats.stats.brevoRemaining || 0);
+        statEmailsSent.textContent = formatNum(stats.stats.emailsSentToday || 0);
+        statSmsSent.textContent = formatNum(stats.stats.smsSentToday || 0);
+        statBrevoRemaining.textContent = formatNum(stats.stats.brevoRemaining || 0);
       }
     } else {
-      showError(result.error || 'Campaign failed.');
+      showError(result.error || 'Campaign failed', campaignResults);
+      campaignResultBadge.textContent = '❌ Failed';
+      campaignResultBadge.className = 'text-xs bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full';
     }
 
     setLoading(sendCampaignBtn, false);
@@ -578,225 +532,238 @@
   }
 
   // ========== API SETTINGS ==========
-
-  /**
-   * Load API usage statistics for both Abstract and Brevo.
-   */
   async function loadApiStats() {
-    // Abstract
-    const absResult = await apiCall('/api-keys/stats?apiName=abstract');
-    if (absResult.success && absResult.data) {
-      const stats = absResult.data;
-      abstractUsed.textContent = formatNumber(stats.used);
-      abstractRemaining.textContent = formatNumber(stats.remaining);
-      abstractLimit.textContent = formatNumber(stats.limit);
-      abstractStats.classList.remove('hidden');
-    }
-
-    // Brevo
-    const brResult = await apiCall('/api-keys/stats?apiName=brevo');
-    if (brResult.success && brResult.data) {
-      const stats = brResult.data;
-      brevoUsed.textContent = formatNumber(stats.used);
-      brevoRemaining.textContent = formatNumber(stats.remaining);
-      brevoLimit.textContent = formatNumber(stats.limit);
+    // Email (Brevo)
+    const br = await apiCall('/api-keys/stats?apiName=brevo');
+    if (br.success && br.data) {
+      brevoUsed.textContent = formatNum(br.data.used);
+      brevoRemaining.textContent = formatNum(br.data.remaining);
+      brevoLimit.textContent = formatNum(br.data.limit);
       brevoStats.classList.remove('hidden');
-      // Update dashboard stat
-      statBrevoRemaining.textContent = formatNumber(stats.remaining);
+      statBrevoRemaining.textContent = formatNum(br.data.remaining);
+      const used = br.data.limit - br.data.remaining;
+      const pct = Math.min(100, (used / br.data.limit) * 100);
+      if (brevoUsageBar) brevoUsageBar.style.width = pct + '%';
+    }
+    // SMS
+    const sms = await apiCall('/api-keys/stats?apiName=sms');
+    if (sms.success && sms.data) {
+      smsUsed.textContent = formatNum(sms.data.used);
+      smsRemaining.textContent = formatNum(sms.data.remaining);
+      smsLimit.textContent = formatNum(sms.data.limit);
+      smsStats.classList.remove('hidden');
     }
   }
 
-  /**
-   * Save Abstract API key.
-   */
-  async function handleSaveAbstract() {
-    const key = abstractApiKey.value.trim();
-    if (!key) {
-      showError('API key is required.');
-      return;
-    }
-
-    setLoading(saveAbstractApiBtn, true);
-    const result = await apiCall('/api-keys/save', 'POST', {
-      apiName: 'abstract',
-      apiKey: key,
-    });
-    setLoading(saveAbstractApiBtn, false);
-
-    if (result.success) {
-      abstractApiKey.value = '';
-      addActivity('🔑 Abstract API key saved', '');
-      alert('API key saved successfully.');
-      await loadApiStats();
-    } else {
-      showError(result.error || 'Failed to save API key.');
-    }
-  }
-
-  /**
-   * Save Brevo API key and sender email.
-   */
   async function handleSaveBrevo() {
     const key = brevoApiKey.value.trim();
     const sender = brevoSenderEmail.value.trim();
-
-    if (!key || !sender) {
-      showError('Both API key and sender email are required.');
-      return;
-    }
-
+    if (!key || !sender) { showError('API Key and Sender Email required', brevoStats); return; }
     setLoading(saveBrevoApiBtn, true);
-    const result = await apiCall('/api-keys/save', 'POST', {
-      apiName: 'brevo',
-      apiKey: key,
-    });
+    const res = await apiCall('/api-keys/save', 'POST', { apiName: 'brevo', apiKey: key });
     setLoading(saveBrevoApiBtn, false);
-
-    if (result.success) {
+    if (res.success) {
       brevoApiKey.value = '';
       brevoSenderEmail.value = '';
-      addActivity('🔑 Brevo API key saved', '');
-      alert('API key saved successfully.');
+      addActivity('🔑 Brevo API key', 'Saved');
+      alert('Email API key saved successfully');
       await loadApiStats();
     } else {
-      showError(result.error || 'Failed to save API key.');
+      showError(res.error || 'Save failed', brevoStats);
+    }
+  }
+
+  async function handleSaveSms() {
+    const provider = smsProviderSelect.value;
+    const key = smsApiKey.value.trim();
+    const baseUrl = smsApiBaseUrl.value.trim();
+    const sender = smsDefaultSender.value.trim();
+    if (!key || !baseUrl || !sender) {
+      showError('All SMS API fields are required', smsStats);
+      return;
+    }
+    setLoading(saveSmsApiBtn, true);
+    const res = await apiCall('/api-keys/save', 'POST', {
+      apiName: 'sms',
+      apiKey: key,
+      provider,
+      baseUrl,
+      defaultSender: sender
+    });
+    setLoading(saveSmsApiBtn, false);
+    if (res.success) {
+      smsApiKey.value = '';
+      smsApiBaseUrl.value = '';
+      smsDefaultSender.value = '';
+      addActivity('🔑 SMS API key', 'Saved');
+      alert('SMS API configuration saved successfully');
+      await loadApiStats();
+    } else {
+      showError(res.error || 'Save failed', smsStats);
     }
   }
 
   // ========== AUDIT LOGS ==========
-
-  /**
-   * Load audit logs for today.
-   */
   async function loadAuditLogs() {
-    const today = new Date().toISOString().split('T')[0];
-    const result = await apiCall(`/audit-logs?date=${today}&limit=100`);
-
-    if (result.success && result.events) {
-      displayAuditLogs(result.events);
-      auditLogsCount.textContent = `${result.totalEvents} events`;
+    const date = auditDateFilter.value || new Date().toISOString().split('T')[0];
+    const res = await apiCall(`/audit-logs?date=${date}&limit=200`);
+    if (res.success && res.events) {
+      allAuditLogs = res.events;
+      applyFilters();
+      auditLogsCount.textContent = `${filteredAuditLogs.length} events`;
     } else {
-      auditLogsList.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No logs available.</div>';
+      auditLogsBody.innerHTML = '<tr><td colspan="5" class="text-center text-slate-500 py-8">No logs found</td></tr>';
       auditLogsCount.textContent = '0 events';
     }
   }
 
-  /**
-   * Render audit logs in the UI.
-   */
-  function displayAuditLogs(events) {
-    if (!events || events.length === 0) {
-      auditLogsList.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No logs found.</div>';
-      return;
-    }
+  function applyFilters() {
+    const action = auditActionFilter.value;
+    const search = auditSearchFilter.value.toLowerCase().trim();
 
-    let html = '<div class="space-y-2">';
-    // Show latest first
-    const sorted = [...events].reverse();
-    for (const ev of sorted) {
-      const timestamp = new Date(ev.timestamp).toLocaleTimeString();
-      const icon = getActionIcon(ev.action);
-      const user = ev.username || 'system';
-      html += `
-        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-all">
-          <div class="flex justify-between items-start gap-2">
-            <div class="flex-1">
-              <p class="text-sm font-semibold text-slate-800">${icon} ${ev.action}</p>
-              <p class="text-xs text-slate-600">User: ${user}</p>
-            </div>
-            <p class="text-xs text-slate-400 whitespace-nowrap">${timestamp}</p>
-          </div>
-        </div>
-      `;
-    }
-    html += '</div>';
-    auditLogsList.innerHTML = html;
+    filteredAuditLogs = allAuditLogs.filter(ev => {
+      if (action !== 'all' && ev.action !== action) return false;
+      if (search) {
+        const user = (ev.username || '').toLowerCase();
+        const details = JSON.stringify(ev.details || '').toLowerCase();
+        const actionStr = ev.action.toLowerCase();
+        if (!user.includes(search) && !details.includes(search) && !actionStr.includes(search)) return false;
+      }
+      return true;
+    });
+
+    displayAuditLogs(filteredAuditLogs);
+    auditLogsCount.textContent = `${filteredAuditLogs.length} events`;
   }
 
-  /**
-   * Get an emoji icon for an action type.
-   */
-  function getActionIcon(action) {
-    const icons = {
-      'LOGIN_SUCCESS': '🔓',
-      'LOGIN_FAILED': '❌',
-      'LOGOUT': '🔒',
-      'API_KEY_UPDATED': '🔑',
-      'SCRAPE_EMAILS': '✉️',
-      'SCRAPE_PHONES': '📱',
-      'SEND_EMAILS': '📧',
-      'SCRAPE_ERROR': '⚠️',
-      'CONTACTS_IMPORT': '📥',
-    };
-    return icons[action] || '📋';
+  function displayAuditLogs(events) {
+    if (!events || events.length === 0) {
+      auditLogsBody.innerHTML = '<tr><td colspan="5" class="text-center text-slate-500 py-8">No matching logs</td></tr>';
+      return;
+    }
+    let html = '';
+    for (const ev of events.slice().reverse()) {
+      const ts = new Date(ev.timestamp).toLocaleString();
+      const icon = getActionIcon(ev.action);
+      const user = ev.username || 'system';
+      const details = ev.details ? Object.entries(ev.details).map(([k, v]) => `${k}: ${v}`).join(', ') : '';
+      const status = ev.success !== undefined ? (ev.success ? 'success' : 'failed') : 'info';
+      const badge = getStatusBadge(status);
+      html += `
+        <tr class="hover:bg-slate-50/80 transition-all">
+          <td class="text-xs text-slate-500 whitespace-nowrap">${ts}</td>
+          <td class="font-medium text-slate-700">${user}</td>
+          <td><span class="flex items-center gap-1.5">${icon} ${ev.action.replace(/_/g, ' ')}</span></td>
+          <td class="text-xs text-slate-500 max-w-[200px] truncate" title="${details}">${details || '—'}</td>
+          <td><span class="status-badge ${badge}">${status}</span></td>
+        </tr>
+      `;
+    }
+    auditLogsBody.innerHTML = html;
+  }
+
+  function exportAuditCsv() {
+    const data = filteredAuditLogs.length ? filteredAuditLogs : allAuditLogs;
+    if (!data || data.length === 0) {
+      alert('No data to export');
+      return;
+    }
+    let csv = 'Timestamp,User,Action,Details,Status\n';
+    for (const ev of data) {
+      const ts = new Date(ev.timestamp).toLocaleString();
+      const user = ev.username || 'system';
+      const details = ev.details ? JSON.stringify(ev.details) : '';
+      const status = ev.success !== undefined ? (ev.success ? 'success' : 'failed') : 'info';
+      csv += `"${ts}","${user}","${ev.action}","${details.replace(/"/g, '""')}","${status}"\n`;
+    }
+    downloadFile(csv, `audit_logs_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
   }
 
   // ========== EVENT BINDINGS ==========
-
-  // Login
   loginForm.addEventListener('submit', handleLogin);
-
-  // Logout
   logoutBtn.addEventListener('click', logout);
 
-  // Tab switching
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      switchTab(btn.dataset.tab);
-    });
-  });
+  tabButtons.forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
-  // Scraper
   scrapeBtn.addEventListener('click', handleScrape);
   exportScraperBtn.addEventListener('click', () => {
-    if (!scraperData || scraperData.length === 0) {
-      showError('No data to export.', scraperResults);
-      return;
-    }
+    if (!scraperData.length) { showError('No data to export', scraperResults); return; }
     downloadFile(scraperData.join('\n'), 'extracted_data.txt');
   });
   clearScraperBtn.addEventListener('click', () => {
     scraperData = [];
     scraperUrl.value = '';
-    scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data.</div>';
+    scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data</div>';
     scraperResultCount.textContent = '0 items found';
   });
 
-  // Campaign
+  campaignTypeToggle.addEventListener('change', updateCampaignUI);
+  campaignSmsContent.addEventListener('input', updateSmsCounter);
   sendCampaignBtn.addEventListener('click', handleSendCampaign);
 
-  // API Settings
-  saveAbstractApiBtn.addEventListener('click', handleSaveAbstract);
   saveBrevoApiBtn.addEventListener('click', handleSaveBrevo);
+  saveSmsApiBtn.addEventListener('click', handleSaveSms);
 
-  // Audit Logs
   refreshAuditLogsBtn.addEventListener('click', loadAuditLogs);
+  applyAuditFiltersBtn.addEventListener('click', applyFilters);
+  resetAuditFiltersBtn.addEventListener('click', () => {
+    auditDateFilter.value = new Date().toISOString().split('T')[0];
+    auditActionFilter.value = 'all';
+    auditSearchFilter.value = '';
+    loadAuditLogs();
+  });
+  exportAuditCsvBtn.addEventListener('click', exportAuditCsv);
+
+  // Email editor toolbar commands
+  document.querySelectorAll('.email-editor-toolbar button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cmd = btn.dataset.cmd;
+      const textarea = campaignHtmlContent;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = textarea.value.substring(start, end);
+      let replacement = '';
+      switch (cmd) {
+        case 'bold': replacement = `<strong>${selected}</strong>`; break;
+        case 'italic': replacement = `<em>${selected}</em>`; break;
+        case 'underline': replacement = `<u>${selected}</u>`; break;
+        case 'h1': replacement = `<h1>${selected}</h1>`; break;
+        case 'h2': replacement = `<h2>${selected}</h2>`; break;
+        case 'link': {
+          const url = prompt('Enter URL:', 'https://');
+          if (url) replacement = `<a href="${url}">${selected || url}</a>`;
+          else return;
+          break;
+        }
+        case 'ul': replacement = `<ul>\n  <li>${selected.split('\n').filter(s => s.trim()).join('</li>\n  <li>')}</li>\n</ul>`; break;
+        case 'ol': replacement = `<ol>\n  <li>${selected.split('\n').filter(s => s.trim()).join('</li>\n  <li>')}</li>\n</ol>`; break;
+        default: return;
+      }
+      textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+      textarea.focus();
+      textarea.selectionStart = start;
+      textarea.selectionEnd = start + replacement.length;
+    });
+  });
 
   // ========== INITIALIZATION ==========
-
-  /**
-   * Initialize the application.
-   */
   function init() {
+    auditDateFilter.value = new Date().toISOString().split('T')[0];
+    updateSmsCounter();
+    updateCampaignUI();
+
     if (authToken && currentUser) {
       showDashboard();
       loadDashboardData();
     } else {
       showLoginPage();
     }
-    console.log('✅ Email Extractor Pro v3.0 initialized');
+    console.log('✅ Marketing Pro v3.0 initialized');
   }
 
-  // Run on DOM ready
   document.addEventListener('DOMContentLoaded', init);
 
-  // Expose for debugging
-  window.__debug = {
-    logout,
-    loadDashboardData,
-    loadAuditLogs,
-    loadApiStats,
-    apiCall,
-  };
+  // Expose debug
+  window.__debug = { logout, loadDashboardData, loadAuditLogs, loadApiStats };
 
 })();
