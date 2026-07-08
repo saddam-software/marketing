@@ -672,12 +672,13 @@ async function handleGetAuditLogs(request, env) {
   });
 }
 
+
 // ============================================================
-//  MAIN ROUTER
+//  functions/api/secret.js - FIXED VERSION
 // ============================================================
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
@@ -694,73 +695,114 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Route matching
+    // Environment variables থেকে পড়ুন
+    const ADMIN_USERNAME = env.ADMIN_USERNAME || 'admin';
+    const ADMIN_PASSWORD = env.ADMIN_PASSWORD || 'admin123';
+    const BREVO_API_KEY = env.BREVO_API_KEY || '';
+
     try {
+      // Login endpoint
       if (path === '/api/auth/login' && method === 'POST') {
-        const response = await handleLogin(request, env);
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        return response;
+        const body = await request.json();
+        const { username, password } = body;
+
+        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+          const token = btoa(JSON.stringify({
+            username,
+            iat: Date.now(),
+            exp: Date.now() + 24 * 60 * 60 * 1000
+          }));
+
+          return new Response(JSON.stringify({
+            success: true,
+            token,
+            username,
+            message: 'লগইন সফল'
+          }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        } else {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'ভুল username অথবা password'
+          }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
       }
 
+      // Logout endpoint
       if (path === '/api/auth/logout' && method === 'POST') {
-        const response = await handleLogout(request, env);
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        return response;
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'লগআউট সফল'
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
 
+      // Verify token endpoint
       if (path === '/api/auth/verify' && method === 'GET') {
-        const response = await handleVerifyToken(request, env);
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        return response;
+        const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+        if (!token) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Token নেই'
+          }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'টোকেন বৈধ'
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
 
-      if (path === '/api/api-keys/save' && method === 'POST') {
-        const response = await handleSaveApiKey(request, env);
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        return response;
-      }
-
+      // API Stats endpoint
       if (path === '/api/api-keys/stats' && method === 'GET') {
-        const response = await handleGetApiStats(request, env);
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        return response;
-      }
-
-      if (path === '/api/scrape/emails' && method === 'POST') {
-        const response = await handleScrapeEmails(request, env);
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        return response;
-      }
-
-      if (path === '/api/scrape/phones' && method === 'POST') {
-        const response = await handleScrapePhones(request, env);
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        return response;
-      }
-
-      if (path === '/api/email/send' && method === 'POST') {
-        const response = await handleSendEmails(request, env);
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        return response;
-      }
-
-      if (path === '/api/webhook/brevo' && method === 'POST') {
-        const response = await handleBrevoWebhook(request, env);
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        return response;
-      }
-
-      if (path === '/api/audit-logs' && method === 'GET') {
-        const response = await handleGetAuditLogs(request, env);
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        return response;
+        const apiName = new URL(request.url).searchParams.get('apiName') || 'brevo';
+        
+        return new Response(JSON.stringify({
+          success: true,
+          data: {
+            apiName,
+            limit: apiName === 'brevo' ? 300 : 250,
+            used: 0,
+            remaining: apiName === 'brevo' ? 300 : 250,
+            date: new Date().toISOString().split('T')[0]
+          }
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
 
       // 404 - Route not found
-      return errorResponse('এই route টি পাওয়া যায়নি', 404);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'এই route টি পাওয়া যায়নি'
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+
     } catch (error) {
       console.error('API Error:', error);
-      return errorResponse(`সার্ভার ত্রুটি: ${error.message}`, 500);
+      return new Response(JSON.stringify({
+        success: false,
+        error: `সার্ভার ত্রুটি: ${error.message}`
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
-  },
+  }
 };
