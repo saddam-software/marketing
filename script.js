@@ -8,7 +8,7 @@
     'use strict';
 
     // ========== CONFIGURATION ==========
-    const API_BASE_URL = 'https://marketing-4sy.pages.dev/api';  // Cloudflare Functions endpoint
+    const API_BASE_URL = window.location.origin + '/api';   
     const STORAGE_KEY_TOKEN = 'emailExtractorToken';
     const STORAGE_KEY_USERNAME = 'emailExtractorUsername';
 
