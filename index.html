@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Extractor Pro | Admin Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js (Analytics) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- CryptoJS for MD5 hashing (Gravatar) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
+    <!-- Custom Styles -->
+    <style>
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* ===== SCROLLBAR STYLING ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* ===== TABLE HOVER ===== */
+        .result-row:hover {
+            background: #f8fafc;
+        }
+
+        /* ===== LOADING SPINNER ===== */
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .progress-bar-fill {
+            transition: width 0.3s ease;
+        }
+
+        /* ===== TAB STYLING ===== */
+        .tab-button {
+            @apply px-4 py-2 font-medium text-slate-600 border-b-2 border-transparent hover:border-blue-400 transition-all;
+        }
+
+        .tab-button.active {
+            @apply text-blue-600 border-blue-600;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .grid-cols-12 {
+                grid-template-columns: 0.5fr 0.5fr 1fr 1.5fr 1fr 0.8fr 0.8fr 0.8fr !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+
+    <!-- ===== LOGIN PAGE ===== -->
+    <div id="loginPage" class="fixed inset-0 bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md fade-in">
+            <div class="text-center mb-8">
+                <svg class="w-12 h-12 text-blue-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <h1 class="text-3xl font-bold text-blue-600">Email Extractor</h1>
+                <p class="text-slate-500 text-sm mt-1">Admin Panel v2.1</p>
+            </div>
+
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">ইউজারনেম</label>
+                    <input type="text" id="loginUsername" placeholder="আপনার ইউজারনেম" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">পাসওয়ার্ড</label>
+                    <input type="password" id="loginPassword" placeholder="আপনার পাসওয়ার্ড" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
+                </div>
+
+                <div id="loginError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                    </svg>
+                    লগইন করুন
+                </button>
+            </form>
+
+            <p class="text-center text-xs text-slate-500 mt-6">
+                Default: admin / admin123
+            </p>
+        </div>
+    </div>
+
+    <!-- ===== MAIN DASHBOARD ===== -->
+    <div id="dashboardPage" class="hidden min-h-screen bg-slate-50">
+
+        <!-- ===== HEADER ===== -->
+        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold text-blue-600">Email Extractor</h1>
+                        <p class="text-xs sm:text-sm text-slate-500">Admin Panel</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="userBadge" class="text-sm px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full font-medium">—</span>
+                    <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all">
+                        লগআউট
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+            <!-- ===== TABS ===== -->
+            <div class="flex gap-2 border-b border-slate-200 mb-6 overflow-x-auto">
+                <button class="tab-button active" data-tab="dashboard">
+                    📊 ড্যাশবোর্ড
+                </button>
+                <button class="tab-button" data-tab="scraper">
+                    🔍 স্ক্র্যাপার
+                </button>
+                <button class="tab-button" data-tab="email-campaign">
+                    ✉️ ইমেইল ক্যাম্পেইন
+                </button>
+                <button class="tab-button" data-tab="api-settings">
+                    ⚙️ API সেটিংস
+                </button>
+                <button class="tab-button" data-tab="audit-logs">
+                    📋 অডিট লগ
+                </button>
+            </div>
+
+            <!-- ===== TAB 1: DASHBOARD ===== -->
+            <div id="dashboardTab" class="tab-content space-y-6">
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">আজ এক্সট্র্যাক্ট করা ইমেইল</p>
+                        <p class="text-3xl font-bold text-blue-600" id="statEmailsToday">0</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">আজ পাঠানো ইমেইল</p>
+                        <p class="text-3xl font-bold text-emerald-600" id="statEmailsSent">0</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Brevo লিমিট (বাকি)</p>
+                        <p class="text-3xl font-bold text-indigo-600" id="statBrevoRemaining">250</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">কন্টাক্ট লিস্ট</p>
+                        <p class="text-3xl font-bold text-cyan-600" id="statTotalContacts">0</p>
+                    </div>
+                </div>
+
+                <!-- Analytics Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 আজকের কার্যকলাপ</h2>
+                    <canvas id="analyticsChart" height="80"></canvas>
+                </div>
+
+                <!-- Recent Activities -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-4">🕐 সম্প্রতি ঘটনা</h2>
+                    <div id="recentActivities" class="space-y-3 max-h-64 overflow-y-auto">
+                        <div class="text-sm text-slate-500 text-center py-6">কোনো কার্যকলাপ এখনও নেই</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ===== TAB 2: SCRAPER ===== -->
+            <div id="scraperTab" class="tab-content hidden space-y-6">
+
+                <!-- Email Scraper Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- Input Card -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-24">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                স্ক্র্যাপার কন্ট্রোল
+                            </h3>
+
+                            <div class="space-y-4">
+                                <!-- URL Input -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">ওয়েবসাইট URL</label>
+                                    <input type="url" id="scraperUrl" placeholder="https://example.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+                                </div>
+
+                                <!-- Mode Selection -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">এক্সট্র্যাক্ট করুন</label>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="scraperMode" value="emails" checked class="w-4 h-4 text-blue-600" />
+                                            <span class="text-sm text-slate-700">📧 ইমেইল</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="scraperMode" value="phones" class="w-4 h-4 text-blue-600" />
+                                            <span class="text-sm text-slate-700">📱 ফোন নম্বর</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Buttons -->
+                                <div class="space-y-2 pt-2">
+                                    <button id="scrapeBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                        শুরু করুন
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Card -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
+
+                            <!-- Header -->
+                            <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-xl">
+                                <h3 class="font-semibold text-slate-800">স্ক্র্যাপ করা ডেটা</h3>
+                                <div class="flex gap-2">
+                                    <button id="exportScraperBtn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                        ডাউনলোড
+                                    </button>
+                                    <button id="clearScraperBtn" class="px-3 py-1.5 bg-slate-300 hover:bg-slate-400 text-slate-700 text-xs font-medium rounded-lg transition-all">
+                                        সাফ করুন
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div id="scraperProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span id="scraperProgressLabel" class="font-medium text-slate-700">প্রসেস করছে…</span>
+                                    <span id="scraperProgressText" class="text-blue-600 font-bold">0%</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                    <div id="scraperProgressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Results Table -->
+                            <div id="scraperResults" class="flex-1 overflow-y-auto p-4">
+                                <div class="text-sm text-slate-500 text-center py-12">
+                                    কোনো ডেটা নেই। URL এন্টার করে স্ক্র্যাপ শুরু করুন।
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center">
+                                <span id="scraperResultCount">0 টি আইটেম পাওয়া গেছে</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ===== TAB 3: EMAIL CAMPAIGN ===== -->
+            <div id="emailCampaignTab" class="tab-content hidden space-y-6">
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- Campaign Form -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-24">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                ক্যাম্পেইন তৈরি করুন
+                            </h3>
+
+                            <div class="space-y-4">
+                                <!-- Subject -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">বিষয়</label>
+                                    <input type="text" id="campaignSubject" placeholder="ইমেইল বিষয়" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" />
+                                </div>
+
+                                <!-- HTML Content -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">HTML কন্টেন্ট</label>
+                                    <textarea id="campaignHtmlContent" rows="8" placeholder="<h1>Hello</h1><p>Your content here</p>" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-y font-mono text-xs"></textarea>
+                                </div>
+
+                                <!-- Recipients Selection -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">প্রাপকরা</label>
+                                    <select id="campaignRecipients" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                                        <option value="">— সব কন্টাক্ট নির্বাচন করুন —</option>
+                                        <option value="all">সব কন্টাক্ট</option>
+                                        <option value="b2b">শুধু B2B</option>
+                                        <option value="b2c">শুধু B2C</option>
+                                        <option value="verified">শুধু যাচাইকৃত</option>
+                                    </select>
+                                </div>
+
+                                <!-- Send Button -->
+                                <button id="sendCampaignBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                    পাঠান
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campaign Results -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
+
+                            <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl">
+                                <h3 class="font-semibold text-slate-800">প্রেরণ ফলাফল</h3>
+                            </div>
+
+                            <!-- Progress -->
+                            <div id="campaignProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span id="campaignProgressLabel" class="font-medium text-slate-700">পাঠাচ্ছে…</span>
+                                    <span id="campaignProgressText" class="text-indigo-600 font-bold">0%</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                    <div id="campaignProgressBar" class="bg-indigo-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Results -->
+                            <div id="campaignResults" class="flex-1 overflow-y-auto p-4 space-y-2">
+                                <div class="text-sm text-slate-500 text-center py-12">
+                                    ফলাফল এখানে দেখা যাবে
+                                </div>
+                            </div>
+
+                            <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center">
+                                <span id="campaignResultCount">0 টি ইমেইল পাঠানো হয়েছে</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ===== TAB 4: API SETTINGS ===== -->
+            <div id="apiSettingsTab" class="tab-content hidden space-y-6">
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                    <!-- Abstract API -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Abstract API (ইমেইল যাচাই)
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label>
+                                <input type="password" id="abstractApiKey" placeholder="আপনার Abstract API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-xs" />
+                            </div>
+
+                            <button id="saveAbstractApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all">
+                                সংরক্ষণ করুন
+                            </button>
+
+                            <!-- Stats -->
+                            <div id="abstractStats" class="hidden p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                <p class="text-xs text-slate-600 mb-2 font-semibold">আজকের ব্যবহার</p>
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div>
+                                        <p class="text-2xl font-bold text-blue-600" id="abstractUsed">0</p>
+                                        <p class="text-xs text-slate-500">ব্যবহৃত</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-2xl font-bold text-emerald-600" id="abstractRemaining">250</p>
+                                        <p class="text-xs text-slate-500">বাকি</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-2xl font-bold text-slate-600" id="abstractLimit">250</p>
+                                        <p class="text-xs text-slate-500">সীমা</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Brevo API -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Brevo API (ইমেইল পাঠানো)
+                        </h3>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label>
+                                <input type="password" id="brevoApiKey" placeholder="আপনার Brevo API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-mono text-xs" />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Sender Email</label>
+                                <input type="email" id="brevoSenderEmail" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" />
+                            </div>
+
+                            <button id="saveBrevoApiBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-all">
+                                সংরক্ষণ করুন
+                            </button>
+
+                            <!-- Stats -->
+                            <div id="brevoStats" class="hidden p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                <p class="text-xs text-slate-600 mb-2 font-semibold">আজকের ব্যবহার</p>
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div>
+                                        <p class="text-2xl font-bold text-indigo-600" id="brevoUsed">0</p>
+                                        <p class="text-xs text-slate-500">পাঠানো</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-2xl font-bold text-emerald-600" id="brevoRemaining">300</p>
+                                        <p class="text-xs text-slate-500">বাকি</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-2xl font-bold text-slate-600" id="brevoLimit">300</p>
+                                        <p class="text-xs text-slate-500">সীমা</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ===== TAB 5: AUDIT LOGS ===== -->
+            <div id="auditLogsTab" class="tab-content hidden space-y-6">
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[600px]">
+
+                    <!-- Header -->
+                    <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-xl">
+                        <h3 class="font-semibold text-slate-800">সব অডিট লগ</h3>
+                        <button id="refreshAuditLogsBtn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">
+                            রিফ্রেশ করুন
+                        </button>
+                    </div>
+
+                    <!-- Logs Table -->
+                    <div id="auditLogsList" class="flex-1 overflow-y-auto p-4">
+                        <div class="text-sm text-slate-500 text-center py-12">
+                            লোড করছে…
+                        </div>
+                    </div>
+
+                    <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center">
+                        <span id="auditLogsCount">0 টি ইভেন্ট</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- ===== SCRIPT ===== -->
+    <script src="script.js"></script>
+
+</body>
+</html>
