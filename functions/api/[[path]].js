@@ -419,18 +419,75 @@ export async function onRequest(context) {
         };
       }
 
-      // Simulate sending (in production, integrate with actual API)
-      const results = recipients.map((contact) => {
-        const success = Math.random() > 0.1; // 90% success rate
-        return {
+      // ========== REAL API CALLS (Brevo / SMS) ==========
+      const results = [];
+      let successCount = 0;
+
+      for (const contact of recipients) {
+        let success = false;
+        let messageId = null;
+        let errorMsg = null;
+
+        try {
+          if (type === 'email') {
+            // Brevo (Sendinblue) API
+            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'api-key': apiKey
+              },
+              body: JSON.stringify({
+                sender: { name: sender || "Marketing", email: "noreply@yourdomain.com" },
+                to: [{ email: contact }],
+                subject: subject,
+                htmlContent: htmlContent
+              })
+            });
+            const data = await response.json();
+            if (response.ok) {
+              success = true;
+              messageId = data.messageId;
+              successCount++;
+            } else {
+              errorMsg = data.message || 'Brevo API error';
+            }
+          } else if (type === 'sms') {
+            // Example: Twilio API (adjust according to your provider)
+            const smsUrl = smsConfig.baseUrl || 'https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID/Messages.json';
+            const response = await fetch(smsUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Basic ' + btoa('ACCOUNT_SID:' + apiKey)
+              },
+              body: new URLSearchParams({
+                To: contact,
+                From: smsConfig.defaultSender || 'Marketing',
+                Body: message
+              })
+            });
+            if (response.ok) {
+              success = true;
+              messageId = 'sms_' + Date.now();
+              successCount++;
+            } else {
+              const err = await response.text();
+              errorMsg = err;
+            }
+          }
+        } catch (err) {
+          errorMsg = err.message;
+        }
+
+        results.push({
           [type === 'email' ? 'email' : 'phone']: contact,
           success,
-          messageId: success ? `msg_${Math.random().toString(36).substr(2, 9)}` : null,
-          error: success ? null : 'Simulated failure',
-        };
-      });
-
-      const successCount = results.filter((r) => r.success).length;
+          messageId,
+          error: errorMsg,
+        });
+      }
 
       // Log the campaign
       const action = type === 'email' ? 'SEND_EMAILS' : 'SEND_SMS';
