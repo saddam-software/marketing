@@ -6,7 +6,7 @@
 
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD_HASH = 'admin123'; // ⚠️ NOTE: পরবর্তীতে সিকিউর হ্যাশিং করতে হবে
-const BREVO_API_KEY = 'YOUR_BREVO_API_KEY'; // Environment variable থেকে আসবে
+const BREVO_API_KEY = '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'; // Environment variable থেকে আসবে
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 মিনিট
 const MAX_LOGIN_ATTEMPTS = 5;
 
