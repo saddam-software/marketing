@@ -478,8 +478,11 @@
           </div>
         `;
         recentActivities.insertAdjacentHTML('afterbegin', html);
-        const children = recentActivities.querySelectorAll('> div');
-        if (children.length > 10) children[children.length - 1].remove();
+        
+        // FIX: > div এরর সমাধানের জন্য children ব্যবহার করা হয়েছে
+        if (recentActivities.children.length > 10) {
+          recentActivities.lastElementChild.remove();
+        }
       }
 
       // ========== AUTH ==========
@@ -587,9 +590,16 @@
       }
 
       // ========== SCRAPER ==========
-      async function handleScrape() {
+    async function handleScrape() {
         const url = scraperUrl.value.trim();
         const mode = document.querySelector('input[name="scraperMode"]:checked').value;
+        
+        // নতুন যুক্ত করা Limit এবং Force Cache অপশন DOM থেকে নেওয়া
+        const limitInput = document.getElementById('scraperLimit');
+        const forceInput = document.getElementById('forceScrape');
+        const limit = limitInput ? parseInt(limitInput.value, 10) : 50;
+        const force = forceInput ? forceInput.checked : false;
+
         if (!url) { showError('Please enter a URL', scraperResults); return; }
 
         setLoading(scrapeBtn, true);
@@ -599,13 +609,20 @@
         scraperProgressLabel.textContent = mode === 'emails' ? 'Extracting emails…' : 'Extracting phone numbers…';
 
         const endpoint = mode === 'emails' ? '/scrape/emails' : '/scrape/phones';
-        const result = await apiCall(endpoint, 'POST', { url });
+        
+        // API কলে limit এবং force পাঠানো হচ্ছে
+        const result = await apiCall(endpoint, 'POST', { url, limit, force });
 
         if (result.success) {
           scraperData = mode === 'emails' ? result.emails : result.phones;
           displayScraperResults(scraperData, mode);
+          
+          const count = mode === 'emails' ? result.emailCount : result.phoneCount;
+          const cachedMsg = result.cached ? ' (Loaded from Cache)' : '';
+          
           addActivity(mode === 'emails' ? '✉️ Emails extracted' : '📱 Phones extracted',
-            `${result[mode === 'emails' ? 'emailCount' : 'phoneCount']} items found`);
+            `${count} items found${cachedMsg}`);
+            
           // update stats
           const stats = await apiCall('/dashboard/stats');
           if (stats.success && stats.stats) {
