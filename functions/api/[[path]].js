@@ -208,14 +208,17 @@ export async function onRequest(context) {
       return jsonResponse({ success: true, data: result });
     }
 
-    // ---------- SCRAPING ----------
-    if (path === '/api/scrape/emails' && method === 'POST') {
+  // ---------- SCRAPING ----------
+    if ((path === '/api/scrape/emails' || path === '/api/scrape/phones') && method === 'POST') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
         return jsonResponse({ success: false, error: auth.error }, 401);
       }
+      
       const body = await request.json().catch(() => ({}));
-      let { url } = body;
+      let { url, limit = 50, force = false } = body;
+      const type = path.includes('emails') ? 'emails' : 'phones';
+
       if (!url) {
         return jsonResponse({ success: false, error: 'URL required' }, 400);
       }
@@ -224,44 +227,91 @@ export async function onRequest(context) {
         return jsonResponse({ success: false, error: 'Invalid URL' }, 400);
       }
 
+      // Cache Logic: Check if we already scraped this URL recently
+      const cacheKey = `cache:scrape:${type}:${url}`;
+      if (!force) {
+        const cachedData = await kv.getJSON(cacheKey);
+        if (cachedData) {
+          // If cached, just return it without fetching again
+          return jsonResponse({
+            success: true,
+            url,
+            [`${type === 'emails' ? 'email' : 'phone'}Count`]: cachedData.length,
+            [type]: cachedData,
+            cached: true,
+            scrapedAt: new Date().toISOString(),
+          });
+        }
+      }
+
+      // Improved Fetch with better Headers to prevent blocking
       const fetchWithRetry = async (retries = 2) => {
         for (let i = 0; i <= retries; i++) {
           try {
             const response = await fetch(url, {
               headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1'
               },
-              timeout: 10000,
+              // Adding timeout to prevent infinite spinning
+              signal: AbortSignal.timeout(10000) 
             });
+            
+            if (response.status === 403) throw new Error(`Access Denied (403). The site might be blocking scrapers.`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return await response.text();
           } catch (err) {
             if (i === retries) throw err;
-            await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+            await new Promise(r => setTimeout(r, 1000 * (i + 1))); // wait before retry
           }
         }
       };
 
       try {
         const html = await fetchWithRetry();
-        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-        const matches = html.match(emailRegex) || [];
-        const emails = [...new Set(matches.map(e => e.toLowerCase()))];
+        let results = [];
 
-        await kv.pushToList('contacts:emails', emails);
-        await auditLogger.log('SCRAPE_EMAILS', {
+        if (type === 'emails') {
+          const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+          const matches = html.match(emailRegex) || [];
+          results = [...new Set(matches.map(e => e.toLowerCase()))];
+        } else {
+          const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g;
+          const matches = html.match(phoneRegex) || [];
+          results = [...new Set(
+            matches.map(p => p.trim().replace(/[^\d+]/g, '')).filter(p => p.length >= 10)
+          )];
+        }
+
+        // Apply Logic: Slice the array to respect the user's limit
+        results = results.slice(0, parseInt(limit, 10));
+
+        // Save to KV Storage
+        await kv.pushToList(`contacts:${type}`, results);
+        
+        // Save to Cache for 24 hours (86400 seconds) so we don't scrape again soon
+        if (results.length > 0) {
+          await kv.putJSON(cacheKey, results, { expirationTtl: 86400 });
+        }
+
+        await auditLogger.log(`SCRAPE_${type.toUpperCase()}`, {
           username: auth.username,
           url,
-          count: emails.length,
+          count: results.length,
         });
 
         return jsonResponse({
           success: true,
           url,
-          emailCount: emails.length,
-          emails,
+          [`${type === 'emails' ? 'email' : 'phone'}Count`]: results.length,
+          [type]: results,
+          cached: false,
           scrapedAt: new Date().toISOString(),
         });
+
       } catch (error) {
         await auditLogger.log('SCRAPE_ERROR', {
           username: auth.username,
