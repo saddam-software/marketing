@@ -1,0 +1,18 @@
+name = "email-extractor-pro"
+type = "javascript"
+main = "src/index.js"
+
+env = {
+  production = { name = "email-extractor-pro" }
+}
+
+# Cloudflare KV Namespace Binding
+kv_namespaces = [
+  { binding = "SECRETS_KV", id = "YOUR_KV_NAMESPACE_ID", preview_id = "YOUR_KV_PREVIEW_ID" }
+]
+
+# Environment Variables
+vars = { BREVO_API_KEY = "YOUR_BREVO_API_KEY" }
+
+[env.production.vars]
+BREVO_API_KEY = "YOUR_PRODUCTION_BREVO_API_KEY"
