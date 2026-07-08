@@ -1,13 +1,13 @@
-name = "marketing"
+name = "email-extractor-pro"
 type = "javascript"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-11-01"
 
-# Cloudflare KV Namespace Binding
+# KV Namespace for secrets and persistent data
 kv_namespaces = [
   { binding = "SECRETS_KV", id = "YOUR_KV_NAMESPACE_ID", preview_id = "YOUR_KV_PREVIEW_ID" }
 ]
 
-# Environment Variables
+# Environment variables (production)
 [env.production]
 vars = {
   ADMIN_USERNAME = "saddam",
@@ -15,6 +15,8 @@ vars = {
   BREVO_API_KEY = "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"
 }
 
-kv_namespaces = [
-  { binding = "SECRETS_KV", id = "YOUR_KV_NAMESPACE_ID", preview_id = "YOUR_KV_PREVIEW_ID" }
-]
+# Bindings for production (same as top-level)
+[[env.production.kv_namespaces]]
+binding = "SECRETS_KV"
+id = "YOUR_KV_NAMESPACE_ID"
+preview_id = "YOUR_KV_PREVIEW_ID"
