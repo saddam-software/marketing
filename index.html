@@ -1,858 +1,1604 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Email Extractor Pro · Admin</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email & SMS Marketing Pro · Admin</title>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- CryptoJS (for Gravatar / hashing) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+    </script>
+    <!-- CryptoJS (for Gravatar / hashing) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js">
+    </script>
 
-  <style>
-    /* ===== ANIMATIONS ===== */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .fade-in { animation: fadeIn 0.3s ease-out; }
+    <style>
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
 
-    /* ===== SCROLLBAR ===== */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .slide-up {
+            animation: slideUp 0.4s ease-out;
+        }
 
-    /* ===== SPINNER ===== */
-    .spinner {
-      border: 3px solid #e2e8f0;
-      border-top: 3px solid #3b82f6;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+        .pulse-dot {
+            animation: pulse-dot 1.5s ease-in-out infinite;
+        }
 
-    /* ===== PROGRESS BAR ===== */
-    .progress-bar-fill { transition: width 0.3s ease; }
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
 
-    /* ===== TABS ===== */
-    .tab-button {
-      @apply px-4 py-2 font-medium text-slate-600 border-b-2 border-transparent hover:border-blue-400 transition-all;
-    }
-    .tab-button.active {
-      @apply text-blue-600 border-blue-600;
-    }
+        /* ===== SPINNER ===== */
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        .spinner-sm {
+            width: 18px;
+            height: 18px;
+            border-width: 2px;
+        }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
 
-    /* ===== MODAL OVERLAY ===== */
-    .modal-overlay { background-color: rgba(0,0,0,0.5); }
+        /* ===== PROGRESS BAR ===== */
+        .progress-bar-fill {
+            transition: width 0.4s ease;
+        }
 
-    /* ===== RESPONSIVE TABLE ===== */
-    @media (max-width: 768px) {
-      .grid-cols-12 { grid-template-columns: 0.5fr 0.5fr 1fr 1.5fr 1fr 0.8fr 0.8fr 0.8fr !important; }
-    }
+        /* ===== TABS ===== */
+        .tab-button {
+            @apply px-4 py-2.5 font-medium text-slate-600 border-b-2 border-transparent hover:border-blue-400 transition-all text-sm whitespace-nowrap;
+        }
+        .tab-button.active {
+            @apply text-blue-600 border-blue-600;
+        }
+        .tab-button .tab-icon {
+            @apply mr-2 inline-block;
+        }
 
-    /* ===== CUSTOM ===== */
-    .result-row:hover { background: #f8fafc; }
-    .sticky-top-24 { position: sticky; top: 96px; z-index: 30; }
-  </style>
+        /* ===== TOGGLE SWITCH ===== */
+        .toggle-switch {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .toggle-switch input {
+            display: none;
+        }
+        .toggle-switch .toggle-track {
+            width: 48px;
+            height: 26px;
+            background: #cbd5e1;
+            border-radius: 13px;
+            transition: background 0.3s ease;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .toggle-switch .toggle-track .toggle-thumb {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .toggle-switch input:checked+.toggle-track {
+            background: #3b82f6;
+        }
+        .toggle-switch input:checked+.toggle-track .toggle-thumb {
+            transform: translateX(22px);
+        }
+        .toggle-switch .toggle-label {
+            @apply ml-3 text-sm font-medium text-slate-700;
+        }
+
+        /* ===== MODAL OVERLAY ===== */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        /* ===== CAMPAIGN BUILDER ===== */
+        .email-editor-toolbar {
+            @apply flex flex-wrap gap-1 p-2 bg-slate-50 border border-slate-200 rounded-t-lg border-b-0;
+        }
+        .email-editor-toolbar button {
+            @apply px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600;
+        }
+        .email-editor-content {
+            @apply w-full border border-slate-200 rounded-b-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y font-mono text-xs min-h-[160px];
+        }
+        .sms-counter {
+            @apply text-xs font-medium;
+        }
+        .sms-counter.danger {
+            @apply text-red-600;
+        }
+        .sms-counter.warning {
+            @apply text-amber-600;
+        }
+        .sms-counter.safe {
+            @apply text-emerald-600;
+        }
+
+        /* ===== DATA TABLE ===== */
+        .data-table {
+            @apply w-full text-sm;
+        }
+        .data-table thead {
+            @apply bg-slate-50;
+        }
+        .data-table thead th {
+            @apply px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200;
+        }
+        .data-table tbody td {
+            @apply px-4 py-3 border-b border-slate-100 text-slate-700;
+        }
+        .data-table tbody tr:hover {
+            @apply bg-slate-50/80;
+        }
+        .data-table .status-badge {
+            @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+        }
+        .data-table .status-badge.success {
+            @apply bg-emerald-100 text-emerald-700;
+        }
+        .data-table .status-badge.failed {
+            @apply bg-red-100 text-red-700;
+        }
+        .data-table .status-badge.pending {
+            @apply bg-amber-100 text-amber-700;
+        }
+        .data-table .status-badge.info {
+            @apply bg-blue-100 text-blue-700;
+        }
+
+        /* ===== FILTER BAR ===== */
+        .filter-bar {
+            @apply flex flex-wrap items-center gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200;
+        }
+        .filter-bar .filter-group {
+            @apply flex items-center gap-2;
+        }
+        .filter-bar .filter-group label {
+            @apply text-xs font-medium text-slate-600 whitespace-nowrap;
+        }
+        .filter-bar .filter-group select,
+        .filter-bar .filter-group input {
+            @apply border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white;
+        }
+
+        /* ===== STAT CARDS ===== */
+        .stat-card {
+            @apply bg-white p-5 rounded-xl shadow-sm border border-slate-200 transition-all hover:shadow-md hover:-translate-y-0.5;
+        }
+        .stat-card .stat-icon {
+            @apply w-10 h-10 rounded-full flex items-center justify-center text-white text-lg;
+        }
+        .stat-card .stat-value {
+            @apply text-2xl font-bold;
+        }
+        .stat-card .stat-label {
+            @apply text-xs text-slate-500 font-semibold uppercase tracking-wider;
+        }
+
+        /* ===== STICKY HEADER ===== */
+        .sticky-top-24 {
+            position: sticky;
+            top: 96px;
+            z-index: 30;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .filter-bar {
+                @apply flex-col items-stretch;
+            }
+            .filter-bar .filter-group {
+                @apply flex-wrap;
+            }
+            .stat-card .stat-value {
+                @apply text-xl;
+            }
+            .tab-button {
+                @apply px-3 py-2 text-xs;
+            }
+        }
+
+        /* ===== CUSTOM SCROLLBAR FOR TABLES ===== */
+        .table-scroll {
+            max-height: 480px;
+            overflow-y: auto;
+        }
+        .table-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .table-scroll::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* ===== CAMPAIGN TOGGLE WRAPPER ===== */
+        .campaign-toggle-wrapper {
+            @apply flex items-center gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200;
+        }
+
+        /* ===== SMS CHARACTER COUNTER PROGRESS ===== */
+        .char-progress {
+            @apply h-1.5 w-full bg-slate-200 rounded-full overflow-hidden mt-1;
+        }
+        .char-progress .char-progress-fill {
+            @apply h-full rounded-full transition-all duration-300;
+        }
+
+        /* ===== TOOLTIP ===== */
+        .tooltip-trigger {
+            position: relative;
+            cursor: help;
+        }
+        .tooltip-trigger .tooltip-text {
+            @apply invisible opacity-0 absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-800 text-white text-xs rounded whitespace-nowrap transition-all;
+        }
+        .tooltip-trigger:hover .tooltip-text {
+            @apply visible opacity-100;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
 
-  <!-- ===== LOGIN PAGE ===== -->
-  <div id="loginPage" class="fixed inset-0 bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center z-50">
-    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md fade-in">
-      <div class="text-center mb-8">
-        <svg class="w-12 h-12 text-blue-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
-        <h1 class="text-3xl font-bold text-blue-600">Email Extractor</h1>
-        <p class="text-slate-500 text-sm mt-1">Admin Panel v3.0</p>
-      </div>
-
-      <form id="loginForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Username</label>
-          <input type="text" id="loginUsername" placeholder="Enter your username" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
-          <input type="password" id="loginPassword" placeholder="Enter your password" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
-        </div>
-        <div id="loginError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
-          Login
-        </button>
-      </form>
-      <p class="text-center text-xs text-slate-500 mt-6">Default: admin / admin123</p>
-    </div>
-  </div>
-
-  <!-- ===== DASHBOARD ===== -->
-  <div id="dashboardPage" class="hidden min-h-screen bg-slate-50">
-
-    <!-- HEADER -->
-    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-          <div>
-            <h1 class="text-xl sm:text-2xl font-bold text-blue-600">Email Extractor</h1>
-            <p class="text-xs sm:text-sm text-slate-500">Admin Panel</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <span id="userBadge" class="text-sm px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full font-medium">—</span>
-          <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all">Logout</button>
-        </div>
-      </div>
-    </header>
-
-    <!-- MAIN -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-
-      <!-- TABS -->
-      <div class="flex gap-2 border-b border-slate-200 mb-6 overflow-x-auto">
-        <button class="tab-button active" data-tab="dashboard">📊 Dashboard</button>
-        <button class="tab-button" data-tab="scraper">🔍 Scraper</button>
-        <button class="tab-button" data-tab="email-campaign">✉️ Email Campaign</button>
-        <button class="tab-button" data-tab="api-settings">⚙️ API Settings</button>
-        <button class="tab-button" data-tab="audit-logs">📋 Audit Logs</button>
-      </div>
-
-      <!-- TAB 1: DASHBOARD -->
-      <div id="dashboardTab" class="tab-content space-y-6">
-        <!-- Stats -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Emails Extracted Today</p>
-            <p class="text-3xl font-bold text-blue-600" id="statEmailsToday">0</p>
-          </div>
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Emails Sent Today</p>
-            <p class="text-3xl font-bold text-emerald-600" id="statEmailsSent">0</p>
-          </div>
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Brevo Remaining</p>
-            <p class="text-3xl font-bold text-indigo-600" id="statBrevoRemaining">0</p>
-          </div>
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Total Contacts</p>
-            <p class="text-3xl font-bold text-cyan-600" id="statTotalContacts">0</p>
-          </div>
-        </div>
-        <!-- Chart -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 Today's Activity</h2>
-          <canvas id="analyticsChart" height="80"></canvas>
-        </div>
-        <!-- Recent Activities -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <h2 class="text-lg font-semibold text-slate-800 mb-4">🕐 Recent Events</h2>
-          <div id="recentActivities" class="space-y-3 max-h-64 overflow-y-auto">
-            <div class="text-sm text-slate-500 text-center py-6">No activity yet</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 2: SCRAPER -->
-      <div id="scraperTab" class="tab-content hidden space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <!-- Input -->
-          <div class="lg:col-span-1">
-  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
-    <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-      <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-      Scraper Control
-    </h3>
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Website URL</label>
-        <input type="url" id="scraperUrl" placeholder="https://example.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Extract</label>
-        <div class="space-y-2">
-          <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="scraperMode" value="emails" checked class="w-4 h-4 text-blue-600" /> <span class="text-sm text-slate-700">📧 Emails</span></label>
-          <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="scraperMode" value="phones" class="w-4 h-4 text-blue-600" /> <span class="text-sm text-slate-700">📱 Phone Numbers</span></label>
-        </div>
-      </div>
-      
-      <div class="flex gap-4">
-        <div class="flex-1">
-          <label class="block text-sm font-semibold text-slate-700 mb-2">Limit</label>
-          <input type="number" id="scraperLimit" value="50" min="1" max="1000" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-        </div>
-      </div>
-      <div>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" id="forceScrape" class="w-4 h-4 text-blue-600" />
-          <span class="text-xs text-slate-700">Ignore Cache (Force new scrape)</span>
-        </label>
-      </div>
-      <button id="scrapeBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-        Start
-      </button>
-    </div>
-  </div>
-</div>
-          <!-- Results -->
-          <div class="lg:col-span-2">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
-              <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-xl">
-                <h3 class="font-semibold text-slate-800">Scraped Data</h3>
-                <div class="flex gap-2">
-                  <button id="exportScraperBtn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">Download</button>
-                  <button id="clearScraperBtn" class="px-3 py-1.5 bg-slate-300 hover:bg-slate-400 text-slate-700 text-xs font-medium rounded-lg transition-all">Clear</button>
+    <!-- ===== LOGIN PAGE ===== -->
+    <div id="loginPage" class="fixed inset-0 bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md fade-in">
+            <div class="text-center mb-8">
+                <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
                 </div>
-              </div>
-              <div id="scraperProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
-                <div class="flex justify-between text-sm mb-2">
-                  <span id="scraperProgressLabel" class="font-medium text-slate-700">Processing…</span>
-                  <span id="scraperProgressText" class="text-blue-600 font-bold">0%</span>
-                </div>
-                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                  <div id="scraperProgressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div>
-                </div>
-              </div>
-              <div id="scraperResults" class="flex-1 overflow-y-auto p-4">
-                <div class="text-sm text-slate-500 text-center py-12">No data. Enter a URL and start scraping.</div>
-              </div>
-              <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center">
-                <span id="scraperResultCount">0 items found</span>
-              </div>
+                <h1 class="text-3xl font-bold text-blue-600">Marketing Pro</h1>
+                <p class="text-slate-500 text-sm mt-1">Email &amp; SMS Marketing Platform</p>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- TAB 3: EMAIL CAMPAIGN -->
-      <div id="emailCampaignTab" class="tab-content hidden space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-1">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
-              <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                Create Campaign
-              </h3>
-              <div class="space-y-4">
-                <div><label class="block text-sm font-semibold text-slate-700 mb-2">Subject</label><input type="text" id="campaignSubject" placeholder="Email subject" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" /></div>
-                <div><label class="block text-sm font-semibold text-slate-700 mb-2">HTML Content</label><textarea id="campaignHtmlContent" rows="8" placeholder="<h1>Hello</h1><p>Your content here</p>" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-y font-mono text-xs"></textarea></div>
+            <form id="loginForm" class="space-y-4">
                 <div>
-                  <label class="block text-sm font-semibold text-slate-700 mb-2">Recipients</label>
-                  <select id="campaignRecipients" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
-                    <option value="">— Select recipient group —</option>
-                    <option value="all">All Contacts</option>
-                    <option value="b2b">B2B only</option>
-                    <option value="b2c">B2C only</option>
-                    <option value="verified">Verified only</option>
-                  </select>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter your username" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
                 </div>
-                <button id="sendCampaignBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                  Send
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
+                </div>
+                <div id="loginError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
+                    Sign In
                 </button>
-              </div>
-            </div>
-          </div>
-          <div class="lg:col-span-2">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
-              <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl"><h3 class="font-semibold text-slate-800">Send Results</h3></div>
-              <div id="campaignProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
-                <div class="flex justify-between text-sm mb-2"><span id="campaignProgressLabel" class="font-medium text-slate-700">Sending…</span><span id="campaignProgressText" class="text-indigo-600 font-bold">0%</span></div>
-                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden"><div id="campaignProgressBar" class="bg-indigo-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div></div>
-              </div>
-              <div id="campaignResults" class="flex-1 overflow-y-auto p-4 space-y-2"><div class="text-sm text-slate-500 text-center py-12">Results will appear here</div></div>
-              <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center"><span id="campaignResultCount">0 emails sent</span></div>
-            </div>
-          </div>
+            </form>
+            <p class="text-center text-xs text-slate-500 mt-6">Default: admin / admin123</p>
         </div>
-      </div>
+    </div>
 
-      <!-- TAB 4: API SETTINGS -->
-      <div id="apiSettingsTab" class="tab-content hidden space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Abstract -->
-          <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-              Abstract API (Email Verification)
-            </h3>
-            <div class="space-y-4">
-              <div><label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label><input type="password" id="abstractApiKey" placeholder="Your Abstract API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-xs" /></div>
-              <button id="saveAbstractApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save</button>
-              <div id="abstractStats" class="hidden p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
-                <div class="grid grid-cols-3 gap-2 text-center">
-                  <div><p class="text-2xl font-bold text-blue-600" id="abstractUsed">0</p><p class="text-xs text-slate-500">Used</p></div>
-                  <div><p class="text-2xl font-bold text-emerald-600" id="abstractRemaining">250</p><p class="text-xs text-slate-500">Remaining</p></div>
-                  <div><p class="text-2xl font-bold text-slate-600" id="abstractLimit">250</p><p class="text-xs text-slate-500">Limit</p></div>
+    <!-- ===== DASHBOARD ===== -->
+    <div id="dashboardPage" class="hidden min-h-screen bg-slate-50">
+
+        <!-- HEADER -->
+        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold text-blue-600 leading-tight">Marketing Pro</h1>
+                        <p class="text-[10px] sm:text-xs text-slate-500 leading-tight">Email &amp; SMS Platform</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="userBadge" class="text-sm px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full font-medium">—</span>
+                    <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+            <!-- TABS -->
+            <div class="flex gap-1 border-b border-slate-200 mb-6 overflow-x-auto pb-0.5">
+                <button class="tab-button active" data-tab="dashboard">
+                    <span class="tab-icon">📊</span> Dashboard
+                </button>
+                <button class="tab-button" data-tab="scraper">
+                    <span class="tab-icon">🔍</span> Scraper
+                </button>
+                <button class="tab-button" data-tab="campaign">
+                    <span class="tab-icon">🚀</span> Campaigns
+                </button>
+                <button class="tab-button" data-tab="api-settings">
+                    <span class="tab-icon">⚙️</span> API Settings
+                </button>
+                <button class="tab-button" data-tab="audit-logs">
+                    <span class="tab-icon">📋</span> Audit Logs
+                </button>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB 1: DASHBOARD -->
+            <!-- ============================================================ -->
+            <div id="dashboardTab" class="tab-content space-y-6">
+                <!-- Stats -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="stat-label">Emails Extracted Today</p>
+                                <p class="stat-value text-blue-600" id="statEmailsToday">0</p>
+                            </div>
+                            <div class="stat-icon bg-blue-100 text-blue-600">✉️</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="stat-label">Emails Sent Today</p>
+                                <p class="stat-value text-emerald-600" id="statEmailsSent">0</p>
+                            </div>
+                            <div class="stat-icon bg-emerald-100 text-emerald-600">📤</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="stat-label">SMS Sent Today</p>
+                                <p class="stat-value text-purple-600" id="statSmsSent">0</p>
+                            </div>
+                            <div class="stat-icon bg-purple-100 text-purple-600">📱</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="stat-label">Total Contacts</p>
+                                <p class="stat-value text-cyan-600" id="statTotalContacts">0</p>
+                            </div>
+                            <div class="stat-icon bg-cyan-100 text-cyan-600">👥</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart + Brevo Remaining -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 7-Day Activity</h2>
+                        <canvas id="analyticsChart" height="80"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center">
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Brevo Remaining</p>
+                        <p class="text-4xl font-bold text-indigo-600" id="statBrevoRemaining">0</p>
+                        <p class="text-xs text-slate-400 mt-1">of 300 daily limit</p>
+                        <div class="w-full mt-3 bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div id="brevoUsageBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-4">🕐 Recent Events</h2>
+                    <div id="recentActivities" class="space-y-3 max-h-64 overflow-y-auto">
+                        <div class="text-sm text-slate-500 text-center py-6">No activity yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB 2: SCRAPER (unchanged structure, enhanced) -->
+            <!-- ============================================================ -->
+            <div id="scraperTab" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                Scraper Control
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">Website URL</label>
+                                    <input type="url" id="scraperUrl" placeholder="https://example.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">Extract</label>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="scraperMode" value="emails" checked class="w-4 h-4 text-blue-600" /> <span class="text-sm text-slate-700">📧 Emails</span></label>
+                                        <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="scraperMode" value="phones" class="w-4 h-4 text-blue-600" /> <span class="text-sm text-slate-700">📱 Phone Numbers</span></label>
+                                    </div>
+                                </div>
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <label class="block text-sm font-semibold text-slate-700 mb-2">Limit</label>
+                                        <input type="number" id="scraperLimit" value="50" min="1" max="1000" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="forceScrape" class="w-4 h-4 text-blue-600" />
+                                        <span class="text-xs text-slate-700">Ignore Cache (Force new scrape)</span>
+                                    </label>
+                                </div>
+                                <button id="scrapeBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                    Start Scraping
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
+                            <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-xl">
+                                <h3 class="font-semibold text-slate-800">Scraped Data</h3>
+                                <div class="flex gap-2">
+                                    <button id="exportScraperBtn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">Download</button>
+                                    <button id="clearScraperBtn" class="px-3 py-1.5 bg-slate-300 hover:bg-slate-400 text-slate-700 text-xs font-medium rounded-lg transition-all">Clear</button>
+                                </div>
+                            </div>
+                            <div id="scraperProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span id="scraperProgressLabel" class="font-medium text-slate-700">Processing…</span>
+                                    <span id="scraperProgressText" class="text-blue-600 font-bold">0%</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                    <div id="scraperProgressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div>
+                                </div>
+                            </div>
+                            <div id="scraperResults" class="flex-1 overflow-y-auto p-4">
+                                <div class="text-sm text-slate-500 text-center py-12">No data. Enter a URL and start scraping.</div>
+                            </div>
+                            <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center">
+                                <span id="scraperResultCount">0 items found</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB 3: CAMPAIGN (Email + SMS with toggle) -->
+            <!-- ============================================================ -->
+            <div id="campaignTab" class="tab-content hidden space-y-6">
+                <!-- Toggle: Email / SMS -->
+                <div class="campaign-toggle-wrapper">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-slate-700">📧 Email</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="campaignTypeToggle" />
+                            <span class="toggle-track">
+                                <span class="toggle-thumb"></span>
+                            </span>
+                        </label>
+                        <span class="text-sm font-medium text-slate-700">📱 SMS</span>
+                    </div>
+                    <span id="campaignTypeLabel" class="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Email Campaign</span>
+                </div>
+
+                <!-- Campaign Form -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
+                            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <span id="campaignIcon">✉️</span>
+                                <span id="campaignTitle">Email Campaign</span>
+                            </h3>
+                            <div class="space-y-4">
+                                <!-- Email Fields -->
+                                <div id="emailFields">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 mb-2">Subject</label>
+                                        <input type="text" id="campaignSubject" placeholder="Email subject" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 mb-2">HTML Content</label>
+                                        <div class="email-editor-toolbar">
+                                            <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+                                            <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+                                            <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+                                            <button type="button" data-cmd="h1" title="Heading 1">H1</button>
+                                            <button type="button" data-cmd="h2" title="Heading 2">H2</button>
+                                            <button type="button" data-cmd="link" title="Insert Link">🔗</button>
+                                            <button type="button" data-cmd="ul" title="Bullet List">•</button>
+                                            <button type="button" data-cmd="ol" title="Numbered List">1.</button>
+                                        </div>
+                                        <textarea id="campaignHtmlContent" rows="8" placeholder="<h1>Hello</h1><p>Your content here</p>" class="email-editor-content"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- SMS Fields -->
+                                <div id="smsFields" class="hidden">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 mb-2">Message</label>
+                                        <textarea id="campaignSmsContent" rows="5" placeholder="Type your SMS message here…" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all resize-y"></textarea>
+                                        <div class="flex items-center justify-between mt-2">
+                                            <span class="sms-counter safe" id="smsCharCounter">0 / 160 characters</span>
+                                            <span class="text-xs text-slate-500" id="smsSegmentCounter">1 segment</span>
+                                        </div>
+                                        <div class="char-progress mt-1">
+                                            <div id="smsCharProgress" class="char-progress-fill bg-emerald-500" style="width:0%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 mb-2">Sender ID</label>
+                                        <input type="text" id="campaignSmsSender" placeholder="YourBrand" maxlength="11" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                                        <p class="text-[10px] text-slate-400 mt-1">Max 11 alphanumeric characters</p>
+                                    </div>
+                                </div>
+
+                                <!-- Common -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">Recipients</label>
+                                    <select id="campaignRecipients" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                                        <option value="">— Select recipient group —</option>
+                                        <option value="all">All Contacts</option>
+                                        <option value="b2b">B2B only</option>
+                                        <option value="b2c">B2C only</option>
+                                        <option value="verified">Verified only</option>
+                                    </select>
+                                </div>
+
+                                <button id="sendCampaignBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                                    <span id="sendBtnText">Send Campaign</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Panel -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
+                            <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl flex items-center justify-between">
+                                <h3 class="font-semibold text-slate-800">Send Results</h3>
+                                <span id="campaignResultBadge" class="text-xs bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full">Ready</span>
+                            </div>
+                            <div id="campaignProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span id="campaignProgressLabel" class="font-medium text-slate-700">Sending…</span>
+                                    <span id="campaignProgressText" class="text-blue-600 font-bold">0%</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                                    <div id="campaignProgressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div>
+                                </div>
+                            </div>
+                            <div id="campaignResults" class="flex-1 overflow-y-auto p-4 space-y-2">
+                                <div class="text-sm text-slate-500 text-center py-12">No campaign sent yet.</div>
+                            </div>
+                            <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center">
+                                <span id="campaignResultCount">0 sent</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB 4: API SETTINGS (Email + SMS) -->
+            <!-- ============================================================ -->
+            <div id="apiSettingsTab" class="tab-content hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Email API -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            Email API
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Provider</label>
+                                <select id="emailProviderSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                                    <option value="brevo">Brevo (Sendinblue)</option>
+                                    <option value="sendgrid">SendGrid</option>
+                                    <option value="mailgun">Mailgun</option>
+                                    <option value="custom">Custom SMTP</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label>
+                                <input type="password" id="brevoApiKey" placeholder="Your Email API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-xs" />
+                            </div>
+                            <div id="brevoSenderField">
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Sender Email</label>
+                                <input type="email" id="brevoSenderEmail" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+                            </div>
+                            <button id="saveBrevoApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Email API</button>
+                            <div id="brevoStats" class="hidden p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div><p class="text-2xl font-bold text-blue-600" id="brevoUsed">0</p><p class="text-xs text-slate-500">Sent</p></div>
+                                    <div><p class="text-2xl font-bold text-emerald-600" id="brevoRemaining">300</p><p class="text-xs text-slate-500">Remaining</p></div>
+                                    <div><p class="text-2xl font-bold text-slate-600" id="brevoLimit">300</p><p class="text-xs text-slate-500">Limit</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SMS API -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                            SMS API
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Provider</label>
+                                <select id="smsProviderSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all">
+                                    <option value="twilio">Twilio</option>
+                                    <option value="vonage">Vonage (Nexmo)</option>
+                                    <option value="africastalking">Africa's Talking</option>
+                                    <option value="custom">Custom HTTP API</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key / Token</label>
+                                <input type="password" id="smsApiKey" placeholder="Your SMS API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all font-mono text-xs" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Base URL</label>
+                                <input type="url" id="smsApiBaseUrl" placeholder="https://api.twilio.com/2010-04-01" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Default Sender ID</label>
+                                <input type="text" id="smsDefaultSender" placeholder="YourBrand" maxlength="11" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                                <p class="text-[10px] text-slate-400 mt-1">Max 11 alphanumeric characters</p>
+                            </div>
+                            <button id="saveSmsApiBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save SMS API</button>
+                            <div id="smsStats" class="hidden p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div><p class="text-2xl font-bold text-purple-600" id="smsUsed">0</p><p class="text-xs text-slate-500">Sent</p></div>
+                                    <div><p class="text-2xl font-bold text-emerald-600" id="smsRemaining">100</p><p class="text-xs text-slate-500">Remaining</p></div>
+                                    <div><p class="text-2xl font-bold text-slate-600" id="smsLimit">100</p><p class="text-xs text-slate-500">Limit</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- TAB 5: AUDIT LOGS (Enhanced with filters + export) -->
+            <!-- ============================================================ -->
+            <div id="auditLogsTab" class="tab-content hidden space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                    <!-- Filter Bar -->
+                    <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl">
+                        <div class="filter-bar">
+                            <div class="filter-group">
+                                <label for="auditDateFilter">📅 Date</label>
+                                <input type="date" id="auditDateFilter" class="w-auto" />
+                            </div>
+                            <div class="filter-group">
+                                <label for="auditActionFilter">🎯 Action</label>
+                                <select id="auditActionFilter" class="w-auto">
+                                    <option value="all">All</option>
+                                    <option value="SCRAPE_EMAILS">Scrape Emails</option>
+                                    <option value="SCRAPE_PHONES">Scrape Phones</option>
+                                    <option value="SEND_EMAILS">Send Email</option>
+                                    <option value="SEND_SMS">Send SMS</option>
+                                    <option value="LOGIN_SUCCESS">Login</option>
+                                    <option value="LOGOUT">Logout</option>
+                                    <option value="API_KEY_UPDATED">API Key Update</option>
+                                    <option value="CONTACTS_IMPORT">Import Contacts</option>
+                                </select>
+                            </div>
+                            <div class="filter-group flex-1 min-w-[140px]">
+                                <label for="auditSearchFilter">🔍 Search</label>
+                                <input type="text" id="auditSearchFilter" placeholder="Search user or details…" class="flex-1" />
+                            </div>
+                            <div class="flex gap-2 ml-auto">
+                                <button id="applyAuditFiltersBtn" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">Apply</button>
+                                <button id="resetAuditFiltersBtn" class="px-4 py-1.5 bg-slate-300 hover:bg-slate-400 text-slate-700 text-xs font-medium rounded-lg transition-all">Reset</button>
+                                <button id="exportAuditCsvBtn" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Details</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditLogsBody">
+                                <tr><td colspan="5" class="text-center text-slate-500 py-8">Loading logs…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center flex items-center justify-between">
+                        <span id="auditLogsCount">0 events</span>
+                        <button id="refreshAuditLogsBtn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">🔄 Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- JAVASCRIPT (Core functionality - enhanced) -->
+    <!-- ============================================================ -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ========== CONFIG ==========
+            const API_BASE = window.location.origin + '/api';
+            const STORAGE_TOKEN = 'emailExtractorToken';
+            const STORAGE_USER = 'emailExtractorUsername';
+
+            // ========== DOM REFS ==========
+            const loginPage = document.getElementById('loginPage');
+            const dashboardPage = document.getElementById('dashboardPage');
+            const loginForm = document.getElementById('loginForm');
+            const loginUsername = document.getElementById('loginUsername');
+            const loginPassword = document.getElementById('loginPassword');
+            const loginError = document.getElementById('loginError');
+            const userBadge = document.getElementById('userBadge');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            const statEmailsToday = document.getElementById('statEmailsToday');
+            const statEmailsSent = document.getElementById('statEmailsSent');
+            const statSmsSent = document.getElementById('statSmsSent');
+            const statBrevoRemaining = document.getElementById('statBrevoRemaining');
+            const statTotalContacts = document.getElementById('statTotalContacts');
+            const recentActivities = document.getElementById('recentActivities');
+            const analyticsChart = document.getElementById('analyticsChart');
+            const brevoUsageBar = document.getElementById('brevoUsageBar');
+
+            // Scraper
+            const scraperUrl = document.getElementById('scraperUrl');
+            const scraperMode = document.querySelectorAll('input[name="scraperMode"]');
+            const scrapeBtn = document.getElementById('scrapeBtn');
+            const scraperProgressContainer = document.getElementById('scraperProgressContainer');
+            const scraperProgressBar = document.getElementById('scraperProgressBar');
+            const scraperProgressText = document.getElementById('scraperProgressText');
+            const scraperProgressLabel = document.getElementById('scraperProgressLabel');
+            const scraperResults = document.getElementById('scraperResults');
+            const scraperResultCount = document.getElementById('scraperResultCount');
+            const exportScraperBtn = document.getElementById('exportScraperBtn');
+            const clearScraperBtn = document.getElementById('clearScraperBtn');
+            const scraperLimit = document.getElementById('scraperLimit');
+            const forceScrape = document.getElementById('forceScrape');
+
+            // Campaign
+            const campaignTypeToggle = document.getElementById('campaignTypeToggle');
+            const campaignTypeLabel = document.getElementById('campaignTypeLabel');
+            const campaignIcon = document.getElementById('campaignIcon');
+            const campaignTitle = document.getElementById('campaignTitle');
+            const emailFields = document.getElementById('emailFields');
+            const smsFields = document.getElementById('smsFields');
+            const campaignSubject = document.getElementById('campaignSubject');
+            const campaignHtmlContent = document.getElementById('campaignHtmlContent');
+            const campaignSmsContent = document.getElementById('campaignSmsContent');
+            const campaignSmsSender = document.getElementById('campaignSmsSender');
+            const smsCharCounter = document.getElementById('smsCharCounter');
+            const smsSegmentCounter = document.getElementById('smsSegmentCounter');
+            const smsCharProgress = document.getElementById('smsCharProgress');
+            const campaignRecipients = document.getElementById('campaignRecipients');
+            const sendCampaignBtn = document.getElementById('sendCampaignBtn');
+            const sendBtnText = document.getElementById('sendBtnText');
+            const campaignProgressContainer = document.getElementById('campaignProgressContainer');
+            const campaignProgressBar = document.getElementById('campaignProgressBar');
+            const campaignProgressText = document.getElementById('campaignProgressText');
+            const campaignProgressLabel = document.getElementById('campaignProgressLabel');
+            const campaignResults = document.getElementById('campaignResults');
+            const campaignResultCount = document.getElementById('campaignResultCount');
+            const campaignResultBadge = document.getElementById('campaignResultBadge');
+
+            // API Settings - Email
+            const emailProviderSelect = document.getElementById('emailProviderSelect');
+            const brevoApiKey = document.getElementById('brevoApiKey');
+            const brevoSenderEmail = document.getElementById('brevoSenderEmail');
+            const saveBrevoApiBtn = document.getElementById('saveBrevoApiBtn');
+            const brevoStats = document.getElementById('brevoStats');
+            const brevoUsed = document.getElementById('brevoUsed');
+            const brevoRemaining = document.getElementById('brevoRemaining');
+            const brevoLimit = document.getElementById('brevoLimit');
+
+            // API Settings - SMS
+            const smsProviderSelect = document.getElementById('smsProviderSelect');
+            const smsApiKey = document.getElementById('smsApiKey');
+            const smsApiBaseUrl = document.getElementById('smsApiBaseUrl');
+            const smsDefaultSender = document.getElementById('smsDefaultSender');
+            const saveSmsApiBtn = document.getElementById('saveSmsApiBtn');
+            const smsStats = document.getElementById('smsStats');
+            const smsUsed = document.getElementById('smsUsed');
+            const smsRemaining = document.getElementById('smsRemaining');
+            const smsLimit = document.getElementById('smsLimit');
+
+            // Audit Logs
+            const auditLogsBody = document.getElementById('auditLogsBody');
+            const auditLogsCount = document.getElementById('auditLogsCount');
+            const refreshAuditLogsBtn = document.getElementById('refreshAuditLogsBtn');
+            const auditDateFilter = document.getElementById('auditDateFilter');
+            const auditActionFilter = document.getElementById('auditActionFilter');
+            const auditSearchFilter = document.getElementById('auditSearchFilter');
+            const applyAuditFiltersBtn = document.getElementById('applyAuditFiltersBtn');
+            const resetAuditFiltersBtn = document.getElementById('resetAuditFiltersBtn');
+            const exportAuditCsvBtn = document.getElementById('exportAuditCsvBtn');
+
+            // ========== STATE ==========
+            let authToken = localStorage.getItem(STORAGE_TOKEN);
+            let currentUser = localStorage.getItem(STORAGE_USER);
+            let scraperData = [];
+            let chartInstance = null;
+            let allAuditLogs = [];
+            let filteredAuditLogs = [];
+
+            // ========== HELPERS ==========
+            function showError(msg, el = loginError) {
+                el.textContent = msg;
+                el.classList.remove('hidden');
+                console.error(msg);
+            }
+
+            function hideError(el = loginError) {
+                el.classList.add('hidden');
+            }
+
+            function setLoading(btn, loading) {
+                if (!btn) return;
+                if (loading) {
+                    btn.disabled = true;
+                    const orig = btn.innerHTML;
+                    btn.innerHTML = '<div class="spinner spinner-sm"></div>';
+                    btn.dataset.orig = orig;
+                } else {
+                    btn.disabled = false;
+                    if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
+                }
+            }
+
+            function formatNum(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+            function downloadFile(content, name, mime = 'text/plain') {
+                const blob = new Blob([content], { type: mime });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            async function apiCall(endpoint, method = 'GET', body = null, needAuth = true) {
+                const opts = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                };
+                if (needAuth && authToken) {
+                    opts.headers.Authorization = `Bearer ${authToken}`;
+                }
+                if (body) opts.body = JSON.stringify(body);
+
+                const res = await fetch(API_BASE + endpoint, opts);
+                if (res.status === 401) {
+                    logout();
+                    return { success: false, error: 'Session expired' };
+                }
+                const data = await res.json();
+                if (!res.ok) {
+                    return { success: false, error: data.error || 'Unknown error' };
+                }
+                return data;
+            }
+
+            function addActivity(action, details = '') {
+                const ts = new Date().toLocaleTimeString();
+                const html = `
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 fade-in">
+                <div class="flex justify-between items-start gap-2">
+                  <div><p class="text-sm font-semibold text-slate-800">${action}</p><p class="text-xs text-slate-600">${details}</p></div>
+                  <p class="text-xs text-slate-400 whitespace-nowrap">${ts}</p>
                 </div>
               </div>
-            </div>
-          </div>
-          <!-- Brevo -->
-          <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-              Brevo API (Email Sending)
-            </h3>
-            <div class="space-y-4">
-              <div><label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label><input type="password" id="brevoApiKey" placeholder="Your Brevo API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all font-mono text-xs" /></div>
-              <div><label class="block text-sm font-semibold text-slate-700 mb-2">Sender Email</label><input type="email" id="brevoSenderEmail" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" /></div>
-              <button id="saveBrevoApiBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save</button>
-              <div id="brevoStats" class="hidden p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
-                <div class="grid grid-cols-3 gap-2 text-center">
-                  <div><p class="text-2xl font-bold text-indigo-600" id="brevoUsed">0</p><p class="text-xs text-slate-500">Sent</p></div>
-                  <div><p class="text-2xl font-bold text-emerald-600" id="brevoRemaining">300</p><p class="text-xs text-slate-500">Remaining</p></div>
-                  <div><p class="text-2xl font-bold text-slate-600" id="brevoLimit">300</p><p class="text-xs text-slate-500">Limit</p></div>
+            `;
+                recentActivities.insertAdjacentHTML('afterbegin', html);
+                if (recentActivities.children.length > 10) {
+                    recentActivities.lastElementChild.remove();
+                }
+            }
+
+            function getActionIcon(action) {
+                const map = {
+                    'LOGIN_SUCCESS': '🔓',
+                    'LOGIN_FAILED': '❌',
+                    'LOGOUT': '🔒',
+                    'API_KEY_UPDATED': '🔑',
+                    'SCRAPE_EMAILS': '✉️',
+                    'SCRAPE_PHONES': '📱',
+                    'SEND_EMAILS': '📧',
+                    'SEND_SMS': '📱',
+                    'SCRAPE_ERROR': '⚠️',
+                    'CONTACTS_IMPORT': '📥'
+                };
+                return map[action] || '📋';
+            }
+
+            function getStatusBadge(status) {
+                const map = {
+                    'success': 'success',
+                    'failed': 'failed',
+                    'pending': 'pending',
+                    'info': 'info'
+                };
+                return map[status] || 'info';
+            }
+
+            // ========== AUTH ==========
+            async function handleLogin(e) {
+                e.preventDefault();
+                hideError();
+                const username = loginUsername.value.trim();
+                const password = loginPassword.value.trim();
+                if (!username || !password) {
+                    showError('Username and password are required');
+                    return;
+                }
+                setLoading(loginForm.querySelector('button'), true);
+                const result = await apiCall('/auth/login', 'POST', { username, password }, false);
+                setLoading(loginForm.querySelector('button'), false);
+                if (result.success) {
+                    authToken = result.token;
+                    currentUser = result.username;
+                    localStorage.setItem(STORAGE_TOKEN, authToken);
+                    localStorage.setItem(STORAGE_USER, currentUser);
+                    showDashboard();
+                    addActivity('Login successful', `User: ${username}`);
+                    loadDashboardData();
+                } else {
+                    showError(result.error || 'Login failed');
+                }
+            }
+
+            async function logout() {
+                await apiCall('/auth/logout', 'POST');
+                authToken = null;
+                currentUser = null;
+                localStorage.removeItem(STORAGE_TOKEN);
+                localStorage.removeItem(STORAGE_USER);
+                showLoginPage();
+            }
+
+            function showLoginPage() {
+                loginPage.classList.remove('hidden');
+                dashboardPage.classList.add('hidden');
+            }
+
+            function showDashboard() {
+                loginPage.classList.add('hidden');
+                dashboardPage.classList.remove('hidden');
+                userBadge.textContent = `👤 ${currentUser}`;
+            }
+
+            // ========== TABS ==========
+            function switchTab(name) {
+                tabContents.forEach(t => t.classList.add('hidden'));
+                tabButtons.forEach(b => b.classList.remove('active'));
+                const target = document.getElementById(name + 'Tab');
+                if (target) target.classList.remove('hidden');
+                const btn = document.querySelector(`[data-tab="${name}"]`);
+                if (btn) btn.classList.add('active');
+                if (name === 'dashboard') loadDashboardData();
+                else if (name === 'audit-logs') loadAuditLogs();
+                else if (name === 'api-settings') loadApiStats();
+            }
+
+            // ========== DASHBOARD ==========
+            async function loadDashboardData() {
+                await loadApiStats();
+                await loadAuditLogs();
+                const stats = await apiCall('/dashboard/stats');
+                if (stats.success && stats.stats) {
+                    statEmailsToday.textContent = formatNum(stats.stats.emailsToday || 0);
+                    statEmailsSent.textContent = formatNum(stats.stats.emailsSentToday || 0);
+                    statSmsSent.textContent = formatNum(stats.stats.smsSentToday || 0);
+                    statBrevoRemaining.textContent = formatNum(stats.stats.brevoRemaining || 0);
+                    statTotalContacts.textContent = formatNum(stats.stats.totalContacts || 0);
+                    const used = (stats.stats.brevoLimit || 300) - (stats.stats.brevoRemaining || 0);
+                    const pct = Math.min(100, (used / (stats.stats.brevoLimit || 300)) * 100);
+                    if (brevoUsageBar) brevoUsageBar.style.width = pct + '%';
+                }
+                const chartData = await apiCall('/dashboard/charts');
+                if (chartData.success && chartData.data) {
+                    initChart(chartData.data);
+                } else {
+                    initChart([]);
+                }
+            }
+
+            function initChart(data) {
+                if (chartInstance) chartInstance.destroy();
+                const ctx = analyticsChart.getContext('2d');
+                const labels = data.length ? data.map(d => d.date.slice(5)) : ['No data'];
+                const extracted = data.length ? data.map(d => d.extracted) : [0];
+                const sent = data.length ? data.map(d => d.sent) : [0];
+
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Extracted', data: extracted, borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 },
+                            { label: 'Sent', data: sent, borderColor: '#10b981',
+                                backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: { legend: { position: 'top' } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            // ========== SCRAPER ==========
+            async function handleScrape() {
+                const url = scraperUrl.value.trim();
+                const mode = document.querySelector('input[name="scraperMode"]:checked').value;
+                const limit = scraperLimit ? parseInt(scraperLimit.value, 10) : 50;
+                const force = forceScrape ? forceScrape.checked : false;
+
+                if (!url) { showError('Please enter a URL', scraperResults); return; }
+
+                setLoading(scrapeBtn, true);
+                scraperProgressContainer.classList.remove('hidden');
+                scraperProgressBar.style.width = '0%';
+                scraperProgressText.textContent = '0%';
+                scraperProgressLabel.textContent = mode === 'emails' ? 'Extracting emails…' : 'Extracting phone numbers…';
+
+                const endpoint = mode === 'emails' ? '/scrape/emails' : '/scrape/phones';
+                const result = await apiCall(endpoint, 'POST', { url, limit, force });
+
+                if (result.success) {
+                    scraperData = mode === 'emails' ? result.emails : result.phones;
+                    displayScraperResults(scraperData, mode);
+                    const count = mode === 'emails' ? result.emailCount : result.phoneCount;
+                    const cachedMsg = result.cached ? ' (Loaded from Cache)' : '';
+                    addActivity(mode === 'emails' ? '✉️ Emails extracted' : '📱 Phones extracted',
+                        `${count} items found${cachedMsg}`);
+                    const stats = await apiCall('/dashboard/stats');
+                    if (stats.success && stats.stats) {
+                        statEmailsToday.textContent = formatNum(stats.stats.emailsToday || 0);
+                    }
+                } else {
+                    showError(result.error || 'Scraping failed', scraperResults);
+                }
+
+                scraperProgressContainer.classList.add('hidden');
+                setLoading(scrapeBtn, false);
+            }
+
+            function displayScraperResults(data, mode) {
+                if (!data || data.length === 0) {
+                    scraperResults.innerHTML =
+                    '<div class="text-sm text-slate-500 text-center py-12">No data found</div>';
+                    scraperResultCount.textContent = '0 items found';
+                    return;
+                }
+                let html = '<div class="space-y-2">';
+                const limit = Math.min(100, data.length);
+                for (let i = 0; i < limit; i++) {
+                    const item = data[i];
+                    html += `
+                <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-all result-row">
+                  <span class="text-sm font-mono text-slate-700 flex-1 break-all">${item}</span>
+                  <button class="ml-2 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-all copy-btn" data-value="${item}">Copy</button>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+              `;
+                }
+                if (data.length > limit) html +=
+                    `<div class="p-2 text-center text-sm text-blue-600 font-medium">… and ${data.length - limit} more</div>`;
+                html += '</div>';
+                scraperResults.innerHTML = html;
+                scraperResultCount.textContent = `${data.length} items found`;
+                scraperResults.querySelectorAll('.copy-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        navigator.clipboard.writeText(btn.dataset.value);
+                        btn.textContent = '✓ Copied';
+                        setTimeout(() => btn.textContent = 'Copy', 2000);
+                    });
+                });
+            }
 
-      <!-- TAB 5: AUDIT LOGS -->
-      <div id="auditLogsTab" class="tab-content hidden space-y-6">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[600px]">
-          <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 rounded-t-xl">
-            <h3 class="font-semibold text-slate-800">All Audit Logs</h3>
-            <button id="refreshAuditLogsBtn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">Refresh</button>
-          </div>
-          <div id="auditLogsList" class="flex-1 overflow-y-auto p-4"><div class="text-sm text-slate-500 text-center py-12">Loading…</div></div>
-          <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center"><span id="auditLogsCount">0 events</span></div>
-        </div>
-      </div>
+            // ========== CAMPAIGN TOGGLE ==========
+            function updateCampaignUI() {
+                const isSms = campaignTypeToggle.checked;
+                if (isSms) {
+                    emailFields.classList.add('hidden');
+                    smsFields.classList.remove('hidden');
+                    campaignTypeLabel.textContent = '📱 SMS Campaign';
+                    campaignIcon.textContent = '📱';
+                    campaignTitle.textContent = 'SMS Campaign';
+                    sendBtnText.textContent = 'Send SMS';
+                    sendCampaignBtn.className =
+                        'w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2';
+                    // Update progress bar color
+                    document.querySelector('#campaignProgressBar').className =
+                        'bg-purple-600 h-2.5 rounded-full progress-bar-fill';
+                } else {
+                    emailFields.classList.remove('hidden');
+                    smsFields.classList.add('hidden');
+                    campaignTypeLabel.textContent = '✉️ Email Campaign';
+                    campaignIcon.textContent = '✉️';
+                    campaignTitle.textContent = 'Email Campaign';
+                    sendBtnText.textContent = 'Send Campaign';
+                    sendCampaignBtn.className =
+                        'w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2';
+                    document.querySelector('#campaignProgressBar').className =
+                        'bg-blue-600 h-2.5 rounded-full progress-bar-fill';
+                }
+                // Reset results when switching
+                campaignResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">Switch mode to start a new campaign.</div>';
+                campaignResultCount.textContent = '0 sent';
+                campaignResultBadge.textContent = 'Ready';
+                campaignProgressContainer.classList.add('hidden');
+            }
 
-    </main>
-  </div>
+            // ========== SMS CHARACTER COUNTER ==========
+            function updateSmsCounter() {
+                const text = campaignSmsContent.value || '';
+                const len = text.length;
+                const maxPerSms = 160;
+                const segments = len <= maxPerSms ? 1 : Math.ceil(len / 153);
+                const remaining = maxPerSms - (len % maxPerSms || maxPerSms);
+                const pct = Math.min(100, (len / (maxPerSms * 3)) * 100);
 
-  <!-- ===== JAVASCRIPT ===== -->
-  <script>
-    (function() {
-      'use strict';
+                smsCharCounter.textContent = `${len} / ${maxPerSms} characters`;
+                smsSegmentCounter.textContent = `${segments} segment${segments > 1 ? 's' : ''}`;
 
-      // ========== CONFIG ==========
-      const API_BASE = window.location.origin + '/api';
-      const STORAGE_TOKEN = 'emailExtractorToken';
-      const STORAGE_USER = 'emailExtractorUsername';
+                // Color coding
+                smsCharCounter.className = 'sms-counter';
+                if (len > maxPerSms * 2) smsCharCounter.classList.add('danger');
+                else if (len > maxPerSms) smsCharCounter.classList.add('warning');
+                else smsCharCounter.classList.add('safe');
 
-      // ========== DOM REFS ==========
-      const loginPage = document.getElementById('loginPage');
-      const dashboardPage = document.getElementById('dashboardPage');
-      const loginForm = document.getElementById('loginForm');
-      const loginUsername = document.getElementById('loginUsername');
-      const loginPassword = document.getElementById('loginPassword');
-      const loginError = document.getElementById('loginError');
-      const userBadge = document.getElementById('userBadge');
-      const logoutBtn = document.getElementById('logoutBtn');
+                // Progress bar
+                smsCharProgress.style.width = Math.min(100, pct) + '%';
+                if (pct > 80) smsCharProgress.className = 'char-progress-fill bg-red-500';
+                else if (pct > 50) smsCharProgress.className = 'char-progress-fill bg-amber-500';
+                else smsCharProgress.className = 'char-progress-fill bg-emerald-500';
+            }
 
-      const tabButtons = document.querySelectorAll('.tab-button');
-      const tabContents = document.querySelectorAll('.tab-content');
+            // ========== CAMPAIGN SEND ==========
+            async function handleSendCampaign() {
+                const isSms = campaignTypeToggle.checked;
+                const recipientFilter = campaignRecipients.value;
 
-      const statEmailsToday = document.getElementById('statEmailsToday');
-      const statEmailsSent = document.getElementById('statEmailsSent');
-      const statBrevoRemaining = document.getElementById('statBrevoRemaining');
-      const statTotalContacts = document.getElementById('statTotalContacts');
-      const recentActivities = document.getElementById('recentActivities');
-      const analyticsChart = document.getElementById('analyticsChart');
+                if (!recipientFilter) {
+                    showError('Select a recipient group', campaignResults);
+                    return;
+                }
 
-      const scraperUrl = document.getElementById('scraperUrl');
-      const scraperMode = document.querySelectorAll('input[name="scraperMode"]');
-      const scrapeBtn = document.getElementById('scrapeBtn');
-      const scraperProgressContainer = document.getElementById('scraperProgressContainer');
-      const scraperProgressBar = document.getElementById('scraperProgressBar');
-      const scraperProgressText = document.getElementById('scraperProgressText');
-      const scraperProgressLabel = document.getElementById('scraperProgressLabel');
-      const scraperResults = document.getElementById('scraperResults');
-      const scraperResultCount = document.getElementById('scraperResultCount');
-      const exportScraperBtn = document.getElementById('exportScraperBtn');
-      const clearScraperBtn = document.getElementById('clearScraperBtn');
+                let payload = { recipientFilter };
 
-      const campaignSubject = document.getElementById('campaignSubject');
-      const campaignHtmlContent = document.getElementById('campaignHtmlContent');
-      const campaignRecipients = document.getElementById('campaignRecipients');
-      const sendCampaignBtn = document.getElementById('sendCampaignBtn');
-      const campaignProgressContainer = document.getElementById('campaignProgressContainer');
-      const campaignProgressBar = document.getElementById('campaignProgressBar');
-      const campaignProgressText = document.getElementById('campaignProgressText');
-      const campaignProgressLabel = document.getElementById('campaignProgressLabel');
-      const campaignResults = document.getElementById('campaignResults');
-      const campaignResultCount = document.getElementById('campaignResultCount');
+                if (isSms) {
+                    const message = campaignSmsContent.value.trim();
+                    const sender = campaignSmsSender.value.trim() || 'Marketing';
+                    if (!message) {
+                        showError('SMS message is required', campaignResults);
+                        return;
+                    }
+                    payload.type = 'sms';
+                    payload.message = message;
+                    payload.sender = sender;
+                } else {
+                    const subject = campaignSubject.value.trim();
+                    const htmlContent = campaignHtmlContent.value.trim();
+                    if (!subject || !htmlContent) {
+                        showError('Subject and HTML content are required', campaignResults);
+                        return;
+                    }
+                    payload.type = 'email';
+                    payload.subject = subject;
+                    payload.htmlContent = htmlContent;
+                }
 
-      const abstractApiKey = document.getElementById('abstractApiKey');
-      const saveAbstractApiBtn = document.getElementById('saveAbstractApiBtn');
-      const abstractStats = document.getElementById('abstractStats');
-      const abstractUsed = document.getElementById('abstractUsed');
-      const abstractRemaining = document.getElementById('abstractRemaining');
-      const abstractLimit = document.getElementById('abstractLimit');
+                setLoading(sendCampaignBtn, true);
+                campaignProgressContainer.classList.remove('hidden');
+                campaignProgressBar.style.width = '0%';
+                campaignProgressText.textContent = '0%';
+                campaignProgressLabel.textContent = isSms ? 'Sending SMS…' : 'Sending emails…';
+                campaignResultBadge.textContent = 'Sending…';
+                campaignResultBadge.className = 'text-xs bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full';
 
-      const brevoApiKey = document.getElementById('brevoApiKey');
-      const brevoSenderEmail = document.getElementById('brevoSenderEmail');
-      const saveBrevoApiBtn = document.getElementById('saveBrevoApiBtn');
-      const brevoStats = document.getElementById('brevoStats');
-      const brevoUsed = document.getElementById('brevoUsed');
-      const brevoRemaining = document.getElementById('brevoRemaining');
-      const brevoLimit = document.getElementById('brevoLimit');
+                const result = await apiCall('/campaigns/send', 'POST', payload);
 
-      const auditLogsList = document.getElementById('auditLogsList');
-      const auditLogsCount = document.getElementById('auditLogsCount');
-      const refreshAuditLogsBtn = document.getElementById('refreshAuditLogsBtn');
+                if (result.success) {
+                    campaignResults.innerHTML = '<div class="space-y-2"></div>';
+                    const container = campaignResults.querySelector('div');
+                    let successCount = 0;
+                    for (const r of result.results) {
+                        const statusColor = r.success ? 'bg-green-50 border-green-200' :
+                        'bg-red-50 border-red-200';
+                        const icon = r.success ? '✅' : '❌';
+                        const text = r.success ? 'Sent' : 'Failed';
+                        if (r.success) successCount++;
+                        container.insertAdjacentHTML('beforeend', `
+                    <div class="p-2.5 ${statusColor} rounded-lg border fade-in">
+                      <div class="flex justify-between items-center">
+                        <span class="text-sm font-mono">${r.email || r.phone || 'N/A'}</span>
+                        <span class="text-xs font-medium">${icon} ${text}</span>
+                      </div>
+                    </div>
+                  `);
+                    }
+                    campaignResultCount.textContent = `${successCount}/${result.total} ${isSms ? 'SMS' : 'emails'} sent`;
+                    campaignResultBadge.textContent = '✅ Done';
+                    campaignResultBadge.className = 'text-xs bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full';
+                    addActivity(isSms ? '📱 SMS campaign' : '📧 Email campaign',
+                        `${successCount} sent successfully`);
 
-      // ========== STATE ==========
-      let authToken = localStorage.getItem(STORAGE_TOKEN);
-      let currentUser = localStorage.getItem(STORAGE_USER);
-      let scraperData = [];
-      let chartInstance = null;
+                    const stats = await apiCall('/dashboard/stats');
+                    if (stats.success && stats.stats) {
+                        statEmailsSent.textContent = formatNum(stats.stats.emailsSentToday || 0);
+                        statSmsSent.textContent = formatNum(stats.stats.smsSentToday || 0);
+                        statBrevoRemaining.textContent = formatNum(stats.stats.brevoRemaining || 0);
+                    }
+                } else {
+                    showError(result.error || 'Campaign failed', campaignResults);
+                    campaignResultBadge.textContent = '❌ Failed';
+                    campaignResultBadge.className = 'text-xs bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full';
+                }
 
-      // ========== HELPERS ==========
-      function showError(msg, el = loginError) {
-        el.textContent = msg;
-        el.classList.remove('hidden');
-        console.error(msg);
-      }
-      function hideError(el = loginError) {
-        el.classList.add('hidden');
-      }
-      function setLoading(btn, loading) {
-        if (!btn) return;
-        if (loading) {
-          btn.disabled = true;
-          const orig = btn.innerHTML;
-          btn.innerHTML = '<div class="spinner"></div>';
-          btn.dataset.orig = orig;
-        } else {
-          btn.disabled = false;
-          if (btn.dataset.orig) btn.innerHTML = btn.dataset.orig;
-        }
-      }
-      function formatNum(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
-      function downloadFile(content, name, mime = 'text/plain') {
-        const blob = new Blob([content], { type: mime });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = name;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
+                setLoading(sendCampaignBtn, false);
+                setTimeout(() => {
+                    campaignProgressContainer.classList.add('hidden');
+                }, 2000);
+            }
 
-      async function apiCall(endpoint, method = 'GET', body = null, needAuth = true) {
-        const opts = {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-        };
-        if (needAuth && authToken) {
-          opts.headers.Authorization = `Bearer ${authToken}`;
-        }
-        if (body) opts.body = JSON.stringify(body);
+            // ========== API SETTINGS ==========
+            async function loadApiStats() {
+                // Email (Brevo)
+                const br = await apiCall('/api-keys/stats?apiName=brevo');
+                if (br.success && br.data) {
+                    brevoUsed.textContent = formatNum(br.data.used);
+                    brevoRemaining.textContent = formatNum(br.data.remaining);
+                    brevoLimit.textContent = formatNum(br.data.limit);
+                    brevoStats.classList.remove('hidden');
+                    statBrevoRemaining.textContent = formatNum(br.data.remaining);
+                    const used = br.data.limit - br.data.remaining;
+                    const pct = Math.min(100, (used / br.data.limit) * 100);
+                    if (brevoUsageBar) brevoUsageBar.style.width = pct + '%';
+                }
+                // SMS
+                const sms = await apiCall('/api-keys/stats?apiName=sms');
+                if (sms.success && sms.data) {
+                    smsUsed.textContent = formatNum(sms.data.used);
+                    smsRemaining.textContent = formatNum(sms.data.remaining);
+                    smsLimit.textContent = formatNum(sms.data.limit);
+                    smsStats.classList.remove('hidden');
+                }
+            }
 
-        const res = await fetch(API_BASE + endpoint, opts);
-        if (res.status === 401) {
-          logout();
-          return { success: false, error: 'Session expired' };
-        }
-        const data = await res.json();
-        if (!res.ok) {
-          return { success: false, error: data.error || 'Unknown error' };
-        }
-        return data;
-      }
+            async function handleSaveBrevo() {
+                const key = brevoApiKey.value.trim();
+                const sender = brevoSenderEmail.value.trim();
+                if (!key || !sender) { showError('API Key and Sender Email required', brevoStats); return; }
+                setLoading(saveBrevoApiBtn, true);
+                const res = await apiCall('/api-keys/save', 'POST', { apiName: 'brevo', apiKey: key });
+                setLoading(saveBrevoApiBtn, false);
+                if (res.success) {
+                    brevoApiKey.value = '';
+                    brevoSenderEmail.value = '';
+                    addActivity('🔑 Brevo API key', 'Saved');
+                    alert('Email API key saved successfully');
+                    await loadApiStats();
+                } else {
+                    showError(res.error || 'Save failed', brevoStats);
+                }
+            }
 
-      function addActivity(action, details = '') {
-        const ts = new Date().toLocaleTimeString();
-        const html = `
-          <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 fade-in">
-            <div class="flex justify-between items-start gap-2">
-              <div><p class="text-sm font-semibold text-slate-800">${action}</p><p class="text-xs text-slate-600">${details}</p></div>
-              <p class="text-xs text-slate-400 whitespace-nowrap">${ts}</p>
-            </div>
-          </div>
-        `;
-        recentActivities.insertAdjacentHTML('afterbegin', html);
-        
-        // FIX: > div এরর সমাধানের জন্য children ব্যবহার করা হয়েছে
-        if (recentActivities.children.length > 10) {
-          recentActivities.lastElementChild.remove();
-        }
-      }
+            async function handleSaveSms() {
+                const provider = smsProviderSelect.value;
+                const key = smsApiKey.value.trim();
+                const baseUrl = smsApiBaseUrl.value.trim();
+                const sender = smsDefaultSender.value.trim();
+                if (!key || !baseUrl || !sender) {
+                    showError('All SMS API fields are required', smsStats);
+                    return;
+                }
+                setLoading(saveSmsApiBtn, true);
+                const res = await apiCall('/api-keys/save', 'POST', {
+                    apiName: 'sms',
+                    apiKey: key,
+                    provider,
+                    baseUrl,
+                    defaultSender: sender
+                });
+                setLoading(saveSmsApiBtn, false);
+                if (res.success) {
+                    smsApiKey.value = '';
+                    smsApiBaseUrl.value = '';
+                    smsDefaultSender.value = '';
+                    addActivity('🔑 SMS API key', 'Saved');
+                    alert('SMS API configuration saved successfully');
+                    await loadApiStats();
+                } else {
+                    showError(res.error || 'Save failed', smsStats);
+                }
+            }
 
-      // ========== AUTH ==========
-      async function handleLogin(e) {
-        e.preventDefault();
-        hideError();
-        const username = loginUsername.value.trim();
-        const password = loginPassword.value.trim();
-        if (!username || !password) {
-          showError('Username and password are required');
-          return;
-        }
-        setLoading(loginForm.querySelector('button'), true);
-        const result = await apiCall('/auth/login', 'POST', { username, password }, false);
-        setLoading(loginForm.querySelector('button'), false);
-        if (result.success) {
-          authToken = result.token;
-          currentUser = result.username;
-          localStorage.setItem(STORAGE_TOKEN, authToken);
-          localStorage.setItem(STORAGE_USER, currentUser);
-          showDashboard();
-          addActivity('Login successful', `User: ${username}`);
-          loadDashboardData();
-        } else {
-          showError(result.error || 'Login failed');
-        }
-      }
+            // ========== AUDIT LOGS ==========
+            async function loadAuditLogs() {
+                const date = auditDateFilter.value || new Date().toISOString().split('T')[0];
+                const res = await apiCall(`/audit-logs?date=${date}&limit=200`);
+                if (res.success && res.events) {
+                    allAuditLogs = res.events;
+                    applyFilters();
+                    auditLogsCount.textContent = `${filteredAuditLogs.length} events`;
+                } else {
+                    auditLogsBody.innerHTML =
+                        '<tr><td colspan="5" class="text-center text-slate-500 py-8">No logs found</td></tr>';
+                    auditLogsCount.textContent = '0 events';
+                }
+            }
 
-      async function logout() {
-        await apiCall('/auth/logout', 'POST');
-        authToken = null;
-        currentUser = null;
-        localStorage.removeItem(STORAGE_TOKEN);
-        localStorage.removeItem(STORAGE_USER);
-        showLoginPage();
-      }
+            function applyFilters() {
+                const action = auditActionFilter.value;
+                const search = auditSearchFilter.value.toLowerCase().trim();
 
-      function showLoginPage() {
-        loginPage.classList.remove('hidden');
-        dashboardPage.classList.add('hidden');
-      }
-      function showDashboard() {
-        loginPage.classList.add('hidden');
-        dashboardPage.classList.remove('hidden');
-        userBadge.textContent = `👤 ${currentUser}`;
-      }
+                filteredAuditLogs = allAuditLogs.filter(ev => {
+                    if (action !== 'all' && ev.action !== action) return false;
+                    if (search) {
+                        const user = (ev.username || '').toLowerCase();
+                        const details = JSON.stringify(ev.details || '').toLowerCase();
+                        const actionStr = ev.action.toLowerCase();
+                        if (!user.includes(search) && !details.includes(search) && !actionStr.includes(search))
+                            return false;
+                    }
+                    return true;
+                });
 
-      // ========== TABS ==========
-      function switchTab(name) {
-        tabContents.forEach(t => t.classList.add('hidden'));
-        tabButtons.forEach(b => b.classList.remove('active'));
-        const target = document.getElementById(name + 'Tab');
-        if (target) target.classList.remove('hidden');
-        const btn = document.querySelector(`[data-tab="${name}"]`);
-        if (btn) btn.classList.add('active');
-        if (name === 'dashboard') loadDashboardData();
-        else if (name === 'audit-logs') loadAuditLogs();
-        else if (name === 'api-settings') loadApiStats();
-      }
+                displayAuditLogs(filteredAuditLogs);
+                auditLogsCount.textContent = `${filteredAuditLogs.length} events`;
+            }
 
-      // ========== DASHBOARD ==========
-      async function loadDashboardData() {
-        await loadApiStats();
-        await loadAuditLogs();
-        // Load stats from /dashboard/stats
-        const stats = await apiCall('/dashboard/stats');
-        if (stats.success && stats.stats) {
-          statEmailsToday.textContent = formatNum(stats.stats.emailsToday || 0);
-          statEmailsSent.textContent = formatNum(stats.stats.emailsSentToday || 0);
-          statBrevoRemaining.textContent = formatNum(stats.stats.brevoRemaining || 0);
-          statTotalContacts.textContent = formatNum(stats.stats.totalContacts || 0);
-        }
-        // Load chart data
-        const chartData = await apiCall('/dashboard/charts');
-        if (chartData.success && chartData.data) {
-          initChart(chartData.data);
-        } else {
-          initChart([]);
-        }
-      }
+            function displayAuditLogs(events) {
+                if (!events || events.length === 0) {
+                    auditLogsBody.innerHTML =
+                        '<tr><td colspan="5" class="text-center text-slate-500 py-8">No matching logs</td></tr>';
+                    return;
+                }
+                let html = '';
+                for (const ev of events.slice().reverse()) {
+                    const ts = new Date(ev.timestamp).toLocaleString();
+                    const icon = getActionIcon(ev.action);
+                    const user = ev.username || 'system';
+                    const details = ev.details ? Object.entries(ev.details).map(([k, v]) =>
+                        `${k}: ${v}`).join(', ') : '';
+                    const status = ev.success !== undefined ? (ev.success ? 'success' : 'failed') : 'info';
+                    const badge = getStatusBadge(status);
+                    html += `
+                <tr class="hover:bg-slate-50/80 transition-all">
+                  <td class="text-xs text-slate-500 whitespace-nowrap">${ts}</td>
+                  <td class="font-medium text-slate-700">${user}</td>
+                  <td><span class="flex items-center gap-1.5">${icon} ${ev.action.replace(/_/g, ' ')}</span></td>
+                  <td class="text-xs text-slate-500 max-w-[200px] truncate" title="${details}">${details || '—'}</td>
+                  <td><span class="status-badge ${badge}">${status}</span></td>
+                </tr>
+              `;
+                }
+                auditLogsBody.innerHTML = html;
+            }
 
-      function initChart(data) {
-        if (chartInstance) chartInstance.destroy();
-        const ctx = analyticsChart.getContext('2d');
-        const labels = data.length ? data.map(d => d.date.slice(5)) : ['No data'];
-        const extracted = data.length ? data.map(d => d.extracted) : [0];
-        const sent = data.length ? data.map(d => d.sent) : [0];
+            function exportAuditCsv() {
+                const data = filteredAuditLogs.length ? filteredAuditLogs : allAuditLogs;
+                if (!data || data.length === 0) {
+                    alert('No data to export');
+                    return;
+                }
+                let csv = 'Timestamp,User,Action,Details,Status\n';
+                for (const ev of data) {
+                    const ts = new Date(ev.timestamp).toLocaleString();
+                    const user = ev.username || 'system';
+                    const details = ev.details ? JSON.stringify(ev.details) : '';
+                    const status = ev.success !== undefined ? (ev.success ? 'success' : 'failed') : 'info';
+                    csv +=
+                    `"${ts}","${user}","${ev.action}","${details.replace(/"/g, '""')}","${status}"\n`;
+                }
+                downloadFile(csv, `audit_logs_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+            }
 
-        chartInstance = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [
-              { label: 'Extracted', data: extracted, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 },
-              { label: 'Sent', data: sent, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: { legend: { position: 'top' } },
-            scales: { y: { beginAtZero: true } }
-          }
-        });
-      }
+            // ========== EVENT BINDINGS ==========
+            loginForm.addEventListener('submit', handleLogin);
+            logoutBtn.addEventListener('click', logout);
 
-      // ========== SCRAPER ==========
-    async function handleScrape() {
-        const url = scraperUrl.value.trim();
-        const mode = document.querySelector('input[name="scraperMode"]:checked').value;
-        
-        // নতুন যুক্ত করা Limit এবং Force Cache অপশন DOM থেকে নেওয়া
-        const limitInput = document.getElementById('scraperLimit');
-        const forceInput = document.getElementById('forceScrape');
-        const limit = limitInput ? parseInt(limitInput.value, 10) : 50;
-        const force = forceInput ? forceInput.checked : false;
+            tabButtons.forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
-        if (!url) { showError('Please enter a URL', scraperResults); return; }
+            scrapeBtn.addEventListener('click', handleScrape);
+            exportScraperBtn.addEventListener('click', () => {
+                if (!scraperData.length) { showError('No data to export', scraperResults); return; }
+                downloadFile(scraperData.join('\n'), 'extracted_data.txt');
+            });
+            clearScraperBtn.addEventListener('click', () => {
+                scraperData = [];
+                scraperUrl.value = '';
+                scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data</div>';
+                scraperResultCount.textContent = '0 items found';
+            });
 
-        setLoading(scrapeBtn, true);
-        scraperProgressContainer.classList.remove('hidden');
-        scraperProgressBar.style.width = '0%';
-        scraperProgressText.textContent = '0%';
-        scraperProgressLabel.textContent = mode === 'emails' ? 'Extracting emails…' : 'Extracting phone numbers…';
+            campaignTypeToggle.addEventListener('change', updateCampaignUI);
+            campaignSmsContent.addEventListener('input', updateSmsCounter);
+            sendCampaignBtn.addEventListener('click', handleSendCampaign);
 
-        const endpoint = mode === 'emails' ? '/scrape/emails' : '/scrape/phones';
-        
-        // API কলে limit এবং force পাঠানো হচ্ছে
-        const result = await apiCall(endpoint, 'POST', { url, limit, force });
+            saveBrevoApiBtn.addEventListener('click', handleSaveBrevo);
+            saveSmsApiBtn.addEventListener('click', handleSaveSms);
 
-        if (result.success) {
-          scraperData = mode === 'emails' ? result.emails : result.phones;
-          displayScraperResults(scraperData, mode);
-          
-          const count = mode === 'emails' ? result.emailCount : result.phoneCount;
-          const cachedMsg = result.cached ? ' (Loaded from Cache)' : '';
-          
-          addActivity(mode === 'emails' ? '✉️ Emails extracted' : '📱 Phones extracted',
-            `${count} items found${cachedMsg}`);
-            
-          // update stats
-          const stats = await apiCall('/dashboard/stats');
-          if (stats.success && stats.stats) {
-            statEmailsToday.textContent = formatNum(stats.stats.emailsToday || 0);
-          }
-        } else {
-          showError(result.error || 'Scraping failed', scraperResults);
-        }
+            refreshAuditLogsBtn.addEventListener('click', loadAuditLogs);
+            applyAuditFiltersBtn.addEventListener('click', applyFilters);
+            resetAuditFiltersBtn.addEventListener('click', () => {
+                auditDateFilter.value = new Date().toISOString().split('T')[0];
+                auditActionFilter.value = 'all';
+                auditSearchFilter.value = '';
+                loadAuditLogs();
+            });
+            exportAuditCsvBtn.addEventListener('click', exportAuditCsv);
 
-        scraperProgressContainer.classList.add('hidden');
-        setLoading(scrapeBtn, false);
-      }
+            // Email editor toolbar commands
+            document.querySelectorAll('.email-editor-toolbar button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const cmd = btn.dataset.cmd;
+                    const textarea = campaignHtmlContent;
+                    const start = textarea.selectionStart;
+                    const end = textarea.selectionEnd;
+                    const selected = textarea.value.substring(start, end);
+                    let replacement = '';
+                    switch (cmd) {
+                        case 'bold':
+                            replacement = `<strong>${selected}</strong>`;
+                            break;
+                        case 'italic':
+                            replacement = `<em>${selected}</em>`;
+                            break;
+                        case 'underline':
+                            replacement = `<u>${selected}</u>`;
+                            break;
+                        case 'h1':
+                            replacement = `<h1>${selected}</h1>`;
+                            break;
+                        case 'h2':
+                            replacement = `<h2>${selected}</h2>`;
+                            break;
+                        case 'link':
+                            const url = prompt('Enter URL:', 'https://');
+                            if (url) replacement = `<a href="${url}">${selected || url}</a>`;
+                            else return;
+                            break;
+                        case 'ul':
+                            replacement =
+                                `<ul>\n  <li>${selected.split('\n').filter(s => s.trim()).join('</li>\n  <li>')}</li>\n</ul>`;
+                            break;
+                        case 'ol':
+                            replacement =
+                                `<ol>\n  <li>${selected.split('\n').filter(s => s.trim()).join('</li>\n  <li>')}</li>\n</ol>`;
+                            break;
+                        default:
+                            return;
+                    }
+                    textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(
+                    end);
+                    textarea.focus();
+                    textarea.selectionStart = start;
+                    textarea.selectionEnd = start + replacement.length;
+                });
+            });
 
-      function displayScraperResults(data, mode) {
-        if (!data || data.length === 0) {
-          scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data found</div>';
-          scraperResultCount.textContent = '0 items found';
-          return;
-        }
-        let html = '<div class="space-y-2">';
-        const limit = Math.min(100, data.length);
-        for (let i = 0; i < limit; i++) {
-          const item = data[i];
-          html += `
-            <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-all result-row">
-              <span class="text-sm font-mono text-slate-700 flex-1 break-all">${item}</span>
-              <button class="ml-2 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-all copy-btn" data-value="${item}">Copy</button>
-            </div>
-          `;
-        }
-        if (data.length > limit) html += `<div class="p-2 text-center text-sm text-blue-600 font-medium">… and ${data.length - limit} more</div>`;
-        html += '</div>';
-        scraperResults.innerHTML = html;
-        scraperResultCount.textContent = `${data.length} items found`;
-        // Copy functionality
-        scraperResults.querySelectorAll('.copy-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            navigator.clipboard.writeText(btn.dataset.value);
-            btn.textContent = '✓ Copied';
-            setTimeout(() => btn.textContent = 'Copy', 2000);
-          });
-        });
-      }
+            // ========== INIT ==========
+            function init() {
+                // Set default date filter
+                auditDateFilter.value = new Date().toISOString().split('T')[0];
+                // Init SMS counter
+                updateSmsCounter();
+                // Init campaign UI
+                updateCampaignUI();
 
-      // ========== CAMPAIGN ==========
-      async function handleSendCampaign() {
-        const subject = campaignSubject.value.trim();
-        const htmlContent = campaignHtmlContent.value.trim();
-        const filter = campaignRecipients.value;
-        if (!subject || !htmlContent) { showError('Subject and content required'); return; }
-        if (!filter) { showError('Select recipient group'); return; }
+                if (authToken && currentUser) {
+                    showDashboard();
+                    loadDashboardData();
+                } else {
+                    showLoginPage();
+                }
+                console.log('✅ Marketing Pro v3.0 initialized');
+            }
 
-        setLoading(sendCampaignBtn, true);
-        campaignProgressContainer.classList.remove('hidden');
-        campaignProgressBar.style.width = '0%';
-        campaignProgressText.textContent = '0%';
-        campaignProgressLabel.textContent = 'Sending emails…';
+            document.addEventListener('DOMContentLoaded', init);
 
-        const result = await apiCall('/campaigns/send', 'POST', { subject, htmlContent, recipientFilter: filter });
-        if (result.success) {
-          campaignResults.innerHTML = '<div class="space-y-2"></div>';
-          const container = campaignResults.querySelector('div');
-          for (const r of result.results) {
-            const statusColor = r.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-            const icon = r.success ? '✅' : '❌';
-            const text = r.success ? 'Sent' : 'Failed';
-            container.insertAdjacentHTML('beforeend', `
-              <div class="p-2.5 ${statusColor} rounded-lg border">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm font-mono">${r.email}</span>
-                  <span class="text-xs font-medium">${icon} ${text}</span>
-                </div>
-              </div>
-            `);
-          }
-          campaignResultCount.textContent = `${result.successCount}/${result.total} emails sent`;
-          addActivity('📧 Email campaign', `${result.successCount} sent successfully`);
-          // Update stats
-          const stats = await apiCall('/dashboard/stats');
-          if (stats.success && stats.stats) {
-            statEmailsSent.textContent = formatNum(stats.stats.emailsSentToday || 0);
-            statBrevoRemaining.textContent = formatNum(stats.stats.brevoRemaining || 0);
-          }
-        } else {
-          showError(result.error || 'Campaign failed');
-        }
+            // Debug
+            window.__debug = { logout, loadDashboardData, loadAuditLogs, loadApiStats };
 
-        setLoading(sendCampaignBtn, false);
-        setTimeout(() => campaignProgressContainer.classList.add('hidden'), 2000);
-      }
+        })();
+    </script>
 
-      // ========== API SETTINGS ==========
-      async function loadApiStats() {
-        // Abstract
-        const abs = await apiCall('/api-keys/stats?apiName=abstract');
-        if (abs.success && abs.data) {
-          abstractUsed.textContent = formatNum(abs.data.used);
-          abstractRemaining.textContent = formatNum(abs.data.remaining);
-          abstractLimit.textContent = formatNum(abs.data.limit);
-          abstractStats.classList.remove('hidden');
-        }
-        // Brevo
-        const br = await apiCall('/api-keys/stats?apiName=brevo');
-        if (br.success && br.data) {
-          brevoUsed.textContent = formatNum(br.data.used);
-          brevoRemaining.textContent = formatNum(br.data.remaining);
-          brevoLimit.textContent = formatNum(br.data.limit);
-          brevoStats.classList.remove('hidden');
-          statBrevoRemaining.textContent = formatNum(br.data.remaining);
-        }
-      }
-
-      async function handleSaveAbstract() {
-        const key = abstractApiKey.value.trim();
-        if (!key) { showError('API Key required'); return; }
-        setLoading(saveAbstractApiBtn, true);
-        const res = await apiCall('/api-keys/save', 'POST', { apiName: 'abstract', apiKey: key });
-        setLoading(saveAbstractApiBtn, false);
-        if (res.success) {
-          abstractApiKey.value = '';
-          addActivity('🔑 Abstract API key', 'Saved');
-          alert('API key saved successfully');
-          await loadApiStats();
-        } else {
-          showError(res.error || 'Save failed');
-        }
-      }
-
-      async function handleSaveBrevo() {
-        const key = brevoApiKey.value.trim();
-        const sender = brevoSenderEmail.value.trim();
-        if (!key || !sender) { showError('API Key and Sender Email required'); return; }
-        setLoading(saveBrevoApiBtn, true);
-        const res = await apiCall('/api-keys/save', 'POST', { apiName: 'brevo', apiKey: key });
-        setLoading(saveBrevoApiBtn, false);
-        if (res.success) {
-          brevoApiKey.value = '';
-          brevoSenderEmail.value = '';
-          addActivity('🔑 Brevo API key', 'Saved');
-          alert('API key saved successfully');
-          await loadApiStats();
-        } else {
-          showError(res.error || 'Save failed');
-        }
-      }
-
-      // ========== AUDIT LOGS ==========
-      async function loadAuditLogs() {
-        const today = new Date().toISOString().split('T')[0];
-        const res = await apiCall(`/audit-logs?date=${today}`);
-        if (res.success && res.events) {
-          displayAuditLogs(res.events);
-          auditLogsCount.textContent = `${res.totalEvents} events`;
-        }
-      }
-
-      function displayAuditLogs(events) {
-        if (!events || events.length === 0) {
-          auditLogsList.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No logs found</div>';
-          return;
-        }
-        let html = '<div class="space-y-2">';
-        for (const ev of events.slice().reverse()) {
-          const ts = new Date(ev.timestamp).toLocaleTimeString();
-          const icon = getIcon(ev.action);
-          html += `
-            <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-all">
-              <div class="flex justify-between items-start gap-2">
-                <div class="flex-1">
-                  <p class="text-sm font-semibold text-slate-800">${icon} ${ev.action}</p>
-                  <p class="text-xs text-slate-600">User: ${ev.username || 'system'}</p>
-                </div>
-                <p class="text-xs text-slate-400 whitespace-nowrap">${ts}</p>
-              </div>
-            </div>
-          `;
-        }
-        html += '</div>';
-        auditLogsList.innerHTML = html;
-      }
-
-      function getIcon(action) {
-        const map = {
-          'LOGIN_SUCCESS': '🔓', 'LOGIN_FAILED': '❌', 'LOGOUT': '🔒',
-          'API_KEY_UPDATED': '🔑', 'SCRAPE_EMAILS': '✉️', 'SCRAPE_PHONES': '📱',
-          'SEND_EMAILS': '📧', 'SCRAPE_ERROR': '⚠️', 'CONTACTS_IMPORT': '📥'
-        };
-        return map[action] || '📋';
-      }
-
-      // ========== EVENT BINDINGS ==========
-      loginForm.addEventListener('submit', handleLogin);
-      logoutBtn.addEventListener('click', logout);
-      tabButtons.forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-
-      scrapeBtn.addEventListener('click', handleScrape);
-      exportScraperBtn.addEventListener('click', () => {
-        if (!scraperData.length) { showError('No data to export'); return; }
-        downloadFile(scraperData.join('\n'), 'extracted_data.txt');
-      });
-      clearScraperBtn.addEventListener('click', () => {
-        scraperData = [];
-        scraperUrl.value = '';
-        scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data</div>';
-        scraperResultCount.textContent = '0 items found';
-      });
-
-      sendCampaignBtn.addEventListener('click', handleSendCampaign);
-
-      saveAbstractApiBtn.addEventListener('click', handleSaveAbstract);
-      saveBrevoApiBtn.addEventListener('click', handleSaveBrevo);
-
-      refreshAuditLogsBtn.addEventListener('click', loadAuditLogs);
-
-      // ========== INIT ==========
-      function init() {
-        if (authToken && currentUser) {
-          showDashboard();
-          loadDashboardData();
-        } else {
-          showLoginPage();
-        }
-      }
-
-      document.addEventListener('DOMContentLoaded', init);
-
-      // Debug
-      window.__debug = { logout, loadDashboardData, loadAuditLogs, loadApiStats };
-      console.log('✅ Email Extractor Pro v3.0 initialized');
-    })();
-  </script>
 </body>
 </html>
