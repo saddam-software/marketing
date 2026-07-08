@@ -746,66 +746,6 @@
     });
   });
 
-
-
-
-
-
-// ========== BULK TEXT EXTRACTOR LOGIC ==========
-const rawTextInput = document.getElementById('rawTextInput');
-const extractTextBtn = document.getElementById('extractTextBtn');
-const extractResults = document.getElementById('extractResults');
-const extEmailCount = document.getElementById('extEmailCount');
-const extPhoneCount = document.getElementById('extPhoneCount');
-
-if (extractTextBtn && rawTextInput) {
-    extractTextBtn.addEventListener('click', () => {
-        const text = rawTextInput.value;
-        
-        if (!text.trim()) {
-            alert('অনুগ্রহ করে আগে কিছু টেক্সট পেস্ট করুন!');
-            return;
-        }
-
-        // ইমেইল খুঁজে বের করার Regex
-        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi;
-        
-        // মোবাইল নাম্বার খুঁজে বের করার Regex (বাংলাদেশের এবং আন্তর্জাতিক নাম্বারের জন্য)
-        // এটি যেকোনো ১০ থেকে ১৫ ডিজিটের নাম্বার খুঁজে বের করবে
-        const phoneRegex = /(?:\+?\d{1,3}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/g;
-
-        // টেক্সট থেকে ম্যাচগুলো বের করা
-        const foundEmails = text.match(emailRegex) || [];
-        let foundPhonesRaw = text.match(phoneRegex) || [];
-
-        // ফোন নাম্বারগুলো থেকে অপ্রয়োজনীয় স্পেস বা চিহ্ন মুছে শুধু নাম্বার রাখা
-        const foundPhones = foundPhonesRaw
-            .map(phone => phone.replace(/[^\d+]/g, '')) // শুধু ডিজিট এবং + চিহ্ন রাখা
-            .filter(phone => phone.length >= 10); // কমপক্ষে ১০ ডিজিট হতে হবে
-
-        // ডুপ্লিকেট (একই ইমেইল/নাম্বার বারবার থাকলে) রিমুভ করা
-        const uniqueEmails = [...new Set(foundEmails)];
-        const uniquePhones = [...new Set(foundPhones)];
-
-        // রেজাল্ট UI-তে দেখানো
-        extEmailCount.textContent = uniqueEmails.length;
-        extPhoneCount.textContent = uniquePhones.length;
-        extractResults.classList.remove('hidden');
-
-        // আপনার বর্তমান ক্যাম্পেইন সিস্টেমে যুক্ত করার জন্য গ্লোবাল ভেরিয়েবল বা ফাংশন কল করতে পারেন
-        // উদাহরণস্বরূপ: (আপনার প্রজেক্টের লজিক অনুযায়ী এটি কাস্টমাইজ করতে হবে)
-        console.log("প্রস্তুতকৃত ইমেইলস:", uniqueEmails);
-        console.log("প্রস্তুতকৃত মোবাইল নাম্বার:", uniquePhones);
-        
-        // alert(`সফলভাবে ${uniqueEmails.length} টি ইমেইল এবং ${uniquePhones.length} টি নাম্বার পাওয়া গেছে!`);
-    });
-}
-  
-
-
-
-
-  
   // ========== INITIALIZATION ==========
   function init() {
     auditDateFilter.value = new Date().toISOString().split('T')[0];
