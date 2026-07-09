@@ -1,21 +1,18 @@
 // script.js
 // ============================================================
-//  Email & SMS Marketing Pro - Frontend Application Logic
-//  Handles authentication, dashboard, scraper, campaigns (Email/SMS),
-//  API settings (Email + SMS), and audit logs with filters & CSV export.
-//  Fully integrated with the Cloudflare Pages backend.
+//  Email & SMS Marketing Pro - Global Application Logic
+//  Authentication, navigation, dashboard, and dynamic module loading.
 // ============================================================
 
 (function() {
   'use strict';
 
-  // ========== CONFIGURATION ==========
+  // ========== CONFIG ==========
   const API_BASE = window.location.origin + '/api';
   const STORAGE_TOKEN = 'emailExtractorToken';
   const STORAGE_USER = 'emailExtractorUsername';
 
-  // ========== DOM REFERENCES ==========
-  // Login
+  // ========== DOM REFS ==========
   const loginPage = document.getElementById('loginPage');
   const dashboardPage = document.getElementById('dashboardPage');
   const loginForm = document.getElementById('loginForm');
@@ -25,11 +22,9 @@
   const userBadge = document.getElementById('userBadge');
   const logoutBtn = document.getElementById('logoutBtn');
 
-  // Tabs
   const tabButtons = document.querySelectorAll('.tab-button');
   const tabContents = document.querySelectorAll('.tab-content');
 
-  // Dashboard
   const statEmailsToday = document.getElementById('statEmailsToday');
   const statEmailsSent = document.getElementById('statEmailsSent');
   const statSmsSent = document.getElementById('statSmsSent');
@@ -39,47 +34,7 @@
   const analyticsChart = document.getElementById('analyticsChart');
   const brevoUsageBar = document.getElementById('brevoUsageBar');
 
-  // Scraper
-  const scraperUrl = document.getElementById('scraperUrl');
-  const scraperMode = document.querySelectorAll('input[name="scraperMode"]');
-  const scrapeBtn = document.getElementById('scrapeBtn');
-  const scraperProgressContainer = document.getElementById('scraperProgressContainer');
-  const scraperProgressBar = document.getElementById('scraperProgressBar');
-  const scraperProgressText = document.getElementById('scraperProgressText');
-  const scraperProgressLabel = document.getElementById('scraperProgressLabel');
-  const scraperResults = document.getElementById('scraperResults');
-  const scraperResultCount = document.getElementById('scraperResultCount');
-  const exportScraperBtn = document.getElementById('exportScraperBtn');
-  const clearScraperBtn = document.getElementById('clearScraperBtn');
-  const scraperLimit = document.getElementById('scraperLimit');
-  const forceScrape = document.getElementById('forceScrape');
-
-  // Campaign
-  const campaignTypeToggle = document.getElementById('campaignTypeToggle');
-  const campaignTypeLabel = document.getElementById('campaignTypeLabel');
-  const campaignIcon = document.getElementById('campaignIcon');
-  const campaignTitle = document.getElementById('campaignTitle');
-  const emailFields = document.getElementById('emailFields');
-  const smsFields = document.getElementById('smsFields');
-  const campaignSubject = document.getElementById('campaignSubject');
-  const campaignHtmlContent = document.getElementById('campaignHtmlContent');
-  const campaignSmsContent = document.getElementById('campaignSmsContent');
-  const campaignSmsSender = document.getElementById('campaignSmsSender');
-  const smsCharCounter = document.getElementById('smsCharCounter');
-  const smsSegmentCounter = document.getElementById('smsSegmentCounter');
-  const smsCharProgress = document.getElementById('smsCharProgress');
-  const campaignRecipients = document.getElementById('campaignRecipients');
-  const sendCampaignBtn = document.getElementById('sendCampaignBtn');
-  const sendBtnText = document.getElementById('sendBtnText');
-  const campaignProgressContainer = document.getElementById('campaignProgressContainer');
-  const campaignProgressBar = document.getElementById('campaignProgressBar');
-  const campaignProgressText = document.getElementById('campaignProgressText');
-  const campaignProgressLabel = document.getElementById('campaignProgressLabel');
-  const campaignResults = document.getElementById('campaignResults');
-  const campaignResultCount = document.getElementById('campaignResultCount');
-  const campaignResultBadge = document.getElementById('campaignResultBadge');
-
-  // API Settings - Email
+  // API Settings
   const emailProviderSelect = document.getElementById('emailProviderSelect');
   const brevoApiKey = document.getElementById('brevoApiKey');
   const brevoSenderEmail = document.getElementById('brevoSenderEmail');
@@ -89,7 +44,6 @@
   const brevoRemaining = document.getElementById('brevoRemaining');
   const brevoLimit = document.getElementById('brevoLimit');
 
-  // API Settings - SMS
   const smsProviderSelect = document.getElementById('smsProviderSelect');
   const smsApiKey = document.getElementById('smsApiKey');
   const smsApiBaseUrl = document.getElementById('smsApiBaseUrl');
@@ -114,7 +68,6 @@
   // ========== STATE ==========
   let authToken = localStorage.getItem(STORAGE_TOKEN);
   let currentUser = localStorage.getItem(STORAGE_USER);
-  let scraperData = [];
   let chartInstance = null;
   let allAuditLogs = [];
   let filteredAuditLogs = [];
@@ -275,9 +228,121 @@
     if (target) target.classList.remove('hidden');
     const btn = document.querySelector(`[data-tab="${name}"]`);
     if (btn) btn.classList.add('active');
+
     if (name === 'dashboard') loadDashboardData();
     else if (name === 'audit-logs') loadAuditLogs();
     else if (name === 'api-settings') loadApiStats();
+    else if (name === 'scraper') loadScraperModules();
+    else if (name === 'campaign') loadCampaignModules();
+  }
+
+  // ========== DYNAMIC MODULE LOADERS ==========
+  async function loadScraperModules() {
+    await loadBulkTextExtractor();
+    await loadWebsiteExtractor();
+    await loadLocationSearch();
+  }
+
+  async function loadCampaignModules() {
+    await loadEmailCampaign();
+    await loadSmsCampaign();
+    await loadCallCampaign();
+  }
+
+  async function loadBulkTextExtractor() {
+    const container = document.getElementById('bulkTextExtractorContainer');
+    if (container.dataset.loaded) return;
+    const response = await fetch('/text-contact-extractor/index.html');
+    const html = await response.text();
+    container.innerHTML = html;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/text-contact-extractor/style.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = '/text-contact-extractor/script.js';
+    document.body.appendChild(script);
+    container.dataset.loaded = 'true';
+  }
+
+  async function loadWebsiteExtractor() {
+    const container = document.getElementById('websiteExtractorContainer');
+    if (container.dataset.loaded) return;
+    const response = await fetch('/website-contact-extractor/index.html');
+    const html = await response.text();
+    container.innerHTML = html;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/website-contact-extractor/style.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = '/website-contact-extractor/script.js';
+    document.body.appendChild(script);
+    container.dataset.loaded = 'true';
+  }
+
+  async function loadLocationSearch() {
+    const container = document.getElementById('locationSearchContainer');
+    if (container.dataset.loaded) return;
+    const response = await fetch('/location-contact-search/index.html');
+    const html = await response.text();
+    container.innerHTML = html;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/location-contact-search/style.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = '/location-contact-search/script.js';
+    document.body.appendChild(script);
+    container.dataset.loaded = 'true';
+  }
+
+  async function loadEmailCampaign() {
+    const container = document.getElementById('emailCampaignContainer');
+    if (container.dataset.loaded) return;
+    const response = await fetch('/email-campaign/index.html');
+    const html = await response.text();
+    container.innerHTML = html;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/email-campaign/style.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = '/email-campaign/script.js';
+    document.body.appendChild(script);
+    container.dataset.loaded = 'true';
+  }
+
+  async function loadSmsCampaign() {
+    const container = document.getElementById('smsCampaignContainer');
+    if (container.dataset.loaded) return;
+    const response = await fetch('/sms-campaign/index.html');
+    const html = await response.text();
+    container.innerHTML = html;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/sms-campaign/style.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = '/sms-campaign/script.js';
+    document.body.appendChild(script);
+    container.dataset.loaded = 'true';
+  }
+
+  async function loadCallCampaign() {
+    const container = document.getElementById('callCampaignContainer');
+    if (container.dataset.loaded) return;
+    const response = await fetch('/call-campaign/index.html');
+    const html = await response.text();
+    container.innerHTML = html;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/call-campaign/style.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = '/call-campaign/script.js';
+    document.body.appendChild(script);
+    container.dataset.loaded = 'true';
   }
 
   // ========== DASHBOARD ==========
@@ -328,212 +393,8 @@
     });
   }
 
-  // ========== SCRAPER ==========
-  async function handleScrape() {
-    const url = scraperUrl.value.trim();
-    const mode = document.querySelector('input[name="scraperMode"]:checked').value;
-    const limit = scraperLimit ? parseInt(scraperLimit.value, 10) : 50;
-    const force = forceScrape ? forceScrape.checked : false;
-
-    if (!url) { showError('Please enter a URL', scraperResults); return; }
-
-    setLoading(scrapeBtn, true);
-    scraperProgressContainer.classList.remove('hidden');
-    scraperProgressBar.style.width = '0%';
-    scraperProgressText.textContent = '0%';
-    scraperProgressLabel.textContent = mode === 'emails' ? 'Extracting emails…' : 'Extracting phone numbers…';
-
-    const endpoint = mode === 'emails' ? '/scrape/emails' : '/scrape/phones';
-    const result = await apiCall(endpoint, 'POST', { url, limit, force });
-
-    if (result.success) {
-      scraperData = mode === 'emails' ? result.emails : result.phones;
-      displayScraperResults(scraperData, mode);
-      const count = mode === 'emails' ? result.emailCount : result.phoneCount;
-      const cachedMsg = result.cached ? ' (Loaded from Cache)' : '';
-      addActivity(mode === 'emails' ? '✉️ Emails extracted' : '📱 Phones extracted',
-        `${count} items found${cachedMsg}`);
-      const stats = await apiCall('/dashboard/stats');
-      if (stats.success && stats.stats) {
-        statEmailsToday.textContent = formatNum(stats.stats.emailsToday || 0);
-      }
-    } else {
-      showError(result.error || 'Scraping failed', scraperResults);
-    }
-
-    scraperProgressContainer.classList.add('hidden');
-    setLoading(scrapeBtn, false);
-  }
-
-  function displayScraperResults(data, mode) {
-    if (!data || data.length === 0) {
-      scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data found</div>';
-      scraperResultCount.textContent = '0 items found';
-      return;
-    }
-    let html = '<div class="space-y-2">';
-    const limit = Math.min(100, data.length);
-    for (let i = 0; i < limit; i++) {
-      const item = data[i];
-      html += `
-        <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-all result-row">
-          <span class="text-sm font-mono text-slate-700 flex-1 break-all">${item}</span>
-          <button class="ml-2 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-all copy-btn" data-value="${item}">Copy</button>
-        </div>
-      `;
-    }
-    if (data.length > limit) html += `<div class="p-2 text-center text-sm text-blue-600 font-medium">… and ${data.length - limit} more</div>`;
-    html += '</div>';
-    scraperResults.innerHTML = html;
-    scraperResultCount.textContent = `${data.length} items found`;
-    scraperResults.querySelectorAll('.copy-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        navigator.clipboard.writeText(btn.dataset.value);
-        btn.textContent = '✓ Copied';
-        setTimeout(() => btn.textContent = 'Copy', 2000);
-      });
-    });
-  }
-
-  // ========== CAMPAIGN TOGGLE ==========
-  function updateCampaignUI() {
-    const isSms = campaignTypeToggle.checked;
-    if (isSms) {
-      emailFields.classList.add('hidden');
-      smsFields.classList.remove('hidden');
-      campaignTypeLabel.textContent = '📱 SMS Campaign';
-      campaignIcon.textContent = '📱';
-      campaignTitle.textContent = 'SMS Campaign';
-      sendBtnText.textContent = 'Send SMS';
-      sendCampaignBtn.className = 'w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2';
-      document.querySelector('#campaignProgressBar').className = 'bg-purple-600 h-2.5 rounded-full progress-bar-fill';
-    } else {
-      emailFields.classList.remove('hidden');
-      smsFields.classList.add('hidden');
-      campaignTypeLabel.textContent = '✉️ Email Campaign';
-      campaignIcon.textContent = '✉️';
-      campaignTitle.textContent = 'Email Campaign';
-      sendBtnText.textContent = 'Send Campaign';
-      sendCampaignBtn.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2';
-      document.querySelector('#campaignProgressBar').className = 'bg-blue-600 h-2.5 rounded-full progress-bar-fill';
-    }
-    campaignResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">Switch mode to start a new campaign.</div>';
-    campaignResultCount.textContent = '0 sent';
-    campaignResultBadge.textContent = 'Ready';
-    campaignResultBadge.className = 'text-xs bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full';
-    campaignProgressContainer.classList.add('hidden');
-  }
-
-  // ========== SMS CHARACTER COUNTER ==========
-  function updateSmsCounter() {
-    const text = campaignSmsContent.value || '';
-    const len = text.length;
-    const maxPerSms = 160;
-    const segments = len <= maxPerSms ? 1 : Math.ceil(len / 153);
-    const pct = Math.min(100, (len / (maxPerSms * 3)) * 100);
-
-    smsCharCounter.textContent = `${len} / ${maxPerSms} characters`;
-    smsSegmentCounter.textContent = `${segments} segment${segments > 1 ? 's' : ''}`;
-
-    smsCharCounter.className = 'sms-counter';
-    if (len > maxPerSms * 2) smsCharCounter.classList.add('danger');
-    else if (len > maxPerSms) smsCharCounter.classList.add('warning');
-    else smsCharCounter.classList.add('safe');
-
-    smsCharProgress.style.width = Math.min(100, pct) + '%';
-    if (pct > 80) smsCharProgress.className = 'char-progress-fill bg-red-500';
-    else if (pct > 50) smsCharProgress.className = 'char-progress-fill bg-amber-500';
-    else smsCharProgress.className = 'char-progress-fill bg-emerald-500';
-  }
-
-  // ========== CAMPAIGN SEND ==========
-  async function handleSendCampaign() {
-    const isSms = campaignTypeToggle.checked;
-    const recipientFilter = campaignRecipients.value;
-
-    if (!recipientFilter) {
-      showError('Select a recipient group', campaignResults);
-      return;
-    }
-
-    let payload = { recipientFilter };
-
-    if (isSms) {
-      const message = campaignSmsContent.value.trim();
-      const sender = campaignSmsSender.value.trim() || 'Marketing';
-      if (!message) {
-        showError('SMS message is required', campaignResults);
-        return;
-      }
-      payload.type = 'sms';
-      payload.message = message;
-      payload.sender = sender;
-    } else {
-      const subject = campaignSubject.value.trim();
-      const htmlContent = campaignHtmlContent.value.trim();
-      if (!subject || !htmlContent) {
-        showError('Subject and HTML content are required', campaignResults);
-        return;
-      }
-      payload.type = 'email';
-      payload.subject = subject;
-      payload.htmlContent = htmlContent;
-    }
-
-    setLoading(sendCampaignBtn, true);
-    campaignProgressContainer.classList.remove('hidden');
-    campaignProgressBar.style.width = '0%';
-    campaignProgressText.textContent = '0%';
-    campaignProgressLabel.textContent = isSms ? 'Sending SMS…' : 'Sending emails…';
-    campaignResultBadge.textContent = 'Sending…';
-    campaignResultBadge.className = 'text-xs bg-amber-100 text-amber-700 px-2.5 py-0.5 rounded-full';
-
-    const result = await apiCall('/campaigns/send', 'POST', payload);
-
-    if (result.success) {
-      campaignResults.innerHTML = '<div class="space-y-2"></div>';
-      const container = campaignResults.querySelector('div');
-      let successCount = 0;
-      for (const r of result.results) {
-        const statusColor = r.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-        const icon = r.success ? '✅' : '❌';
-        const text = r.success ? 'Sent' : 'Failed';
-        if (r.success) successCount++;
-        container.insertAdjacentHTML('beforeend', `
-          <div class="p-2.5 ${statusColor} rounded-lg border fade-in">
-            <div class="flex justify-between items-center">
-              <span class="text-sm font-mono">${r.email || r.phone || 'N/A'}</span>
-              <span class="text-xs font-medium">${icon} ${text}</span>
-            </div>
-          </div>
-        `);
-      }
-      campaignResultCount.textContent = `${successCount}/${result.total} ${isSms ? 'SMS' : 'emails'} sent`;
-      campaignResultBadge.textContent = '✅ Done';
-      campaignResultBadge.className = 'text-xs bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full';
-      addActivity(isSms ? '📱 SMS campaign' : '📧 Email campaign', `${successCount} sent successfully`);
-
-      const stats = await apiCall('/dashboard/stats');
-      if (stats.success && stats.stats) {
-        statEmailsSent.textContent = formatNum(stats.stats.emailsSentToday || 0);
-        statSmsSent.textContent = formatNum(stats.stats.smsSentToday || 0);
-        statBrevoRemaining.textContent = formatNum(stats.stats.brevoRemaining || 0);
-      }
-    } else {
-      showError(result.error || 'Campaign failed', campaignResults);
-      campaignResultBadge.textContent = '❌ Failed';
-      campaignResultBadge.className = 'text-xs bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full';
-    }
-
-    setLoading(sendCampaignBtn, false);
-    setTimeout(() => {
-      campaignProgressContainer.classList.add('hidden');
-    }, 2000);
-  }
-
   // ========== API SETTINGS ==========
   async function loadApiStats() {
-    // Email (Brevo)
     const br = await apiCall('/api-keys/stats?apiName=brevo');
     if (br.success && br.data) {
       brevoUsed.textContent = formatNum(br.data.used);
@@ -545,7 +406,6 @@
       const pct = Math.min(100, (used / br.data.limit) * 100);
       if (brevoUsageBar) brevoUsageBar.style.width = pct + '%';
     }
-    // SMS
     const sms = await apiCall('/api-keys/stats?apiName=sms');
     if (sms.success && sms.data) {
       smsUsed.textContent = formatNum(sms.data.used);
@@ -685,22 +545,6 @@
 
   tabButtons.forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
-  scrapeBtn.addEventListener('click', handleScrape);
-  exportScraperBtn.addEventListener('click', () => {
-    if (!scraperData.length) { showError('No data to export', scraperResults); return; }
-    downloadFile(scraperData.join('\n'), 'extracted_data.txt');
-  });
-  clearScraperBtn.addEventListener('click', () => {
-    scraperData = [];
-    scraperUrl.value = '';
-    scraperResults.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No data</div>';
-    scraperResultCount.textContent = '0 items found';
-  });
-
-  campaignTypeToggle.addEventListener('change', updateCampaignUI);
-  campaignSmsContent.addEventListener('input', updateSmsCounter);
-  sendCampaignBtn.addEventListener('click', handleSendCampaign);
-
   saveBrevoApiBtn.addEventListener('click', handleSaveBrevo);
   saveSmsApiBtn.addEventListener('click', handleSaveSms);
 
@@ -714,43 +558,9 @@
   });
   exportAuditCsvBtn.addEventListener('click', exportAuditCsv);
 
-  // Email editor toolbar commands
-  document.querySelectorAll('.email-editor-toolbar button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const cmd = btn.dataset.cmd;
-      const textarea = campaignHtmlContent;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selected = textarea.value.substring(start, end);
-      let replacement = '';
-      switch (cmd) {
-        case 'bold': replacement = `<strong>${selected}</strong>`; break;
-        case 'italic': replacement = `<em>${selected}</em>`; break;
-        case 'underline': replacement = `<u>${selected}</u>`; break;
-        case 'h1': replacement = `<h1>${selected}</h1>`; break;
-        case 'h2': replacement = `<h2>${selected}</h2>`; break;
-        case 'link': {
-          const url = prompt('Enter URL:', 'https://');
-          if (url) replacement = `<a href="${url}">${selected || url}</a>`;
-          else return;
-          break;
-        }
-        case 'ul': replacement = `<ul>\n  <li>${selected.split('\n').filter(s => s.trim()).join('</li>\n  <li>')}</li>\n</ul>`; break;
-        case 'ol': replacement = `<ol>\n  <li>${selected.split('\n').filter(s => s.trim()).join('</li>\n  <li>')}</li>\n</ol>`; break;
-        default: return;
-      }
-      textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
-      textarea.focus();
-      textarea.selectionStart = start;
-      textarea.selectionEnd = start + replacement.length;
-    });
-  });
-
   // ========== INITIALIZATION ==========
   function init() {
     auditDateFilter.value = new Date().toISOString().split('T')[0];
-    updateSmsCounter();
-    updateCampaignUI();
 
     if (authToken && currentUser) {
       showDashboard();
