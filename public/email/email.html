@@ -1,1 +1,172 @@
+<!-- public/email-campaign/index.html -->
+<div id="emailCampaign" class="space-y-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Control Panel -->
+    <div class="lg:col-span-1">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
+        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Email Campaign
+        </h3>
+        <div class="space-y-4">
+          <!-- Recipients Upload -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">👥 Recipients</label>
+            <div id="emailDropZone" class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors cursor-pointer">
+              <div class="flex flex-col items-center gap-1">
+                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                <p class="text-xs text-slate-600">Drop .txt or .csv file</p>
+                <input type="file" id="emailFileInput" accept=".txt,.csv" class="hidden" />
+              </div>
+            </div>
+            <div id="emailFileInfo" class="hidden mt-2 p-2 bg-slate-50 rounded-lg text-xs flex justify-between">
+              <span id="emailFileName">file.txt</span>
+              <span id="emailFileCount">0 contacts</span>
+              <button id="emailClearFileBtn" class="text-red-500 hover:text-red-700">✕</button>
+            </div>
+          </div>
 
+          <!-- Smart Filter -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">🎯 Filter</label>
+            <select id="emailFilter" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+              <option value="all">All Contacts</option>
+              <option value="b2b">B2B (business emails)</option>
+              <option value="b2c">B2C (personal emails)</option>
+              <option value="verified">Verified Only</option>
+            </select>
+          </div>
+
+          <!-- Subject -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">📝 Subject</label>
+            <input type="text" id="emailSubject" placeholder="Your email subject..." class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+          </div>
+
+          <!-- HTML Content (WYSIWYG) -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">🖌️ HTML Content</label>
+            <div class="email-editor-toolbar flex flex-wrap gap-1 p-2 bg-slate-50 border border-slate-200 rounded-t-lg border-b-0">
+              <button type="button" data-cmd="bold" class="px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600" title="Bold"><b>B</b></button>
+              <button type="button" data-cmd="italic" class="px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600" title="Italic"><i>I</i></button>
+              <button type="button" data-cmd="underline" class="px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600" title="Underline"><u>U</u></button>
+              <button type="button" data-cmd="h1" class="px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600">H1</button>
+              <button type="button" data-cmd="h2" class="px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600">H2</button>
+              <button type="button" data-cmd="link" class="px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600">🔗</button>
+              <button type="button" data-cmd="ul" class="px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600">•</button>
+              <button type="button" data-cmd="ol" class="px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600">1.</button>
+              <button type="button" data-cmd="variable" class="px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600">{ }</button>
+            </div>
+            <textarea id="emailHtmlContent" rows="8" placeholder="<h1>Hello</h1><p>Your content here</p>" class="w-full border border-slate-200 rounded-b-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y font-mono text-xs min-h-[160px]"></textarea>
+            <div class="flex justify-between mt-1 text-xs text-slate-500">
+              <span id="emailHtmlLength">0 characters</span>
+              <button id="emailPreviewBtn" class="text-blue-600 hover:underline">Preview</button>
+            </div>
+          </div>
+
+          <!-- Sender -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">📨 Sender</label>
+            <input type="email" id="emailSender" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+          </div>
+
+          <!-- Provider Selection -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">🔌 Provider</label>
+            <select id="emailProvider" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+              <option value="default">Default (Saved API)</option>
+              <option value="brevo">Brevo (Sendinblue)</option>
+              <option value="sendgrid">SendGrid</option>
+              <option value="mailgun">Mailgun</option>
+              <option value="smtp">SMTP</option>
+            </select>
+          </div>
+
+          <!-- Send Button -->
+          <button id="sendEmailBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            Send Campaign
+          </button>
+          <div id="emailStatus" class="hidden p-3 bg-slate-50 rounded-lg text-sm text-slate-600"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[550px]">
+        <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl flex items-center justify-between">
+          <h3 class="font-semibold text-slate-800">📊 Email Dashboard</h3>
+          <span id="emailResultCount" class="text-xs bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full">0 emails</span>
+        </div>
+
+        <!-- Progress -->
+        <div id="emailProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
+          <div class="flex justify-between text-sm mb-2">
+            <span id="emailProgressLabel" class="font-medium text-slate-700">Sending...</span>
+            <span id="emailProgressText" class="text-blue-600 font-bold">0%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+            <div id="emailProgressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-4 gap-2 p-4 border-b border-slate-200 bg-white">
+          <div class="text-center">
+            <p class="text-2xl font-bold text-slate-700" id="emailTotalStat">0</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-wider">Total</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-emerald-600" id="emailSuccessStat">0</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-wider">Success</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-red-600" id="emailFailedStat">0</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-wider">Failed</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-amber-600" id="emailPendingStat">0</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-wider">Pending</p>
+          </div>
+        </div>
+
+        <!-- Email Log Table -->
+        <div class="flex-1 overflow-y-auto p-4">
+          <table class="data-table w-full" id="emailResultTable">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Message ID</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="emailResultBody">
+              <tr><td colspan="4" class="text-center text-slate-500 py-8">No emails sent yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 flex justify-between items-center">
+          <span id="emailResultMeta">Ready</span>
+          <div class="flex gap-2">
+            <button id="emailExportLogBtn" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50" disabled>Export Log</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Modal -->
+  <div id="emailPreviewModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">📧 Email Preview</h3>
+        <button id="emailPreviewClose" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <div id="emailPreviewContent" class="prose max-w-none"></div>
+    </div>
+  </div>
+</div>
