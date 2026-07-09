@@ -1,1 +1,37 @@
-rtt
+/* public/text-contact-extractor/style.css */
+/* Bulk Text Extractor specific styles */
+#dropZone.dragover {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+#dropZone .file-icon {
+  transition: transform 0.2s;
+}
+#dropZone:hover .file-icon {
+  transform: scale(1.05);
+}
+.result-row .copy-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.result-row:hover .copy-btn {
+  opacity: 1;
+}
+#processingContainer .spinner {
+  border: 3px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+/* Pagination */
+#resultTable tbody tr {
+  transition: background-color 0.15s;
+}
+#resultTable tbody tr:hover {
+  background-color: #f8fafc;
+}
