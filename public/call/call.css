@@ -1,1 +1,55 @@
-
+/* public/call-campaign/style.css */
+#callCampaign #callDropZone.dragover {
+  border-color: #8b5cf6;
+  background-color: #f5f3ff;
+}
+#callCampaign .data-table th {
+  background-color: #f1f5f9;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  padding: 10px 12px;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: left;
+}
+#callCampaign .data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+#callCampaign .data-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+#callCampaign .status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+#callCampaign .status-badge.success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+#callCampaign .status-badge.failed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+#callCampaign .status-badge.pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+#callCampaign .status-badge.completed {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+#callCampaign .status-badge.busy {
+  background-color: #fef9c3;
+  color: #854d0e;
+}
+#callCampaign .status-badge.no-answer {
+  background-color: #e2e8f0;
+  color: #475569;
+}
