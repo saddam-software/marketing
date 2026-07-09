@@ -14,11 +14,17 @@
 
   // State
   let currentContacts = [];
+  // ✅ টোকেন একবার নিলেই হবে
+  const token = localStorage.getItem('emailExtractorToken');
 
   // ========== Load district & thana data ==========
   async function loadLocationData() {
     try {
-      const res = await fetch('/api/finder-api/location-secret?action=getLocations');
+      const res = await fetch('/api/finder-api/location-secret?action=getLocations', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await res.json();
       if (data.success && data.districts) {
         populateDistricts(data.districts);
@@ -60,7 +66,11 @@
       return;
     }
     try {
-      const res = await fetch(`/api/finder-api/location-secret?action=getThanas&district=${encodeURIComponent(district)}`);
+      const res = await fetch(`/api/finder-api/location-secret?action=getThanas&district=${encodeURIComponent(district)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await res.json();
       if (data.success && data.thanas) {
         populateThanas(data.thanas);
@@ -84,7 +94,11 @@
     searchBtn.disabled = true;
 
     try {
-      const res = await fetch(`/api/finder-api/location-secret?action=search&district=${encodeURIComponent(district)}&thana=${encodeURIComponent(thana)}`);
+      const res = await fetch(`/api/finder-api/location-secret?action=search&district=${encodeURIComponent(district)}&thana=${encodeURIComponent(thana)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await res.json();
       if (data.success) {
         currentContacts = data.contacts || [];
