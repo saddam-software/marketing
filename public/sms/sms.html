@@ -1,1 +1,137 @@
-erer
+<!-- public/sms-campaign/index.html -->
+<div id="smsCampaign" class="space-y-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Control Panel -->
+    <div class="lg:col-span-1">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
+        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          SMS Campaign
+        </h3>
+        <div class="space-y-4">
+          <!-- Recipients Upload -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">📱 Recipients</label>
+            <div id="smsDropZone" class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-purple-500 transition-colors cursor-pointer">
+              <div class="flex flex-col items-center gap-1">
+                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                <p class="text-xs text-slate-600">Drop .txt or .csv file</p>
+                <input type="file" id="smsFileInput" accept=".txt,.csv" class="hidden" />
+              </div>
+            </div>
+            <div id="smsFileInfo" class="hidden mt-2 p-2 bg-slate-50 rounded-lg text-xs flex justify-between">
+              <span id="smsFileName">file.txt</span>
+              <span id="smsFileCount">0 contacts</span>
+              <button id="smsClearFileBtn" class="text-red-500 hover:text-red-700">✕</button>
+            </div>
+          </div>
+
+          <!-- Message -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">✉️ Message</label>
+            <textarea id="smsMessage" rows="4" placeholder="Type your SMS message..." class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all resize-y"></textarea>
+            <div class="flex justify-between mt-1 text-xs">
+              <span id="smsCharCounter" class="text-slate-500">0 / 160</span>
+              <span id="smsSegmentCounter" class="text-slate-500">1 segment</span>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-1.5 mt-1 overflow-hidden">
+              <div id="smsCharProgress" class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- Sender ID -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">📇 Sender ID</label>
+            <input type="text" id="smsSenderId" placeholder="YourBrand" maxlength="11" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+            <p class="text-[10px] text-slate-400 mt-1">Max 11 alphanumeric characters</p>
+          </div>
+
+          <!-- Provider Selection (optional) -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">🔌 Provider</label>
+            <select id="smsProvider" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all">
+              <option value="default">Default (Saved API)</option>
+              <option value="twilio">Twilio</option>
+              <option value="vonage">Vonage</option>
+              <option value="africastalking">Africa's Talking</option>
+              <option value="custom">Custom HTTP</option>
+            </select>
+          </div>
+
+          <!-- Send Button -->
+          <button id="sendSmsBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            Send SMS
+          </button>
+          <div id="smsStatus" class="hidden p-3 bg-slate-50 rounded-lg text-sm text-slate-600"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[550px]">
+        <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl flex items-center justify-between">
+          <h3 class="font-semibold text-slate-800">📊 SMS Dashboard</h3>
+          <span id="smsResultCount" class="text-xs bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full">0 messages</span>
+        </div>
+
+        <!-- Progress -->
+        <div id="smsProgressContainer" class="hidden p-4 border-b border-slate-200 bg-white">
+          <div class="flex justify-between text-sm mb-2">
+            <span id="smsProgressLabel" class="font-medium text-slate-700">Sending...</span>
+            <span id="smsProgressText" class="text-purple-600 font-bold">0%</span>
+          </div>
+          <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+            <div id="smsProgressBar" class="bg-purple-600 h-2.5 rounded-full progress-bar-fill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-4 gap-2 p-4 border-b border-slate-200 bg-white">
+          <div class="text-center">
+            <p class="text-2xl font-bold text-slate-700" id="smsTotalStat">0</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-wider">Total</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-emerald-600" id="smsSuccessStat">0</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-wider">Success</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-red-600" id="smsFailedStat">0</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-wider">Failed</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold text-amber-600" id="smsPendingStat">0</p>
+            <p class="text-[10px] text-slate-500 uppercase tracking-wider">Pending</p>
+          </div>
+        </div>
+
+        <!-- SMS Log Table -->
+        <div class="flex-1 overflow-y-auto p-4">
+          <table class="data-table w-full" id="smsResultTable">
+            <thead>
+              <tr>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Message ID</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="smsResultBody">
+              <tr><td colspan="4" class="text-center text-slate-500 py-8">No messages sent yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 flex justify-between items-center">
+          <span id="smsResultMeta">Ready</span>
+          <div class="flex gap-2">
+            <button id="smsExportLogBtn" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50" disabled>Export Log</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
