@@ -1,8 +1,10 @@
 // functions/api/[[path]].js
 // ============================================================
 //  Email & SMS Marketing Pro - Cloudflare Pages API Router
-//  Handles authentication, scraping, email & SMS campaigns,
-//  API key management (Email + SMS), dashboard stats, and audit logs.
+//  Handles authentication, API key management, dashboard stats,
+//  audit logs, contacts, health, and settings.
+//  NOTE: Scraping and Campaign sending are now handled by
+//  dedicated API files in /finder-api/ and /campaigns-api/
 // ============================================================
 
 import { KVMANAGER } from '../helpers/kv-manager.js';
@@ -47,7 +49,7 @@ export async function onRequest(context) {
   const ADMIN_PASSWORD = env.ADMIN_PASSWORD || 'admin123';
   const BREVO_API_KEY = env.BREVO_API_KEY || ''; // fallback for email
 
-  // ==================== AUTHENTICATION ====================
+  // ==================== AUTHENTICATION HELPERS ====================
 
   function generateToken(username) {
     const payload = {
@@ -87,7 +89,8 @@ export async function onRequest(context) {
   }
 
   try {
-    // ---------- AUTH ----------
+    // ==================== AUTHENTICATION ====================
+
     if (path === '/api/auth/login' && method === 'POST') {
       const body = await request.json().catch(() => ({}));
       const { username, password } = body;
@@ -145,7 +148,8 @@ export async function onRequest(context) {
       });
     }
 
-    // ---------- API KEY MANAGEMENT ----------
+    // ==================== API KEY MANAGEMENT ====================
+
     // GET stats for a specific API (email/brevo or sms)
     if (path === '/api/api-keys/stats' && method === 'GET') {
       const auth = await requireAuth(request);
@@ -155,7 +159,7 @@ export async function onRequest(context) {
       const apiName = url.searchParams.get('apiName') || 'brevo';
       const limits = {
         brevo: 300,
-        sms: 100, // default SMS daily limit, can be overridden by config
+        sms: 100,
         abstract: 250,
       };
       const limit = limits[apiName] || 100;
@@ -191,7 +195,6 @@ export async function onRequest(context) {
       const key = `api:key:${apiName}`;
       const config = { key: apiKey, updatedAt: new Date().toISOString() };
       if (apiName === 'sms') {
-        // Additional SMS config
         config.provider = provider || 'custom';
         config.baseUrl = baseUrl || '';
         config.defaultSender = defaultSender || '';
@@ -225,296 +228,8 @@ export async function onRequest(context) {
       return jsonResponse({ success: true, data: result });
     }
 
-    // ---------- SCRAPING ----------
-    if ((path === '/api/scrape/emails' || path === '/api/scrape/phones') && method === 'POST') {
-      const auth = await requireAuth(request);
-      if (!auth.valid) {
-        return jsonResponse({ success: false, error: auth.error }, 401);
-      }
+    // ==================== AUDIT LOGS ====================
 
-      const body = await request.json().catch(() => ({}));
-      let { url, limit = 50, force = false } = body;
-      const type = path.includes('emails') ? 'emails' : 'phones';
-
-      if (!url) {
-        return jsonResponse({ success: false, error: 'URL required' }, 400);
-      }
-      url = validateUrl(url);
-      if (!url) {
-        return jsonResponse({ success: false, error: 'Invalid URL' }, 400);
-      }
-
-      const cacheKey = `cache:scrape:${type}:${url}`;
-      if (!force) {
-        const cachedData = await kv.getJSON(cacheKey);
-        if (cachedData) {
-          return jsonResponse({
-            success: true,
-            url,
-            [`${type === 'emails' ? 'email' : 'phone'}Count`]: cachedData.length,
-            [type]: cachedData,
-            cached: true,
-            scrapedAt: new Date().toISOString(),
-          });
-        }
-      }
-
-      const fetchWithRetry = async (retries = 2) => {
-        for (let i = 0; i <= retries; i++) {
-          try {
-            const response = await fetch(url, {
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-              },
-              signal: AbortSignal.timeout(10000),
-            });
-            if (response.status === 403) throw new Error(`Access Denied (403). The site might be blocking scrapers.`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return await response.text();
-          } catch (err) {
-            if (i === retries) throw err;
-            await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
-          }
-        }
-      };
-
-      try {
-        const html = await fetchWithRetry();
-        let results = [];
-
-        if (type === 'emails') {
-          const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-          const matches = html.match(emailRegex) || [];
-          results = [...new Set(matches.map((e) => e.toLowerCase()))];
-        } else {
-          const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g;
-          const matches = html.match(phoneRegex) || [];
-          results = [...new Set(
-            matches.map((p) => p.trim().replace(/[^\d+]/g, '')).filter((p) => p.length >= 10)
-          )];
-        }
-
-        results = results.slice(0, parseInt(limit, 10));
-
-        await kv.pushToList(`contacts:${type}`, results);
-        if (results.length > 0) {
-          await kv.putJSON(cacheKey, results, { expirationTtl: 86400 });
-        }
-
-        await auditLogger.log(`SCRAPE_${type.toUpperCase()}`, {
-          username: auth.username,
-          url,
-          count: results.length,
-        });
-
-        return jsonResponse({
-          success: true,
-          url,
-          [`${type === 'emails' ? 'email' : 'phone'}Count`]: results.length,
-          [type]: results,
-          cached: false,
-          scrapedAt: new Date().toISOString(),
-        });
-      } catch (error) {
-        await auditLogger.log('SCRAPE_ERROR', {
-          username: auth.username,
-          url,
-          error: error.message,
-        });
-        return jsonResponse(
-          { success: false, error: `Scraping failed: ${error.message}` },
-          500
-        );
-      }
-    }
-
-    // ---------- CAMPAIGN SEND (Email & SMS) ----------
-    if (path === '/api/campaigns/send' && method === 'POST') {
-      const auth = await requireAuth(request);
-      if (!auth.valid) {
-        return jsonResponse({ success: false, error: auth.error }, 401);
-      }
-      const body = await request.json().catch(() => ({}));
-      const { type, recipientFilter, subject, htmlContent, message, sender } = body;
-
-      if (!recipientFilter) {
-        return jsonResponse(
-          { success: false, error: 'Recipient filter is required' },
-          400
-        );
-      }
-
-      // Determine which contacts to use
-      let recipients = [];
-      const allEmails = await kv.getList('contacts:emails') || [];
-      const allPhones = await kv.getList('contacts:phones') || [];
-
-      // For email campaigns, use emails; for SMS, use phones
-      const contactList = type === 'sms' ? allPhones : allEmails;
-      if (recipientFilter === 'all') {
-        recipients = contactList;
-      } else if (recipientFilter === 'b2b') {
-        recipients = contactList.filter((c) => c.endsWith('.com'));
-      } else if (recipientFilter === 'b2c') {
-        recipients = contactList.filter((c) => !c.endsWith('.com'));
-      } else if (recipientFilter === 'verified') {
-        recipients = contactList.slice(0, Math.floor(contactList.length / 2));
-      } else {
-        return jsonResponse(
-          { success: false, error: 'Invalid recipient filter' },
-          400
-        );
-      }
-
-      if (recipients.length === 0) {
-        return jsonResponse(
-          { success: false, error: 'No recipients found for the selected filter' },
-          400
-        );
-      }
-
-      // Validate campaign data
-      if (type === 'email') {
-        if (!subject || !htmlContent) {
-          return jsonResponse(
-            { success: false, error: 'Subject and HTML content required for email' },
-            400
-          );
-        }
-      } else if (type === 'sms') {
-        if (!message) {
-          return jsonResponse(
-            { success: false, error: 'Message content required for SMS' },
-            400
-          );
-        }
-      } else {
-        return jsonResponse(
-          { success: false, error: 'Invalid campaign type. Use "email" or "sms"' },
-          400
-        );
-      }
-
-      // Retrieve API keys
-      const apiKeyData = await kv.getJSON(`api:key:${type === 'email' ? 'brevo' : 'sms'}`);
-      let apiKey = apiKeyData?.key || (type === 'email' ? BREVO_API_KEY : null);
-      if (!apiKey) {
-        return jsonResponse(
-          { success: false, error: `${type} API key not configured` },
-          400
-        );
-      }
-
-      // For SMS, we might need additional config
-      let smsConfig = {};
-      if (type === 'sms') {
-        smsConfig = {
-          provider: apiKeyData?.provider || 'custom',
-          baseUrl: apiKeyData?.baseUrl || '',
-          defaultSender: apiKeyData?.defaultSender || sender || 'Marketing',
-        };
-      }
-
-      // ========== REAL API CALLS (Brevo / SMS) ==========
-      const results = [];
-      let successCount = 0;
-
-      for (const contact of recipients) {
-        let success = false;
-        let messageId = null;
-        let errorMsg = null;
-
-        try {
-          if (type === 'email') {
-            // Brevo (Sendinblue) API
-            const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'api-key': apiKey
-              },
-              body: JSON.stringify({
-                sender: { name: sender || "Marketing", email: "noreply@yourdomain.com" },
-                to: [{ email: contact }],
-                subject: subject,
-                htmlContent: htmlContent
-              })
-            });
-            const data = await response.json();
-            if (response.ok) {
-              success = true;
-              messageId = data.messageId;
-              successCount++;
-            } else {
-              errorMsg = data.message || 'Brevo API error';
-            }
-          } else if (type === 'sms') {
-            // Example: Twilio API (adjust according to your provider)
-            const smsUrl = smsConfig.baseUrl || 'https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID/Messages.json';
-            const response = await fetch(smsUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': 'Basic ' + btoa('ACCOUNT_SID:' + apiKey)
-              },
-              body: new URLSearchParams({
-                To: contact,
-                From: smsConfig.defaultSender || 'Marketing',
-                Body: message
-              })
-            });
-            if (response.ok) {
-              success = true;
-              messageId = 'sms_' + Date.now();
-              successCount++;
-            } else {
-              const err = await response.text();
-              errorMsg = err;
-            }
-          }
-        } catch (err) {
-          errorMsg = err.message;
-        }
-
-        results.push({
-          [type === 'email' ? 'email' : 'phone']: contact,
-          success,
-          messageId,
-          error: errorMsg,
-        });
-      }
-
-      // Log the campaign
-      const action = type === 'email' ? 'SEND_EMAILS' : 'SEND_SMS';
-      await auditLogger.log(action, {
-        username: auth.username,
-        subject: subject || 'SMS Campaign',
-        recipientFilter,
-        total: recipients.length,
-        successCount,
-      });
-
-      // Update usage stats
-      const today = new Date().toISOString().split('T')[0];
-      const usageKey = `api:usage:${type === 'email' ? 'brevo' : 'sms'}:${today}`;
-      const currentUsage = parseInt(await kv.get(usageKey) || '0', 10);
-      await kv.put(usageKey, String(currentUsage + recipients.length));
-
-      return jsonResponse({
-        success: true,
-        total: recipients.length,
-        successCount,
-        results,
-        sentAt: new Date().toISOString(),
-      });
-    }
-
-    // ---------- AUDIT LOGS ----------
     if (path === '/api/audit-logs' && method === 'GET') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
@@ -531,7 +246,8 @@ export async function onRequest(context) {
       });
     }
 
-    // ---------- CONTACTS ----------
+    // ==================== CONTACTS ====================
+
     if (path === '/api/contacts/list' && method === 'GET') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
@@ -607,7 +323,8 @@ export async function onRequest(context) {
       });
     }
 
-    // ---------- DASHBOARD ----------
+    // ==================== DASHBOARD ====================
+
     if (path === '/api/dashboard/stats' && method === 'GET') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
@@ -616,7 +333,7 @@ export async function onRequest(context) {
       const today = new Date().toISOString().split('T')[0];
       const logs = await auditLogger.getLogsForDate(today);
 
-      // Emails extracted today
+      // Emails extracted today (from old scraper logs, but keep for backward compatibility)
       const todayEmails = logs
         .filter((l) => l.action === 'SCRAPE_EMAILS')
         .reduce((sum, l) => sum + (l.details?.count || 0), 0);
@@ -676,7 +393,8 @@ export async function onRequest(context) {
       });
     }
 
-    // ---------- HEALTH ----------
+    // ==================== HEALTH CHECK ====================
+
     if (path === '/api/health/status' && method === 'GET') {
       let kvStatus = 'ok';
       try {
@@ -692,7 +410,8 @@ export async function onRequest(context) {
       });
     }
 
-    // ---------- SETTINGS ----------
+    // ==================== SETTINGS ====================
+
     if (path === '/api/settings' && method === 'GET') {
       const auth = await requireAuth(request);
       if (!auth.valid) {
@@ -712,8 +431,9 @@ export async function onRequest(context) {
       return jsonResponse({ success: true, settings });
     }
 
-    // ---------- 404 ----------
+    // ==================== 404 ====================
     return jsonResponse({ success: false, error: 'Endpoint not found' }, 404);
+
   } catch (error) {
     console.error('[API ERROR]', error);
     return jsonResponse(
