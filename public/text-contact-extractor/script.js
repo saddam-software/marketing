@@ -39,6 +39,9 @@
   let currentPage = 1;
   const pageSize = 50;
 
+  // ✅ টোকেন নিন
+  const token = localStorage.getItem('emailExtractorToken');
+
   // ========== Helpers ==========
   function updateCharWordCount() {
     const text = textInput.value;
@@ -148,7 +151,10 @@
     try {
       const response = await fetch('/api/finder-api/text-secret', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`  // ✅ টোকেন যোগ করা হলো
+        },
         body: JSON.stringify({ text })
       });
       const data = await response.json();
