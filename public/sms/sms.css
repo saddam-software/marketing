@@ -1,1 +1,46 @@
-ere
+/* public/sms-campaign/style.css */
+#smsCampaign #smsDropZone.dragover {
+  border-color: #8b5cf6;
+  background-color: #f5f3ff;
+}
+#smsCampaign .data-table th {
+  background-color: #f1f5f9;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  padding: 10px 12px;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: left;
+}
+#smsCampaign .data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+#smsCampaign .data-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+#smsCampaign .status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+#smsCampaign .status-badge.success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+#smsCampaign .status-badge.failed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+#smsCampaign .status-badge.pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+#smsCampaign .char-progress {
+  transition: width 0.3s ease;
+}
