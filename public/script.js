@@ -249,11 +249,13 @@
     await loadCallCampaign();
   }
 
-  async function loadBulkTextExtractor() {
-    const container = document.getElementById('bulkTextExtractorContainer');
-    if (container.dataset.loaded) return;
-    const response = await fetch('/text-contact-extractor/index.html');
-    const html = await response.text();
+async function loadBulkTextExtractor() {
+  const container = document.getElementById('bulkTextExtractorContainer');
+  if (container.dataset.loaded) return;
+  try {
+    const resp = await fetch('/text-contact-extractor/index.html');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const html = await resp.text();
     container.innerHTML = html;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -263,13 +265,18 @@
     script.src = '/text-contact-extractor/script.js';
     document.body.appendChild(script);
     container.dataset.loaded = 'true';
+  } catch (e) {
+    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Bulk Text Extractor: ${e.message}</div>`;
   }
+}
 
-  async function loadWebsiteExtractor() {
-    const container = document.getElementById('websiteExtractorContainer');
-    if (container.dataset.loaded) return;
-    const response = await fetch('/website-contact-extractor/index.html');
-    const html = await response.text();
+async function loadWebsiteExtractor() {
+  const container = document.getElementById('websiteExtractorContainer');
+  if (container.dataset.loaded) return;
+  try {
+    const resp = await fetch('/website-contact-extractor/index.html');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const html = await resp.text();
     container.innerHTML = html;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -279,13 +286,18 @@
     script.src = '/website-contact-extractor/script.js';
     document.body.appendChild(script);
     container.dataset.loaded = 'true';
+  } catch (e) {
+    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Website Extractor: ${e.message}</div>`;
   }
+}
 
-  async function loadLocationSearch() {
-    const container = document.getElementById('locationSearchContainer');
-    if (container.dataset.loaded) return;
-    const response = await fetch('/location-contact-search/index.html');
-    const html = await response.text();
+async function loadLocationSearch() {
+  const container = document.getElementById('locationSearchContainer');
+  if (container.dataset.loaded) return;
+  try {
+    const resp = await fetch('/location-contact-search/index.html');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const html = await resp.text();
     container.innerHTML = html;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -295,13 +307,18 @@
     script.src = '/location-contact-search/script.js';
     document.body.appendChild(script);
     container.dataset.loaded = 'true';
+  } catch (e) {
+    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Location Search: ${e.message}</div>`;
   }
+}
 
-  async function loadEmailCampaign() {
-    const container = document.getElementById('emailCampaignContainer');
-    if (container.dataset.loaded) return;
-    const response = await fetch('/email-campaign/index.html');
-    const html = await response.text();
+async function loadEmailCampaign() {
+  const container = document.getElementById('emailCampaignContainer');
+  if (container.dataset.loaded) return;
+  try {
+    const resp = await fetch('/email-campaign/index.html');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const html = await resp.text();
     container.innerHTML = html;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -311,13 +328,18 @@
     script.src = '/email-campaign/script.js';
     document.body.appendChild(script);
     container.dataset.loaded = 'true';
+  } catch (e) {
+    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Email Campaign: ${e.message}</div>`;
   }
+}
 
-  async function loadSmsCampaign() {
-    const container = document.getElementById('smsCampaignContainer');
-    if (container.dataset.loaded) return;
-    const response = await fetch('/sms-campaign/index.html');
-    const html = await response.text();
+async function loadSmsCampaign() {
+  const container = document.getElementById('smsCampaignContainer');
+  if (container.dataset.loaded) return;
+  try {
+    const resp = await fetch('/sms-campaign/index.html');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const html = await resp.text();
     container.innerHTML = html;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -327,13 +349,18 @@
     script.src = '/sms-campaign/script.js';
     document.body.appendChild(script);
     container.dataset.loaded = 'true';
+  } catch (e) {
+    container.innerHTML = `<div class="text-red-500 p-4">Failed to load SMS Campaign: ${e.message}</div>`;
   }
+}
 
-  async function loadCallCampaign() {
-    const container = document.getElementById('callCampaignContainer');
-    if (container.dataset.loaded) return;
-    const response = await fetch('/call-campaign/index.html');
-    const html = await response.text();
+async function loadCallCampaign() {
+  const container = document.getElementById('callCampaignContainer');
+  if (container.dataset.loaded) return;
+  try {
+    const resp = await fetch('/call-campaign/index.html');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const html = await resp.text();
     container.innerHTML = html;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -343,7 +370,10 @@
     script.src = '/call-campaign/script.js';
     document.body.appendChild(script);
     container.dataset.loaded = 'true';
+  } catch (e) {
+    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Call Campaign: ${e.message}</div>`;
   }
+}
 
   // ========== DASHBOARD ==========
   async function loadDashboardData() {
