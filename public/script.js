@@ -316,16 +316,16 @@ async function loadEmailCampaign() {
   const container = document.getElementById('emailCampaignContainer');
   if (container.dataset.loaded) return;
   try {
-    const resp = await fetch('/email/index.html');
+    const resp = await fetch('/email-campaign/index.html');
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const html = await resp.text();
     container.innerHTML = html;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '/email/style.css';
+    link.href = '/email-campaign/style.css';
     document.head.appendChild(link);
     const script = document.createElement('script');
-    script.src = '/email/script.js';
+    script.src = '/email-campaign/script.js';
     document.body.appendChild(script);
     container.dataset.loaded = 'true';
   } catch (e) {
@@ -337,16 +337,16 @@ async function loadSmsCampaign() {
   const container = document.getElementById('smsCampaignContainer');
   if (container.dataset.loaded) return;
   try {
-    const resp = await fetch('/sms/index.html');
+    const resp = await fetch('/sms-campaign/index.html');
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const html = await resp.text();
     container.innerHTML = html;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '/sms/style.css';
+    link.href = '/sms-campaign/style.css';
     document.head.appendChild(link);
     const script = document.createElement('script');
-    script.src = '/sms/script.js';
+    script.src = '/sms-campaign/script.js';
     document.body.appendChild(script);
     container.dataset.loaded = 'true';
   } catch (e) {
@@ -358,16 +358,16 @@ async function loadCallCampaign() {
   const container = document.getElementById('callCampaignContainer');
   if (container.dataset.loaded) return;
   try {
-    const resp = await fetch('/call/index.html');
+    const resp = await fetch('/call-campaign/index.html');
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const html = await resp.text();
     container.innerHTML = html;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '/call/style.css';
+    link.href = '/call-campaign/style.css';
     document.head.appendChild(link);
     const script = document.createElement('script');
-    script.src = '/call/script.js';
+    script.src = '/call-campaign/script.js';
     document.body.appendChild(script);
     container.dataset.loaded = 'true';
   } catch (e) {
