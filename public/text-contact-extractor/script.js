@@ -39,7 +39,7 @@
   let currentPage = 1;
   const pageSize = 50;
 
-  // ✅ টোকেন নিন
+  // ✅ টোকেন একবার নেওয়া
   const token = localStorage.getItem('emailExtractorToken');
 
   // ========== Helpers ==========
@@ -144,7 +144,7 @@
     updateAnalytics(emailArray, phoneArray, combined.length);
   }
 
-  // ========== API call to backend ==========
+  // ========== API call to backend (টোকেন সহ) ==========
   async function extractFromText(text) {
     showProcessing(true);
     setProcessingProgress(0, 'Sending data to server...');
@@ -153,7 +153,7 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`  // ✅ টোকেন যোগ করা হলো
+          'Authorization': `Bearer ${token}`   // ✅ টোকেন যোগ করা হলো
         },
         body: JSON.stringify({ text })
       });
@@ -173,13 +173,6 @@
     showProcessing(true);
     setProcessingProgress(0, 'Reading file...');
     const text = await file.text();
-    // Process in chunks if huge
-    const chunkSize = 1024 * 1024; // 1MB
-    if (text.length > chunkSize * 5) {
-      // Use chunked processing via API (streaming not supported, send in parts?)
-      // For simplicity, we'll send the whole text, but we can implement chunked splitting.
-      // We'll just send the whole text; the server can handle large text.
-    }
     await extractFromText(text);
   }
 
