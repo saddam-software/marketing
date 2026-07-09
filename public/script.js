@@ -54,6 +54,29 @@
   const smsRemaining = document.getElementById('smsRemaining');
   const smsLimit = document.getElementById('smsLimit');
 
+  // ===== নতুন API এলিমেন্ট =====
+  const callProviderSelect = document.getElementById('callProviderSelect');
+  const callApiKey = document.getElementById('callApiKey');
+  const callApiBaseUrl = document.getElementById('callApiBaseUrl');
+  const callDefaultCallerId = document.getElementById('callDefaultCallerId');
+  const saveCallApiBtn = document.getElementById('saveCallApiBtn');
+  const callStats = document.getElementById('callStats');
+  const callUsed = document.getElementById('callUsed');
+  const callRemaining = document.getElementById('callRemaining');
+  const callLimit = document.getElementById('callLimit');
+
+  const textApiKey = document.getElementById('textApiKey');
+  const textApiBaseUrl = document.getElementById('textApiBaseUrl');
+  const saveTextApiBtn = document.getElementById('saveTextApiBtn');
+
+  const websiteApiKey = document.getElementById('websiteApiKey');
+  const websiteApiBaseUrl = document.getElementById('websiteApiBaseUrl');
+  const saveWebsiteApiBtn = document.getElementById('saveWebsiteApiBtn');
+
+  const locationApiKey = document.getElementById('locationApiKey');
+  const locationApiBaseUrl = document.getElementById('locationApiBaseUrl');
+  const saveLocationApiBtn = document.getElementById('saveLocationApiBtn');
+
   // Audit Logs
   const auditLogsBody = document.getElementById('auditLogsBody');
   const auditLogsCount = document.getElementById('auditLogsCount');
@@ -249,131 +272,131 @@
     await loadCallCampaign();
   }
 
-async function loadBulkTextExtractor() {
-  const container = document.getElementById('bulkTextExtractorContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/text-contact-extractor/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/text-contact-extractor/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/text-contact-extractor/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Bulk Text Extractor: ${e.message}</div>`;
+  async function loadBulkTextExtractor() {
+    const container = document.getElementById('bulkTextExtractorContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/text-contact-extractor/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/text-contact-extractor/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/text-contact-extractor/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load Bulk Text Extractor: ${e.message}</div>`;
+    }
   }
-}
 
-async function loadWebsiteExtractor() {
-  const container = document.getElementById('websiteExtractorContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/website-contact-extractor/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/website-contact-extractor/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/website-contact-extractor/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Website Extractor: ${e.message}</div>`;
+  async function loadWebsiteExtractor() {
+    const container = document.getElementById('websiteExtractorContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/website-contact-extractor/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/website-contact-extractor/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/website-contact-extractor/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load Website Extractor: ${e.message}</div>`;
+    }
   }
-}
 
-async function loadLocationSearch() {
-  const container = document.getElementById('locationSearchContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/location-contact-search/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/location-contact-search/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/location-contact-search/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Location Search: ${e.message}</div>`;
+  async function loadLocationSearch() {
+    const container = document.getElementById('locationSearchContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/location-contact-search/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/location-contact-search/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/location-contact-search/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load Location Search: ${e.message}</div>`;
+    }
   }
-}
 
-async function loadEmailCampaign() {
-  const container = document.getElementById('emailCampaignContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/email/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/email/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/email/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Email Campaign: ${e.message}</div>`;
+  async function loadEmailCampaign() {
+    const container = document.getElementById('emailCampaignContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/email/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/email/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/email/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load Email Campaign: ${e.message}</div>`;
+    }
   }
-}
 
-async function loadSmsCampaign() {
-  const container = document.getElementById('smsCampaignContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/sms/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/sms/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/sms/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load SMS Campaign: ${e.message}</div>`;
+  async function loadSmsCampaign() {
+    const container = document.getElementById('smsCampaignContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/sms/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/sms/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/sms/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load SMS Campaign: ${e.message}</div>`;
+    }
   }
-}
 
-async function loadCallCampaign() {
-  const container = document.getElementById('callCampaignContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/call/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/call/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/call/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Call Campaign: ${e.message}</div>`;
+  async function loadCallCampaign() {
+    const container = document.getElementById('callCampaignContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/call/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/call/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/call/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load Call Campaign: ${e.message}</div>`;
+    }
   }
-}
 
   // ========== DASHBOARD ==========
   async function loadDashboardData() {
@@ -443,6 +466,14 @@ async function loadCallCampaign() {
       smsLimit.textContent = formatNum(sms.data.limit);
       smsStats.classList.remove('hidden');
     }
+    // Call API stats
+    const call = await apiCall('/api-keys/stats?apiName=call');
+    if (call.success && call.data) {
+      callUsed.textContent = formatNum(call.data.used);
+      callRemaining.textContent = formatNum(call.data.remaining);
+      callLimit.textContent = formatNum(call.data.limit);
+      callStats.classList.remove('hidden');
+    }
   }
 
   async function handleSaveBrevo() {
@@ -490,6 +521,102 @@ async function loadCallCampaign() {
       await loadApiStats();
     } else {
       showError(res.error || 'Save failed', smsStats);
+    }
+  }
+
+  // ===== নতুন চারটি API সেভ ফাংশন =====
+
+  // Call API
+  async function handleSaveCall() {
+    const provider = callProviderSelect.value;
+    const key = callApiKey.value.trim();
+    const baseUrl = callApiBaseUrl.value.trim();
+    const defaultCallerId = callDefaultCallerId.value.trim();
+    if (!key || !baseUrl || !defaultCallerId) {
+      alert('Call API-র সব ফিল্ড পূরণ করুন');
+      return;
+    }
+    setLoading(saveCallApiBtn, true);
+    const res = await apiCall('/api-keys/save', 'POST', {
+      apiName: 'call',
+      apiKey: key,
+      provider,
+      baseUrl,
+      defaultCallerId
+    });
+    setLoading(saveCallApiBtn, false);
+    if (res.success) {
+      callApiKey.value = '';
+      callApiBaseUrl.value = '';
+      callDefaultCallerId.value = '';
+      addActivity('🔑 Call API key', 'Saved');
+      alert('Call API configuration saved successfully');
+      await loadApiStats();
+    } else {
+      alert(res.error || 'সেভ করতে ব্যর্থ');
+    }
+  }
+
+  // Text API
+  async function handleSaveText() {
+    const key = textApiKey.value.trim();
+    const baseUrl = textApiBaseUrl.value.trim();
+    setLoading(saveTextApiBtn, true);
+    const res = await apiCall('/api-keys/save', 'POST', {
+      apiName: 'text',
+      apiKey: key || 'not_required',
+      baseUrl: baseUrl || ''
+    });
+    setLoading(saveTextApiBtn, false);
+    if (res.success) {
+      textApiKey.value = '';
+      textApiBaseUrl.value = '';
+      addActivity('🔑 Text API key', 'Saved');
+      alert('Text API configuration saved successfully');
+    } else {
+      alert(res.error || 'সেভ করতে ব্যর্থ');
+    }
+  }
+
+  // Website API
+  async function handleSaveWebsite() {
+    const key = websiteApiKey.value.trim();
+    const baseUrl = websiteApiBaseUrl.value.trim();
+    setLoading(saveWebsiteApiBtn, true);
+    const res = await apiCall('/api-keys/save', 'POST', {
+      apiName: 'website',
+      apiKey: key || 'not_required',
+      baseUrl: baseUrl || ''
+    });
+    setLoading(saveWebsiteApiBtn, false);
+    if (res.success) {
+      websiteApiKey.value = '';
+      websiteApiBaseUrl.value = '';
+      addActivity('🔑 Website API key', 'Saved');
+      alert('Website API configuration saved successfully');
+    } else {
+      alert(res.error || 'সেভ করতে ব্যর্থ');
+    }
+  }
+
+  // Location API
+  async function handleSaveLocation() {
+    const key = locationApiKey.value.trim();
+    const baseUrl = locationApiBaseUrl.value.trim();
+    setLoading(saveLocationApiBtn, true);
+    const res = await apiCall('/api-keys/save', 'POST', {
+      apiName: 'location',
+      apiKey: key || 'not_required',
+      baseUrl: baseUrl || ''
+    });
+    setLoading(saveLocationApiBtn, false);
+    if (res.success) {
+      locationApiKey.value = '';
+      locationApiBaseUrl.value = '';
+      addActivity('🔑 Location API key', 'Saved');
+      alert('Location API configuration saved successfully');
+    } else {
+      alert(res.error || 'সেভ করতে ব্যর্থ');
     }
   }
 
@@ -577,6 +704,12 @@ async function loadCallCampaign() {
 
   saveBrevoApiBtn.addEventListener('click', handleSaveBrevo);
   saveSmsApiBtn.addEventListener('click', handleSaveSms);
+
+  // নতুন চারটি API সেভ বাটনের ইভেন্ট
+  if (saveCallApiBtn) saveCallApiBtn.addEventListener('click', handleSaveCall);
+  if (saveTextApiBtn) saveTextApiBtn.addEventListener('click', handleSaveText);
+  if (saveWebsiteApiBtn) saveWebsiteApiBtn.addEventListener('click', handleSaveWebsite);
+  if (saveLocationApiBtn) saveLocationApiBtn.addEventListener('click', handleSaveLocation);
 
   refreshAuditLogsBtn.addEventListener('click', loadAuditLogs);
   applyAuditFiltersBtn.addEventListener('click', applyFilters);
