@@ -129,7 +129,7 @@
             @apply px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600;
         }
         .email-editor-content {
-            @apply w-full border border-slate-200 rounded-b-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y font-mono text-xs min-h-[160px];
+            @apply w-full border border-slate-200 rounded-b-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y font-mono text-xs min-[...]
         }
         .sms-counter {
             @apply text-xs font-medium;
@@ -168,7 +168,7 @@
             <div class="text-center mb-8">
                 <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 [...]
                     </svg>
                 </div>
                 <h1 class="text-3xl font-bold text-blue-600">Marketing Pro</h1>
@@ -178,15 +178,15 @@
             <form id="loginForm" class="space-y-4">
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-2">Username</label>
-                    <input type="text" id="loginUsername" placeholder="Enter your username" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
+                    <input type="text" id="loginUsername" placeholder="Enter your username" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 f[...]
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
+                    <input type="password" id="loginPassword" placeholder="Enter your password" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-5[...]
                 </div>
                 <div id="loginError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-cen[...]
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14[...]
                     Sign In
                 </button>
             </form>
@@ -202,7 +202,7 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.[...]
                     </div>
                     <div>
                         <h1 class="text-lg sm:text-xl font-bold text-blue-600 leading-tight">Marketing Pro</h1>
@@ -320,14 +320,14 @@
                 <div id="callCampaignContainer"></div>
             </div>
 
-            <!-- API Settings Tab (keep existing) -->
+            <!-- API Settings Tab -->
             <div id="api-settingsTab" class="tab-content hidden space-y-6">
-                <!-- will be handled by existing API settings code -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Grid: Email, SMS, and Call APIs -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Email API -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                             Email API
                         </h3>
                         <div class="space-y-4">
@@ -342,11 +342,11 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label>
-                                <input type="password" id="brevoApiKey" placeholder="Your Email API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-xs" />
+                                <input type="password" id="brevoApiKey" placeholder="Your Email API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 mb-2">Sender Email</label>
-                                <input type="email" id="brevoSenderEmail" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+                                <input type="email" id="brevoSenderEmail" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                             </div>
                             <button id="saveBrevoApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Email API</button>
                             <div id="brevoStats" class="hidden p-4 bg-slate-50 rounded-lg border border-slate-200">
@@ -363,7 +363,7 @@
                     <!-- SMS API -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             SMS API
                         </h3>
                         <div class="space-y-4">
@@ -378,15 +378,15 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 mb-2">API Key / Token</label>
-                                <input type="password" id="smsApiKey" placeholder="Your SMS API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all font-mono text-xs" />
+                                <input type="password" id="smsApiKey" placeholder="Your SMS API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 mb-2">API Base URL</label>
-                                <input type="url" id="smsApiBaseUrl" placeholder="https://api.twilio.com/2010-04-01" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                                <input type="url" id="smsApiBaseUrl" placeholder="https://api.twilio.com/2010-04-01" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all">
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-slate-700 mb-2">Default Sender ID</label>
-                                <input type="text" id="smsDefaultSender" placeholder="YourBrand" maxlength="11" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                                <input type="text" id="smsDefaultSender" placeholder="YourBrand" maxlength="11" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all">
                                 <p class="text-[10px] text-slate-400 mt-1">Max 11 alphanumeric characters</p>
                             </div>
                             <button id="saveSmsApiBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save SMS API</button>
@@ -400,10 +400,51 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Call API (NEW) -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 00.948.684l1.498 4.493a1 1 0 00.502.756l2.73 1.365a1 1 0 00.556-.023l2.73-1.365a1 1 0 00.502-.756l1.498-4.493a1 1 0 00.948-.684H19a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path></svg>
+                            Call API
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Provider</label>
+                                <select id="callProviderSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all">
+                                    <option value="twilio">Twilio</option>
+                                    <option value="vonage">Vonage (Nexmo)</option>
+                                    <option value="plivo">Plivo</option>
+                                    <option value="custom">Custom API</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key / Token</label>
+                                <input type="password" id="callApiKey" placeholder="Your Call API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Base URL</label>
+                                <input type="url" id="callApiBaseUrl" placeholder="https://api.twilio.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Default Caller ID</label>
+                                <input type="text" id="callDefaultCallerId" placeholder="+1234567890" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all">
+                                <p class="text-[10px] text-slate-400 mt-1">E.164 format (e.g., +1234567890)</p>
+                            </div>
+                            <button id="saveCallApiBtn" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Call API</button>
+                            <div id="callStats" class="hidden p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div><p class="text-2xl font-bold text-orange-600" id="callUsed">0</p><p class="text-xs text-slate-500">Made</p></div>
+                                    <div><p class="text-2xl font-bold text-emerald-600" id="callRemaining">50</p><p class="text-xs text-slate-500">Remaining</p></div>
+                                    <div><p class="text-2xl font-bold text-slate-600" id="callLimit">50</p><p class="text-xs text-slate-500">Limit</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Audit Logs Tab (keep existing) -->
+            <!-- Audit Logs Tab -->
             <div id="audit-logsTab" class="tab-content hidden space-y-6">
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col">
                     <!-- Filter Bar -->
@@ -411,11 +452,11 @@
                         <div class="filter-bar flex flex-wrap items-center gap-3">
                             <div class="filter-group flex items-center gap-2">
                                 <label for="auditDateFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">📅 Date</label>
-                                <input type="date" id="auditDateFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white" />
+                                <input type="date" id="auditDateFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                             </div>
                             <div class="filter-group flex items-center gap-2">
                                 <label for="auditActionFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">🎯 Action</label>
-                                <select id="auditActionFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white">
+                                <select id="auditActionFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                                     <option value="all">All</option>
                                     <option value="SCRAPE_EMAILS">Scrape Emails</option>
                                     <option value="SCRAPE_PHONES">Scrape Phones</option>
@@ -429,13 +470,13 @@
                             </div>
                             <div class="filter-group flex items-center gap-2 flex-1 min-w-[140px]">
                                 <label for="auditSearchFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">🔍 Search</label>
-                                <input type="text" id="auditSearchFilter" placeholder="Search user or details…" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white flex-1" />
+                                <input type="text" id="auditSearchFilter" placeholder="Search user or details…" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                             </div>
                             <div class="flex gap-2 ml-auto">
                                 <button id="applyAuditFiltersBtn" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">Apply</button>
                                 <button id="resetAuditFiltersBtn" class="px-4 py-1.5 bg-slate-300 hover:bg-slate-400 text-slate-700 text-xs font-medium rounded-lg transition-all">Reset</button>
                                 <button id="exportAuditCsvBtn" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                     CSV
                                 </button>
                             </div>
