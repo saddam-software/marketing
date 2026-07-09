@@ -26,6 +26,9 @@
   let currentData = { emails: [], phones: [] };
   let activeTab = 'emails';
 
+  // ✅ টোকেন একবার নেওয়া
+  const token = localStorage.getItem('emailExtractorToken');
+
   // ========== Tab switching ==========
   tabBtns.forEach(btn => {
     btn.addEventListener('click', function() {
@@ -120,7 +123,7 @@
     setTimeout(() => statusDiv.classList.add('hidden'), 5000);
   }
 
-  // ========== API Call ==========
+  // ========== API Call (টোকেন সহ) ==========
   async function handleWebsiteScrape() {
     const url = urlInput.value.trim();
     if (!url) {
@@ -141,7 +144,10 @@
     try {
       const response = await fetch('/api/finder-api/website-secret', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`   // ✅ টোকেন যোগ করা হলো
+        },
         body: JSON.stringify({ url, limit, depth, force, includeSubdomains })
       });
       const data = await response.json();
