@@ -34,7 +34,7 @@
   const analyticsChart = document.getElementById('analyticsChart');
   const brevoUsageBar = document.getElementById('brevoUsageBar');
 
-  // API Settings
+  // API Settings - Email
   const emailProviderSelect = document.getElementById('emailProviderSelect');
   const brevoApiKey = document.getElementById('brevoApiKey');
   const brevoSenderEmail = document.getElementById('brevoSenderEmail');
@@ -44,6 +44,7 @@
   const brevoRemaining = document.getElementById('brevoRemaining');
   const brevoLimit = document.getElementById('brevoLimit');
 
+  // API Settings - SMS
   const smsProviderSelect = document.getElementById('smsProviderSelect');
   const smsApiKey = document.getElementById('smsApiKey');
   const smsApiBaseUrl = document.getElementById('smsApiBaseUrl');
@@ -53,6 +54,17 @@
   const smsUsed = document.getElementById('smsUsed');
   const smsRemaining = document.getElementById('smsRemaining');
   const smsLimit = document.getElementById('smsLimit');
+
+  // API Settings - Call (NEW)
+  const callProviderSelect = document.getElementById('callProviderSelect');
+  const callApiKey = document.getElementById('callApiKey');
+  const callApiBaseUrl = document.getElementById('callApiBaseUrl');
+  const callDefaultCallerId = document.getElementById('callDefaultCallerId');
+  const saveCallApiBtn = document.getElementById('saveCallApiBtn');
+  const callStats = document.getElementById('callStats');
+  const callUsed = document.getElementById('callUsed');
+  const callRemaining = document.getElementById('callRemaining');
+  const callLimit = document.getElementById('callLimit');
 
   // Audit Logs
   const auditLogsBody = document.getElementById('auditLogsBody');
@@ -249,131 +261,131 @@
     await loadCallCampaign();
   }
 
-async function loadBulkTextExtractor() {
-  const container = document.getElementById('bulkTextExtractorContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/text-contact-extractor/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/text-contact-extractor/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/text-contact-extractor/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Bulk Text Extractor: ${e.message}</div>`;
+  async function loadBulkTextExtractor() {
+    const container = document.getElementById('bulkTextExtractorContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/text-contact-extractor/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/text-contact-extractor/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/text-contact-extractor/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load Bulk Text Extractor: ${e.message}</div>`;
+    }
   }
-}
 
-async function loadWebsiteExtractor() {
-  const container = document.getElementById('websiteExtractorContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/website-contact-extractor/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/website-contact-extractor/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/website-contact-extractor/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Website Extractor: ${e.message}</div>`;
+  async function loadWebsiteExtractor() {
+    const container = document.getElementById('websiteExtractorContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/website-contact-extractor/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/website-contact-extractor/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/website-contact-extractor/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load Website Extractor: ${e.message}</div>`;
+    }
   }
-}
 
-async function loadLocationSearch() {
-  const container = document.getElementById('locationSearchContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/location-contact-search/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/location-contact-search/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/location-contact-search/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Location Search: ${e.message}</div>`;
+  async function loadLocationSearch() {
+    const container = document.getElementById('locationSearchContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/location-contact-search/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/location-contact-search/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/location-contact-search/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load Location Search: ${e.message}</div>`;
+    }
   }
-}
 
-async function loadEmailCampaign() {
-  const container = document.getElementById('emailCampaignContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/email/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/email/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/email/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Email Campaign: ${e.message}</div>`;
+  async function loadEmailCampaign() {
+    const container = document.getElementById('emailCampaignContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/email/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/email/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/email/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load Email Campaign: ${e.message}</div>`;
+    }
   }
-}
 
-async function loadSmsCampaign() {
-  const container = document.getElementById('smsCampaignContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/sms/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/sms/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/sms/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load SMS Campaign: ${e.message}</div>`;
+  async function loadSmsCampaign() {
+    const container = document.getElementById('smsCampaignContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/sms/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/sms/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/sms/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load SMS Campaign: ${e.message}</div>`;
+    }
   }
-}
 
-async function loadCallCampaign() {
-  const container = document.getElementById('callCampaignContainer');
-  if (container.dataset.loaded) return;
-  try {
-    const resp = await fetch('/call/index.html');
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const html = await resp.text();
-    container.innerHTML = html;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/call/style.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = '/call/script.js';
-    document.body.appendChild(script);
-    container.dataset.loaded = 'true';
-  } catch (e) {
-    container.innerHTML = `<div class="text-red-500 p-4">Failed to load Call Campaign: ${e.message}</div>`;
+  async function loadCallCampaign() {
+    const container = document.getElementById('callCampaignContainer');
+    if (container.dataset.loaded) return;
+    try {
+      const resp = await fetch('/call/index.html');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const html = await resp.text();
+      container.innerHTML = html;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/call/style.css';
+      document.head.appendChild(link);
+      const script = document.createElement('script');
+      script.src = '/call/script.js';
+      document.body.appendChild(script);
+      container.dataset.loaded = 'true';
+    } catch (e) {
+      container.innerHTML = `<div class="text-red-500 p-4">Failed to load Call Campaign: ${e.message}</div>`;
+    }
   }
-}
 
   // ========== DASHBOARD ==========
   async function loadDashboardData() {
@@ -425,6 +437,7 @@ async function loadCallCampaign() {
 
   // ========== API SETTINGS ==========
   async function loadApiStats() {
+    // Email API
     const br = await apiCall('/api-keys/stats?apiName=brevo');
     if (br.success && br.data) {
       brevoUsed.textContent = formatNum(br.data.used);
@@ -436,12 +449,23 @@ async function loadCallCampaign() {
       const pct = Math.min(100, (used / br.data.limit) * 100);
       if (brevoUsageBar) brevoUsageBar.style.width = pct + '%';
     }
+
+    // SMS API
     const sms = await apiCall('/api-keys/stats?apiName=sms');
     if (sms.success && sms.data) {
       smsUsed.textContent = formatNum(sms.data.used);
       smsRemaining.textContent = formatNum(sms.data.remaining);
       smsLimit.textContent = formatNum(sms.data.limit);
       smsStats.classList.remove('hidden');
+    }
+
+    // Call API (NEW)
+    const call = await apiCall('/api-keys/stats?apiName=call');
+    if (call.success && call.data) {
+      callUsed.textContent = formatNum(call.data.used);
+      callRemaining.textContent = formatNum(call.data.remaining);
+      callLimit.textContent = formatNum(call.data.limit);
+      callStats.classList.remove('hidden');
     }
   }
 
@@ -490,6 +514,36 @@ async function loadCallCampaign() {
       await loadApiStats();
     } else {
       showError(res.error || 'Save failed', smsStats);
+    }
+  }
+
+  async function handleSaveCall() {
+    const provider = callProviderSelect.value;
+    const key = callApiKey.value.trim();
+    const baseUrl = callApiBaseUrl.value.trim();
+    const callerId = callDefaultCallerId.value.trim();
+    if (!key || !baseUrl || !callerId) {
+      showError('All Call API fields are required', callStats);
+      return;
+    }
+    setLoading(saveCallApiBtn, true);
+    const res = await apiCall('/api-keys/save', 'POST', {
+      apiName: 'call',
+      apiKey: key,
+      provider,
+      baseUrl,
+      defaultCallerId: callerId
+    });
+    setLoading(saveCallApiBtn, false);
+    if (res.success) {
+      callApiKey.value = '';
+      callApiBaseUrl.value = '';
+      callDefaultCallerId.value = '';
+      addActivity('🔑 Call API key', 'Saved');
+      alert('Call API configuration saved successfully');
+      await loadApiStats();
+    } else {
+      showError(res.error || 'Save failed', callStats);
     }
   }
 
@@ -577,6 +631,7 @@ async function loadCallCampaign() {
 
   saveBrevoApiBtn.addEventListener('click', handleSaveBrevo);
   saveSmsApiBtn.addEventListener('click', handleSaveSms);
+  saveCallApiBtn.addEventListener('click', handleSaveCall);
 
   refreshAuditLogsBtn.addEventListener('click', loadAuditLogs);
   applyAuditFiltersBtn.addEventListener('click', applyFilters);
