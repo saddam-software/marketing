@@ -124,10 +124,10 @@ class SmartLocationFinder {
         this.closeProfileModalBottomBtn.addEventListener('click', () => this.toggleModal(false));
     }
 
- async loadGeoHierarchy() {
-        // আপনার লগইন সিস্টেমের টোকেনটি এখানে ধরিয়ে দিন
-        // উদাহরণস্বরূপ: localStorage.getItem('token')
-        const token = localStorage.getItem('token') || 'YOUR_AUTH_TOKEN_HERE'; 
+
+async loadGeoHierarchy() {
+        // ব্রাউজারে সেভ থাকা আসল টোকেনটি স্বয়ংক্রিয়ভাবে এখানে চলে আসবে
+        const token = localStorage.getItem('emailExtractorToken'); 
         
         const headers = {
             'Authorization': `Bearer ${token}`,
