@@ -7,6 +7,16 @@ kv_namespaces = [
   { binding = "SECRETS_KV", id = "YOUR_KV_NAMESPACE_ID", preview_id = "YOUR_KV_PREVIEW_ID" }
 ]
 
+
+# ===== Cloudflare Pages Functions Routes =====
+# এই সেকশনটি যোগ করেছি যাতে /api/ পাথগুলো সঠিকভাবে রুট হয়
+routes = [
+  { pattern = "example.com/api/*", zone_name = "example.com" }
+]
+
+
+
+
 # Environment variables (production)
 [env.production]
 vars = {
