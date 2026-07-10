@@ -192,14 +192,20 @@ export async function onRequest(context) {
           400
         );
       }
-      const key = `api:key:${apiName}`;
-      const config = { key: apiKey, updatedAt: new Date().toISOString() };
-      if (apiName === 'sms') {
-        config.provider = provider || 'custom';
-        config.baseUrl = baseUrl || '';
-        config.defaultSender = defaultSender || '';
-      }
-      await kv.put(key, JSON.stringify(config));
+ // 🔄 পরিবর্তন করে যা বসাবেন (নতুন সব API-এর এক্সট্রা সেটিংসের জন্য):
+const key = `api:key:${apiName}`;
+const config = { key: apiKey, updatedAt: new Date().toISOString() };
+
+// যদি রিকোয়েস্টে অন্য কোনো এক্সট্রা সেটিংস (যেমন Base URL বা Sender ID) পাঠানো হয়, তাও সেভ হবে
+if (provider) config.provider = provider;
+if (baseUrl) config.baseUrl = baseUrl;
+if (defaultSender) config.defaultSender = defaultSender;
+
+await kv.put(key, JSON.stringify(config));
+
+
+
+      
       await auditLogger.log('API_KEY_UPDATED', {
         username: auth.username,
         apiName,
@@ -417,17 +423,33 @@ export async function onRequest(context) {
       if (!auth.valid) {
         return jsonResponse({ success: false, error: auth.error }, 401);
       }
-      const brevoKey = await kv.get('api:key:brevo');
-      const smsKey = await kv.get('api:key:sms');
-      const abstractKey = await kv.get('api:key:abstract');
-      const settings = {
-        adminUsername: ADMIN_USERNAME,
-        brevoConfigured: !!(brevoKey || BREVO_API_KEY),
-        smsConfigured: !!smsKey,
-        abstractConfigured: !!abstractKey,
-        rateLimitLogin: '5 per 15 minutes',
-        retentionDays: 90,
-      };
+
+
+      
+    // 🔄 পরিবর্তন করে যা বসাবেন (নতুন ৪টি API-এর স্ট্যাটাসসহ):
+const brevoKey = await kv.get('api:key:brevo');
+const smsKey = await kv.get('api:key:sms');
+const abstractKey = await kv.get('api:key:abstract');
+const callKey = await kv.get('api:key:call');
+const textKey = await kv.get('api:key:text');
+const websiteKey = await kv.get('api:key:website');
+const locationKey = await kv.get('api:key:location');
+
+const settings = {
+  adminUsername: ADMIN_USERNAME,
+  brevoConfigured: !!(brevoKey || BREVO_API_KEY),
+  smsConfigured: !!smsKey,
+  abstractConfigured: !!abstractKey,
+  callConfigured: !!callKey,
+  textConfigured: !!textKey,
+  websiteConfigured: !!websiteKey,
+  locationConfigured: !!locationKey,
+  rateLimitLogin: '5 per 15 minutes',
+  retentionDays: 90,
+};
+
+
+      
       return jsonResponse({ success: true, settings });
     }
 
