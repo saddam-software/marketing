@@ -1,153 +1,288 @@
-<!-- public/location-contact-search/index.html -->
-<div id="locationContactSearch" class="space-y-6">
-  <!-- ========== HEADER / INFO ========== -->
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-        Location‑Based Search
-      </h2>
-      <p class="text-sm text-slate-500 mt-0.5">Discover people, businesses &amp; services by location</p>
+<div id="locationContactSearch" class="space-y-6 fade-in" aria-label="Location Based Smart Search Module">
+  
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+      <div>
+        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Indexed Profiles</p>
+        <h4 id="metaTotalProfiles" class="text-2xl font-bold text-slate-800 mt-1">--</h4>
+      </div>
+      <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+      </div>
     </div>
-    <div class="flex items-center gap-2 text-xs bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-200">
-      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
-      <span class="text-slate-600 font-medium">Live Data</span>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+      <div>
+        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Verified Master Profiles</p>
+        <h4 id="metaVerifiedProfiles" class="text-2xl font-bold text-emerald-600 mt-1">--</h4>
+      </div>
+      <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+      <div>
+        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Avg Confidence Score</p>
+        <h4 id="metaAvgConfidence" class="text-2xl font-bold text-amber-600 mt-1">--</h4>
+      </div>
+      <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+      <div>
+        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Geocoded Entities</p>
+        <h4 id="metaGeocodedCount" class="text-2xl font-bold text-purple-600 mt-1">--</h4>
+      </div>
+      <div class="p-3 bg-purple-50 text-purple-600 rounded-lg">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+      </div>
     </div>
   </div>
 
-  <!-- ========== MAIN GRID ========== -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    
+    <div class="lg:col-span-1 space-y-4">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+          <h3 class="text-md font-bold text-slate-800 flex items-center gap-2">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+            Advanced Engine Filters
+          </h3>
+          <button id="resetAllFiltersBtn" type="button" class="text-xs text-slate-500 hover:text-blue-600 font-medium transition-colors">Reset All</button>
+        </div>
 
-    <!-- ===== CONTROL PANEL ===== -->
-    <div class="lg:col-span-1">
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-24 z-10 transition-shadow hover:shadow-md">
-        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
-          </svg>
-          Filters
-        </h3>
-
-        <form id="locationSearchForm" class="space-y-4" novalidate>
-          <!-- Division -->
+        <form id="advancedSearchForm" class="space-y-4" onsubmit="return false;">
+          
           <div>
-            <label for="divisionSelect" class="block text-sm font-semibold text-slate-700 mb-1.5">
-              Division <span class="text-red-500">*</span>
-            </label>
-            <select id="divisionSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white" aria-required="true">
+            <label for="entityTypeSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Entity Architecture Type</label>
+            <select id="entityTypeSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+              <option value="all">All Entities (Combined Profile)</option>
+              <option value="BUSINESS">Business (Company, Retail, Startups)</option>
+              <option value="PROFESSIONAL">Professionals (Freelancers, Consultants)</option>
+              <option value="CREATOR">Digital Creators (Influencers, YouTubers)</option>
+              <option value="SERVICE">Services (Hospitals, Institutions)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="divisionSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Geographic Division</label>
+            <select id="divisionSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
               <option value="">— Select Division —</option>
             </select>
-            <p class="text-[11px] text-slate-400 mt-1">বাংলাদেশের ৮টি বিভাগ</p>
           </div>
 
-          <!-- District -->
           <div>
-            <label for="districtSelect" class="block text-sm font-semibold text-slate-700 mb-1.5">
-              District <span class="text-red-500">*</span>
-            </label>
-            <select id="districtSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white" aria-required="true" disabled>
+            <label for="districtSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">District / State</label>
+            <select id="districtSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
               <option value="">— Select District —</option>
             </select>
-            <p class="text-[11px] text-slate-400 mt-1">৬৪টি জেলা</p>
           </div>
 
-          <!-- Thana / Upazila -->
           <div>
-            <label for="thanaSelect" class="block text-sm font-semibold text-slate-700 mb-1.5">
-              Thana / Upazila <span class="text-red-500">*</span>
-            </label>
-            <select id="thanaSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white" aria-required="true" disabled>
+            <label for="thanaSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Thana / Upazila / Zone</label>
+            <select id="thanaSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
               <option value="">— Select Thana —</option>
             </select>
-            <p class="text-[11px] text-slate-400 mt-1">উপজেলা / থানা</p>
           </div>
 
-          <!-- Entity Type (future-ready) -->
+          <div class="pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center mb-1">
+              <label for="geoRadiusSlider" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Spatial Search Radius</label>
+              <span id="radiusValueDisplay" class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Global</span>
+            </div>
+            <input type="range" id="geoRadiusSlider" min="0" max="100" value="0" step="5" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+              <span>Exact Match</span>
+              <span>50 KM</span>
+              <span>100 KM+</span>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center mb-1">
+              <label for="confidenceScoreSlider" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Min Confidence Score</label>
+              <span id="confidenceValueDisplay" class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">0%</span>
+            </div>
+            <input type="range" id="confidenceScoreSlider" min="0" max="100" value="0" step="10" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+          </div>
+
           <div>
-            <label for="entityTypeSelect" class="block text-sm font-semibold text-slate-700 mb-1.5">Entity Type</label>
-            <select id="entityTypeSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white">
-              <option value="all">All</option>
-              <option value="business">Business</option>
-              <option value="professional">Professional</option>
-              <option value="creator">Creator</option>
-              <option value="service">Service</option>
+            <label for="verificationStatusSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Verification Framework</label>
+            <select id="verificationStatusSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+              <option value="all">All Profiles</option>
+              <option value="VERIFIED">Fully Verified (Score 90+)</option>
+              <option value="PARTIAL">Partially Enriched</option>
+              <option value="UNVERIFIED">Unverified / Raw Crawler Data</option>
             </select>
           </div>
 
-          <!-- Confidence Score (future filter) -->
-          <div class="hidden" id="confidenceFilterWrapper">
-            <label for="confidenceRange" class="block text-sm font-semibold text-slate-700 mb-1.5">Min Confidence</label>
-            <input type="range" id="confidenceRange" min="0" max="100" value="50" class="w-full accent-blue-600">
-            <div class="flex justify-between text-xs text-slate-500"><span>0%</span><span id="confidenceValue">50%</span><span>100%</span></div>
+          <div class="pt-2 border-t border-slate-100 space-y-2">
+            <span class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Data Channel Availability</span>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                <input type="checkbox" id="hasEmailCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                <span>Has Email</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                <input type="checkbox" id="hasPhoneCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                <span>Has Phone</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                <input type="checkbox" id="hasWhatsappCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                <span>Has WhatsApp</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                <input type="checkbox" id="hasSocialCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                <span>Has Socials</span>
+              </label>
+            </div>
           </div>
 
-          <!-- Search Button -->
-          <button type="submit" id="searchLocationBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            Search Contacts
-          </button>
-
-          <!-- Status / Message -->
-          <div id="locationSearchStatus" class="hidden p-3 rounded-lg text-sm font-medium transition-all" role="status" aria-live="polite"></div>
+          <div class="pt-2">
+            <button id="searchLocationBtn" type="button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              Execute Smart Find
+            </button>
+          </div>
         </form>
       </div>
     </div>
 
-    <!-- ===== RESULTS PANEL ===== -->
-    <div class="lg:col-span-2">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[580px] lg:h-[620px]">
-        <!-- Table Header -->
-        <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <h3 class="font-semibold text-slate-800 text-sm">📍 Contacts</h3>
-            <span id="locationResultCount" class="text-xs bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full font-medium">0</span>
+    <div class="lg:col-span-3 space-y-4 flex flex-col h-full">
+      
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+          </span>
+          <input type="text" id="smartNlpSearchInput" placeholder="Try AI Query: 'Software agency in Dhaka with verified email' or type keywords..." class="w-full text-sm pl-10 pr-24 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+          <div class="absolute inset-y-1.5 right-1.5 flex items-center gap-1.5">
+            <span id="aiIntentBadge" class="hidden text-[10px] font-semibold bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-200 tracking-wide">AI Intent Parsed</span>
+            <button id="clearSmartSearchBtn" type="button" class="text-xs text-slate-400 hover:text-slate-600 px-2 transition-colors">Clear</button>
           </div>
-          <div class="flex items-center gap-2 text-xs">
-            <button id="exportLocationCsv" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5" disabled>
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
-              Export CSV
-            </button>
-            <button id="refreshLocationResults" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-              </svg>
-              Refresh
+        </div>
+        <div id="autocompleteSuggestions" class="hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+          </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col flex-1 min-h-[550px]">
+        
+        <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm sm:text-base">
+              <span>📍</span> Master Profile Directory
+            </h3>
+            <span id="locationResultCount" class="text-xs font-semibold bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full" aria-live="polite">0 Records</span>
+          </div>
+
+          <div class="flex items-center gap-2 self-end sm:self-auto">
+            <div id="bulkActionsWrapper" class="hidden items-center gap-1.5 transition-all">
+              <select id="bulkActionSelect" class="text-xs bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500">
+                <option value="">— Bulk Actions —</option>
+                <option value="export">Export Selected (CSV)</option>
+                <option value="verify">Verify Selected Framework</option>
+                <option value="merge">Merge Profiles (Deduplicate)</option>
+                <option value="tag">Add Metadata Tag</option>
+              </select>
+              <button id="executeBulkBtn" type="button" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded transition-all">Apply</button>
+            </div>
+            
+            <div class="h-6 w-px bg-slate-200 mx-1 hidden id-bulk-separator"></div>
+
+            <button id="exportLocationCsv" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Export Directory
             </button>
           </div>
         </div>
 
-        <!-- Scrollable Table -->
-        <div class="flex-1 overflow-y-auto p-0">
-          <table class="data-table w-full" id="locationResultTable" aria-label="Location search results">
-            <thead class="sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10">
-              <tr>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200">Name</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200">Email</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200">Phone</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200">Thana</th>
+        <div id="locationSearchStatus" class="hidden px-4 py-2.5 border-b text-xs font-medium transition-all" role="alert"></div>
+
+        <div class="flex-1 overflow-x-auto relative min-h-[350px]">
+          <table class="data-table w-full text-left border-collapse" id="locationResultTable">
+            <thead class="sticky top-0 bg-slate-100 z-10 shadow-xs border-b border-slate-200">
+              <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="w-10 p-3 text-center">
+                  <input type="checkbox" id="selectAllProfilesCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer">
+                </th>
+                <th class="p-3 cursor-pointer select-none group" data-sort="name">
+                  Entity & Master Identity 
+                  <span class="inline-block ml-1 text-slate-400 group-hover:text-slate-600">↕</span>
+                </th>
+                <th class="p-3">Data Channels</th>
+                <th class="p-3">Spatial Hierarchy</th>
+                <th class="p-3 cursor-pointer select-none group text-center" data-sort="confidence">
+                  Trust Matrix
+                  <span class="inline-block ml-1 text-slate-400 group-hover:text-slate-600">↕</span>
+                </th>
+                <th class="p-3 text-right">Engine Matrix</th>
               </tr>
             </thead>
-            <tbody id="locationResultBody">
+            <tbody id="locationResultBody" class="divide-y divide-slate-100 text-sm text-slate-700">
               <tr>
-                <td colspan="4" class="text-center text-slate-500 py-10 text-sm">Select division, district &amp; thana to search</td>
+                <td colspan="6" class="text-center text-slate-500 py-16">
+                  <div class="flex flex-col items-center justify-center space-y-3">
+                    <div class="p-4 bg-slate-50 text-slate-400 rounded-full">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </div>
+                    <div>
+                      <p class="font-semibold text-slate-700">System Ready for Query Optimization</p>
+                      <p class="text-xs text-slate-400 mt-1 max-w-sm">Select geographical boundaries or input an AI parsing intent expression to load distributed master dataset.</p>
+                    </div>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Table Footer -->
-        <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
-          <span id="locationResultMeta">—</span>
-          <span id="locationLastUpdated" class="text-[10px] text-slate-400"></span>
+        <div class="p-4 border-t border-slate-200 bg-slate-50/80 rounded-b-xl flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+          <div id="locationResultMeta" class="font-medium tracking-wide">
+            Awaiting parameters execution.
+          </div>
+          
+          <div id="tablePaginationWrapper" class="flex items-center gap-4 hidden">
+            <div class="flex items-center gap-1.5">
+              <span>Rows per page:</span>
+              <select id="paginationLimitSelect" class="bg-white border border-slate-200 rounded p-1 text-xs text-slate-700 focus:outline-none">
+                <option value="10">10</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            
+            <div class="flex items-center gap-1">
+              <button id="prevPageBtn" type="button" class="p-1.5 bg-white border border-slate-200 rounded hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all" disabled>
+                ‹ Prev
+              </button>
+              <span class="text-slate-600 font-medium px-1"><span id="currentPageNumDisplay">1</span> / <span id="totalPageNumDisplay">1</span></span>
+              <button id="nextPageBtn" type="button" class="p-1.5 bg-white border border-slate-200 rounded hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all" disabled>
+                Next ›
+              </button>
+            </div>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
+
+  <div id="masterProfileDetailsModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modalProfileTitle">
+    <div class="bg-white w-full max-w-2xl rounded-xl shadow-xl border border-slate-200 overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <h3 id="modalProfileTitle" class="font-bold text-slate-800 text-base flex items-center gap-2">
+          <span>🛡️</span> Master Identity Ledger Profile
+        </h3>
+        <button id="closeProfileModalBtn" type="button" class="text-slate-400 hover:text-slate-600 text-lg font-bold px-2 transition-colors">&times;</button>
+      </div>
+      <div id="modalProfileBody" class="p-6 overflow-y-auto space-y-6 text-sm text-slate-700">
+        </div>
+      <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+        <button id="verifyProfileInstanceBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs py-1.5 px-3 rounded transition-all">Verify Node</button>
+        <button id="closeProfileModalBottomBtn" type="button" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-xs py-1.5 px-3 rounded transition-all">Close Entry</button>
+      </div>
+    </div>
+  </div>
+
 </div>
