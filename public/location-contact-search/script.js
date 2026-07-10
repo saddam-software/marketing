@@ -124,28 +124,77 @@ class SmartLocationFinder {
         this.closeProfileModalBottomBtn.addEventListener('click', () => this.toggleModal(false));
     }
 
-    // Mock Data for Geo Hierarchy (Replace with actual DB/API call later)
-    loadGeoHierarchy() {
-        const divisions = ['Dhaka', 'Chattogram', 'Sylhet', 'Rajshahi'];
-        divisions.forEach(div => {
-            let option = document.createElement('option');
-            option.value = div.toLowerCase();
-            option.textContent = div;
-            this.divisionSelect.appendChild(option);
-        });
+ async loadGeoHierarchy() {
+        // আপনার লগইন সিস্টেমের টোকেনটি এখানে ধরিয়ে দিন
+        // উদাহরণস্বরূপ: localStorage.getItem('token')
+        const token = localStorage.getItem('token') || 'YOUR_AUTH_TOKEN_HERE'; 
+        
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
 
-        // Basic Cascading Logic Example
-        this.divisionSelect.addEventListener('change', (e) => {
-            this.districtSelect.innerHTML = '<option value="">— Select District —</option>';
-            if(e.target.value === 'dhaka') {
-                ['Dhaka', 'Gazipur', 'Narayanganj'].forEach(dist => {
-                    let opt = document.createElement('option');
-                    opt.value = dist.toLowerCase();
-                    opt.textContent = dist;
-                    this.districtSelect.appendChild(opt);
+        try {
+            // ১. Division লোড করা
+            const divResponse = await fetch('/api/finder-api/location-secret?action=getDivisions', { headers });
+            const divData = await divResponse.json();
+            
+            if (divData.success && divData.divisions) {
+                // আগের ডামি অপশনগুলো সরাতে চাইলে divisionSelect.innerHTML ক্লিয়ার করে নিতে পারেন
+                this.divisionSelect.innerHTML = '<option value="">— Select Division —</option>';
+                
+                divData.divisions.forEach(div => {
+                    let option = document.createElement('option');
+                    option.value = div.id;
+                    option.textContent = div.name;
+                    this.divisionSelect.appendChild(option);
                 });
             }
-        });
+
+            // ২. Division সিলেক্ট করলে District লোড হবে
+            this.divisionSelect.addEventListener('change', async (e) => {
+                this.districtSelect.innerHTML = '<option value="">— Select District —</option>';
+                this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
+                
+                const divisionId = e.target.value;
+                if (!divisionId) return;
+
+                const distResponse = await fetch(`/api/finder-api/location-secret?action=getDistricts&division=${divisionId}`, { headers });
+                const distData = await distResponse.json();
+                
+                if (distData.success && distData.districts) {
+                    distData.districts.forEach(dist => {
+                        let opt = document.createElement('option');
+                        opt.value = dist.id;
+                        opt.textContent = dist.name;
+                        this.districtSelect.appendChild(opt);
+                    });
+                }
+            });
+
+            // ৩. District সিলেক্ট করলে Thana লোড হবে
+            this.districtSelect.addEventListener('change', async (e) => {
+                this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
+                
+                const districtId = e.target.value;
+                if (!districtId) return;
+
+                const thanaResponse = await fetch(`/api/finder-api/location-secret?action=getThanas&district=${districtId}`, { headers });
+                const thanaData = await thanaResponse.json();
+                
+                if (thanaData.success && thanaData.thanas) {
+                    thanaData.thanas.forEach(thana => {
+                        let opt = document.createElement('option');
+                        opt.value = thana.id;
+                        opt.textContent = thana.name;
+                        this.thanaSelect.appendChild(opt);
+                    });
+                }
+            });
+
+        } catch (error) {
+            console.error("Geographic data loading failed:", error);
+        }
     }
 
     resetFilters() {
