@@ -2,6 +2,8 @@
  * AI-Powered Smart People & Business Finder Platform
  * File: public/location-contact-search/script.js
  * Clean version – no debug logs, only critical errors.
+ * 
+ * Updated: Verify Node feature (Option A) implemented.
  */
 
 (function() {
@@ -38,6 +40,7 @@
                 },
                 data: []
             };
+            this.currentModalProfileId = null; // stores profile id for verification
             this.retryCount = 0;
             this.maxRetries = 5;
             this.init();
@@ -99,6 +102,8 @@
             this.masterProfileDetailsModal = document.getElementById('masterProfileDetailsModal');
             this.closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
             this.closeProfileModalBottomBtn = document.getElementById('closeProfileModalBottomBtn');
+            // Verify Node button
+            this.verifyProfileInstanceBtn = document.getElementById('verifyProfileInstanceBtn');
         }
 
         bindEvents() {
@@ -139,6 +144,8 @@
             });
             this.closeProfileModalBtn?.addEventListener('click', () => this.toggleModal(false));
             this.closeProfileModalBottomBtn?.addEventListener('click', () => this.toggleModal(false));
+            // Verify Node click handler
+            this.verifyProfileInstanceBtn?.addEventListener('click', () => this.verifyCurrentProfile());
         }
 
         getAuthHeaders() {
@@ -407,6 +414,9 @@
             const profile = this.state.data.find(p => p.id === profileId);
             if(!profile) return;
 
+            // Store current profile id for verify action
+            this.currentModalProfileId = profileId;
+
             document.getElementById('modalProfileTitle').innerHTML = `<span>🛡️</span> Entity Reference: #${profile.id}`;
             
             document.getElementById('modalProfileBody').innerHTML = `
@@ -447,6 +457,7 @@
                 this.masterProfileDetailsModal.classList.remove('hidden');
             } else {
                 this.masterProfileDetailsModal.classList.add('hidden');
+                this.currentModalProfileId = null;
             }
         }
 
@@ -455,6 +466,63 @@
             document.getElementById('metaVerifiedProfiles').textContent = 'Secured';
             document.getElementById('metaAvgConfidence').textContent = 'Engine';
             document.getElementById('metaGeocodedCount').textContent = 'Active';
+        }
+
+        // ================= VERIFY NODE FEATURE =================
+        async verifyCurrentProfile() {
+            if (!this.currentModalProfileId) {
+                alert('No profile selected for verification.');
+                return;
+            }
+
+            const token = localStorage.getItem('emailExtractorToken');
+            if (!token) {
+                alert('Authentication required. Please log in again.');
+                return;
+            }
+
+            const btn = this.verifyProfileInstanceBtn;
+            const originalText = btn.textContent;
+            btn.textContent = 'Verifying...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/finder-api/location-secret?action=verifyProfile', {
+                    method: 'POST',
+                    headers: this.getAuthHeaders(),
+                    body: JSON.stringify({ profileId: this.currentModalProfileId })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update local state data
+                    const profileIndex = this.state.data.findIndex(p => p.id === this.currentModalProfileId);
+                    if (profileIndex !== -1) {
+                        this.state.data[profileIndex].verificationStatus = data.profile.verificationStatus;
+                        this.state.data[profileIndex].confidenceScore = data.profile.confidenceScore;
+                    }
+
+                    // Re-render table
+                    this.renderTable();
+
+                    // Re-open modal to reflect updated data
+                    const updatedProfile = this.state.data.find(p => p.id === this.currentModalProfileId);
+                    if (updatedProfile) {
+                        this.openProfileModal(this.currentModalProfileId);
+                    }
+
+                    this.locationResultMeta.textContent = '✅ Profile successfully verified!';
+                    // Optionally update stats bar (if you want to show real counts)
+                    // this.updateStatsBar(); 
+                } else {
+                    alert('Verification failed: ' + (data.error || 'Unknown error'));
+                }
+            } catch (_) {
+                alert('Network error while verifying. Please try again.');
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
         }
     }
 
