@@ -1,6 +1,6 @@
 /**
  * AI-Powered Smart People & Business Finder Platform - Core Spatial API
- * Clean version – no console logs.
+ * D1 Database integration – Full version.
  */
 
 function base64UrlToBuffer(str) {
@@ -43,7 +43,7 @@ async function verifyJWT(token, secret) {
 }
 
 // =========================================================================
-// GEO REGISTRY (Full Bangladesh 8 Divisions, 26+ Districts, 20+ Thanas)
+// GEO REGISTRY (Static – unchanged)
 // =========================================================================
 const ENTERPRISE_GEO_REGISTRY = {
   divisions: {
@@ -108,216 +108,6 @@ const ENTERPRISE_GEO_REGISTRY = {
 };
 
 // =========================================================================
-// MASTER PROFILES (18+ sample entities)
-// =========================================================================
-const MASTER_PROFILES_REPOSITORY = [
-  {
-    id: 'MP-001',
-    name: 'TechNova Solutions Ltd.',
-    entityType: 'BUSINESS',
-    division: 'dhaka',
-    district: 'dhaka',
-    thana: 'gulshan',
-    coordinates: { lat: 23.7929, lng: 90.4082 },
-    channels: { email: 'info@technova.io', phone: '+8801712345678', whatsapp: '+8801712345678', social: 'linkedin.com/company/technova' },
-    confidenceScore: 98,
-    verificationStatus: 'VERIFIED'
-  },
-  {
-    id: 'MP-002',
-    name: 'Dr. Sarah Rahman (Data AI Consultant)',
-    entityType: 'PROFESSIONAL',
-    division: 'dhaka',
-    district: 'dhaka',
-    thana: 'dhanmondi',
-    coordinates: { lat: 23.7465, lng: 90.3750 },
-    channels: { email: 'sarah.ai@freelance.net', phone: '+8801812345679', whatsapp: '', social: 'github.com/sarah-ai' },
-    confidenceScore: 92,
-    verificationStatus: 'VERIFIED'
-  },
-  {
-    id: 'MP-003',
-    name: 'Creative Pixel Studio',
-    entityType: 'CREATOR',
-    division: 'dhaka',
-    district: 'dhaka',
-    thana: 'mirpur',
-    coordinates: { lat: 23.8050, lng: 90.3670 },
-    channels: { email: '', phone: '+8801912345680', whatsapp: '+8801912345680', social: 'youtube.com/creativepixel' },
-    confidenceScore: 78,
-    verificationStatus: 'PARTIAL'
-  },
-  {
-    id: 'MP-004',
-    name: 'Software Valley Ltd.',
-    entityType: 'BUSINESS',
-    division: 'dhaka',
-    district: 'dhaka',
-    thana: 'uttara',
-    coordinates: { lat: 23.8729, lng: 90.3987 },
-    channels: { email: 'contact@swvalley.com', phone: '+8801712345690', whatsapp: '+8801712345690', social: 'twitter.com/swvalley' },
-    confidenceScore: 95,
-    verificationStatus: 'VERIFIED'
-  },
-  {
-    id: 'MP-005',
-    name: 'Green Textile Mills',
-    entityType: 'BUSINESS',
-    division: 'dhaka',
-    district: 'gazipur',
-    thana: 'gazipur_sadar',
-    coordinates: { lat: 23.9994, lng: 90.4204 },
-    channels: { email: 'info@greentex.com', phone: '+8801812345681', whatsapp: '', social: '' },
-    confidenceScore: 85,
-    verificationStatus: 'VERIFIED'
-  },
-  {
-    id: 'MP-006',
-    name: 'Chittagong Port Logistics Hub',
-    entityType: 'BUSINESS',
-    division: 'chattogram',
-    district: 'chattogram',
-    thana: 'halishahar',
-    coordinates: { lat: 22.3360, lng: 91.7820 },
-    channels: { email: 'ops@ctglogistics.com', phone: '+8801512345681', whatsapp: '', social: '' },
-    confidenceScore: 88,
-    verificationStatus: 'VERIFIED'
-  },
-  {
-    id: 'MP-007',
-    name: 'Dr. Anwar Hossain (Marine Biologist)',
-    entityType: 'PROFESSIONAL',
-    division: 'chattogram',
-    district: 'chattogram',
-    thana: 'khulshi',
-    coordinates: { lat: 22.3519, lng: 91.7961 },
-    channels: { email: 'anwar.marine@research.org', phone: '+8801812345682', whatsapp: '', social: 'researchgate.net/anwar' },
-    confidenceScore: 91,
-    verificationStatus: 'VERIFIED'
-  },
-  {
-    id: 'MP-008',
-    name: 'Seagull Resort & Spa',
-    entityType: 'SERVICE',
-    division: 'chattogram',
-    district: 'cox_bazar',
-    thana: 'cox_bazar_sadar',
-    coordinates: { lat: 21.4272, lng: 92.0058 },
-    channels: { email: 'reservations@seagull.com', phone: '+8801712345691', whatsapp: '+8801712345691', social: 'facebook.com/seagullresort' },
-    confidenceScore: 82,
-    verificationStatus: 'PARTIAL'
-  },
-  {
-    id: 'MP-009',
-    name: 'Tea Valley Agro Ltd.',
-    entityType: 'BUSINESS',
-    division: 'sylhet',
-    district: 'sylhet',
-    thana: 'sylhet_sadar',
-    coordinates: { lat: 24.8996, lng: 91.8710 },
-    channels: { email: 'info@teavalley.com', phone: '+8801912345692', whatsapp: '', social: '' },
-    confidenceScore: 76,
-    verificationStatus: 'PARTIAL'
-  },
-  {
-    id: 'MP-010',
-    name: 'Sylhet Digital Hub',
-    entityType: 'BUSINESS',
-    division: 'sylhet',
-    district: 'sylhet',
-    thana: 'shahparan',
-    coordinates: { lat: 24.9038, lng: 91.8698 },
-    channels: { email: 'hello@sylhetdigital.com', phone: '+8801712345693', whatsapp: '+8801712345693', social: 'twitter.com/sylhetdig' },
-    confidenceScore: 93,
-    verificationStatus: 'VERIFIED'
-  },
-  {
-    id: 'MP-011',
-    name: 'Rajshahi Silk House',
-    entityType: 'BUSINESS',
-    division: 'rajshahi',
-    district: 'rajshahi',
-    thana: 'rajshahi_sadar',
-    coordinates: { lat: 24.3745, lng: 88.6041 },
-    channels: { email: 'silk@rajshahi.com', phone: '+8801812345694', whatsapp: '', social: '' },
-    confidenceScore: 70,
-    verificationStatus: 'PARTIAL'
-  },
-  {
-    id: 'MP-012',
-    name: 'Sundarban Eco Tours',
-    entityType: 'SERVICE',
-    division: 'khulna',
-    district: 'khulna',
-    thana: 'khulna_sadar',
-    coordinates: { lat: 22.8456, lng: 89.5403 },
-    channels: { email: 'info@sundarbantours.com', phone: '+8801712345695', whatsapp: '+8801712345695', social: 'instagram.com/sundarbaneco' },
-    confidenceScore: 86,
-    verificationStatus: 'VERIFIED'
-  },
-  {
-    id: 'MP-013',
-    name: 'Riverine Fisheries Ltd.',
-    entityType: 'BUSINESS',
-    division: 'barishal',
-    district: 'barishal',
-    thana: 'barishal_sadar',
-    coordinates: { lat: 22.7010, lng: 90.3535 },
-    channels: { email: 'catch@riverine.com', phone: '+8801912345696', whatsapp: '', social: '' },
-    confidenceScore: 80,
-    verificationStatus: 'PARTIAL'
-  },
-  {
-    id: 'MP-014',
-    name: 'Rangpur Agro Industries',
-    entityType: 'BUSINESS',
-    division: 'rangpur',
-    district: 'rangpur',
-    thana: 'rangpur_sadar',
-    coordinates: { lat: 25.7468, lng: 89.2508 },
-    channels: { email: 'agro@rangpur.com', phone: '+8801812345697', whatsapp: '', social: '' },
-    confidenceScore: 75,
-    verificationStatus: 'PARTIAL'
-  },
-  {
-    id: 'MP-015',
-    name: 'Mymensingh Dairy Co.',
-    entityType: 'BUSINESS',
-    division: 'mymensingh',
-    district: 'mymensingh',
-    thana: 'mymensingh_sadar',
-    coordinates: { lat: 24.7471, lng: 90.4203 },
-    channels: { email: 'dairy@mymensingh.com', phone: '+8801712345698', whatsapp: '', social: '' },
-    confidenceScore: 68,
-    verificationStatus: 'UNVERIFIED'
-  },
-  {
-    id: 'MP-016',
-    name: 'Nadia Akhter (Content Creator)',
-    entityType: 'CREATOR',
-    division: 'dhaka',
-    district: 'dhaka',
-    thana: 'motijheel',
-    coordinates: { lat: 23.7330, lng: 90.4172 },
-    channels: { email: 'nadia@contentstudio.com', phone: '', whatsapp: '', social: 'youtube.com/nadia_creates' },
-    confidenceScore: 85,
-    verificationStatus: 'VERIFIED'
-  },
-  {
-    id: 'MP-017',
-    name: 'IT Support Bangladesh',
-    entityType: 'SERVICE',
-    division: 'dhaka',
-    district: 'narayanganj',
-    thana: 'narayanganj_sadar',
-    coordinates: { lat: 23.6233, lng: 90.5000 },
-    channels: { email: 'support@itbd.com', phone: '+8801812345699', whatsapp: '+8801812345699', social: '' },
-    confidenceScore: 90,
-    verificationStatus: 'VERIFIED'
-  }
-];
-
-// =========================================================================
 // GEO INTELLIGENCE ENGINE
 // =========================================================================
 class GeoIntelligenceEngine {
@@ -344,7 +134,7 @@ class GeoIntelligenceEngine {
 }
 
 // =========================================================================
-// CLOUDFLARE WORKER HANDLER
+// CLOUDFLARE WORKER HANDLER – D1 VERSION
 // =========================================================================
 export async function onRequest(context) {
   const { request, env } = context;
@@ -362,6 +152,7 @@ export async function onRequest(context) {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Auth
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return jsonResponse({ success: false, error: 'Unauthorized' }, 401, corsHeaders);
@@ -373,12 +164,13 @@ export async function onRequest(context) {
     return jsonResponse({ success: false, error: 'Unauthorized' }, 401, corsHeaders);
   }
 
-  // Routes
+  // ----- getDivisions (static) -----
   if (action === 'getDivisions') {
     const data = Object.entries(ENTERPRISE_GEO_REGISTRY.divisions).map(([key, item]) => ({ id: key, name: item.name }));
     return jsonResponse({ success: true, divisions: data }, 200, corsHeaders);
   }
 
+  // ----- getDistricts (static) -----
   if (action === 'getDistricts') {
     const division = searchParams.get('division');
     if (!division) return jsonResponse({ success: false, error: 'Missing division' }, 400, corsHeaders);
@@ -389,6 +181,7 @@ export async function onRequest(context) {
     return jsonResponse({ success: true, districts: filtered }, 200, corsHeaders);
   }
 
+  // ----- getThanas (static) -----
   if (action === 'getThanas') {
     const district = searchParams.get('district');
     if (!district) return jsonResponse({ success: false, error: 'Missing district' }, 400, corsHeaders);
@@ -399,48 +192,50 @@ export async function onRequest(context) {
     return jsonResponse({ success: true, thanas: filtered }, 200, corsHeaders);
   }
 
-
-
-if (action === 'verifyProfile') {
+  // ================================================================
+  // verifyProfile – D1
+  // ================================================================
+  if (action === 'verifyProfile') {
     if (request.method !== 'POST') {
-        return jsonResponse({ success: false, error: 'Method not allowed' }, 405, corsHeaders);
+      return jsonResponse({ success: false, error: 'Method not allowed' }, 405, corsHeaders);
     }
-
     let body;
-    try {
-        body = await request.json();
-    } catch (_) {
-        return jsonResponse({ success: false, error: 'Invalid JSON body' }, 400, corsHeaders);
+    try { body = await request.json(); } catch (_) {
+      return jsonResponse({ success: false, error: 'Invalid JSON body' }, 400, corsHeaders);
     }
-
     const { profileId } = body;
     if (!profileId) {
-        return jsonResponse({ success: false, error: 'Missing profileId' }, 400, corsHeaders);
+      return jsonResponse({ success: false, error: 'Missing profileId' }, 400, corsHeaders);
     }
 
-    // Find profile in repository
-    const profile = MASTER_PROFILES_REPOSITORY.find(p => p.id === profileId);
-    if (!profile) {
+    try {
+      const updateQuery = `
+        UPDATE profiles 
+        SET verificationStatus = 'VERIFIED', 
+            confidenceScore = GREATEST(confidenceScore, 92)
+        WHERE id = ?
+        RETURNING id, verificationStatus, confidenceScore
+      `;
+      const result = await env.DB.prepare(updateQuery).bind(profileId).first();
+      if (!result) {
         return jsonResponse({ success: false, error: 'Profile not found' }, 404, corsHeaders);
-    }
-
-    // Update status and score (if not already VERIFIED, you can still update)
-    profile.verificationStatus = 'VERIFIED';
-    profile.confidenceScore = Math.max(profile.confidenceScore, 92); // set to at least 92
-
-    return jsonResponse({
+      }
+      return jsonResponse({
         success: true,
         profile: {
-            id: profile.id,
-            verificationStatus: profile.verificationStatus,
-            confidenceScore: profile.confidenceScore
+          id: result.id,
+          verificationStatus: result.verificationStatus,
+          confidenceScore: result.confidenceScore
         }
-    }, 200, corsHeaders);
-}
+      }, 200, corsHeaders);
+    } catch (err) {
+      return jsonResponse({ success: false, error: 'Database error: ' + err.message }, 500, corsHeaders);
+    }
+  }
 
-
-
-  
+  // ================================================================
+  // search – D1 with pagination & filters
+  // ================================================================
   if (action === 'search') {
     const queryTerm = searchParams.get('query') || '';
     const entityType = searchParams.get('entityType') || 'all';
@@ -458,47 +253,94 @@ if (action === 'verifyProfile') {
     const limit = parseInt(searchParams.get('limit') || '25', 10);
     const offset = (page - 1) * limit;
 
-    let results = MASTER_PROFILES_REPOSITORY.filter(p => {
-      if (queryTerm) {
-        const q = queryTerm.toLowerCase();
-        if (!p.name.toLowerCase().includes(q) && !p.entityType.toLowerCase().includes(q)) return false;
-      }
-      if (entityType !== 'all' && p.entityType !== entityType) return false;
-      if (p.confidenceScore < minConfidence) return false;
-      if (verificationStatus !== 'all' && p.verificationStatus !== verificationStatus) return false;
-      if (division && p.division !== GeoIntelligenceEngine.normalizeQueryLocation(division)) return false;
-      if (district && p.district !== GeoIntelligenceEngine.normalizeQueryLocation(district)) return false;
-      if (thana && p.thana !== GeoIntelligenceEngine.normalizeQueryLocation(thana)) return false;
+    const conditions = [];
+    const params = [];
 
-      if (radius > 0 && thana) {
-        const center = ENTERPRISE_GEO_REGISTRY.thanas[thana.toLowerCase()];
-        if (center) {
+    if (queryTerm) {
+      conditions.push(`(name LIKE ? OR entityType LIKE ?)`);
+      const q = `%${queryTerm}%`;
+      params.push(q, q);
+    }
+    if (entityType !== 'all') {
+      conditions.push(`entityType = ?`);
+      params.push(entityType);
+    }
+    if (minConfidence > 0) {
+      conditions.push(`confidenceScore >= ?`);
+      params.push(minConfidence);
+    }
+    if (verificationStatus !== 'all') {
+      conditions.push(`verificationStatus = ?`);
+      params.push(verificationStatus);
+    }
+    if (division) {
+      const normDiv = GeoIntelligenceEngine.normalizeQueryLocation(division);
+      conditions.push(`division = ?`);
+      params.push(normDiv);
+    }
+    if (district) {
+      const normDist = GeoIntelligenceEngine.normalizeQueryLocation(district);
+      conditions.push(`district = ?`);
+      params.push(normDist);
+    }
+    if (thana) {
+      const normThana = GeoIntelligenceEngine.normalizeQueryLocation(thana);
+      conditions.push(`thana = ?`);
+      params.push(normThana);
+    }
+    if (reqEmail) conditions.push(`email IS NOT NULL AND email != ''`);
+    if (reqPhone) conditions.push(`phone IS NOT NULL AND phone != ''`);
+    if (reqWhatsapp) conditions.push(`whatsapp IS NOT NULL AND whatsapp != ''`);
+    if (reqSocial) conditions.push(`social IS NOT NULL AND social != ''`);
+
+    let whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Count total
+    const countQuery = `SELECT COUNT(*) as total FROM profiles ${whereClause}`;
+    const countResult = await env.DB.prepare(countQuery).bind(...params).first();
+    let totalRecords = countResult ? countResult.total : 0;
+
+    // Data query
+    const dataQuery = `
+      SELECT 
+        id, name, entityType, division, district, thana,
+        lat, lng,
+        email, phone, whatsapp, social,
+        confidenceScore, verificationStatus
+      FROM profiles
+      ${whereClause}
+      LIMIT ? OFFSET ?
+    `;
+    const dataParams = [...params, limit, offset];
+    const dataResult = await env.DB.prepare(dataQuery).bind(...dataParams).all();
+    let results = dataResult.results || [];
+
+    // Apply radius filter in JS (since D1 SQLite lacks trig functions)
+    if (radius > 0 && thana) {
+      const center = ENTERPRISE_GEO_REGISTRY.thanas[thana.toLowerCase()];
+      if (center) {
+        results = results.filter(p => {
           const dist = GeoIntelligenceEngine.calculateDistance(
             center.lat, center.lng,
-            p.coordinates.lat, p.coordinates.lng
+            p.lat, p.lng
           );
-          if (dist > radius) return false;
-        }
+          return dist <= radius;
+        });
+        // Recalculate total after radius filtering
+        totalRecords = results.length;
       }
+    }
 
-      if (reqEmail && (!p.channels || !p.channels.email)) return false;
-      if (reqPhone && (!p.channels || !p.channels.phone)) return false;
-      if (reqWhatsapp && (!p.channels || !p.channels.whatsapp)) return false;
-      if (reqSocial && (!p.channels || !p.channels.social)) return false;
-
-      return true;
-    });
-
-    const total = results.length;
-    const paginated = results.slice(offset, offset + limit);
+    // Ensure pagination matches filtered results (re-slice)
+    const paginated = results.slice(0, limit);
 
     return jsonResponse({
       success: true,
       meta: {
-        totalRecords: total,
+        totalRecords: totalRecords,
         page,
         limit,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(totalRecords / limit)
       },
       contacts: paginated
     }, 200, corsHeaders);
