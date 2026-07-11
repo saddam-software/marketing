@@ -1,8 +1,60 @@
 /**
  * AI-Powered Smart People & Business Finder Platform - Core Spatial API
  * File: functions/api/finder-api/location-secret.js
- * Architecture: Enterprise Clean Engine (SOLID Compliant)
+ * Architecture: Enterprise Clean Engine (SOLID Compliant) + JWT Secure
  */
+
+// =========================================================================
+// 🛡️ NATIVE WEB CRYPTO JWT HELPER (সিকিউরিটি ইঞ্জিন)
+// ============================================================
+function base64UrlToBuffer(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  const binary = atob(str);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+// টোকেনটি আসল নাকি ভুয়া তা যাচাই করার ফাংশন
+async function verifyJWT(token, secret) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return { valid: false, error: 'Malformed token structure' };
+    
+    const [encodedHeader, encodedPayload, encodedSignature] = parts;
+    const dataToSign = `${encodedHeader}.${encodedPayload}`;
+    
+    const encoder = new TextEncoder();
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+    
+    const signatureBuffer = base64UrlToBuffer(encodedSignature);
+    const isValid = await crypto.subtle.verify('HMAC', cryptoKey, signatureBuffer, encoder.encode(dataToSign));
+    
+    if (!isValid) return { valid: false, error: 'Cryptographic signature verification failed.' };
+    
+    const decoder = new TextDecoder();
+    const payload = JSON.parse(decoder.decode(base64UrlToBuffer(encodedPayload)));
+    
+    // মেয়াদের সময় পার হয়ে গেছে কি না চেক করা
+    if (payload.exp && (Date.now() / 1000) > payload.exp) {
+      return { valid: false, error: 'Token has expired.' };
+    }
+    
+    return { valid: true, user: payload };
+  } catch (err) {
+    return { valid: false, error: 'Invalid Token.' };
+  }
+}
+
 
 // =========================================================================
 // ENTERPRISE MASTER RECORD DATASET (Normalized Production-Grade Layer)
@@ -137,20 +189,19 @@ export async function onRequest(context) {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Cryptographic Bearer Token Validation Framework
+  // 🛡️ Cryptographic Bearer Token Validation (Updated Secure Method)
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return jsonResponse({ success: false, error: 'Unauthorized: Missing valid security context identity token.' }, 401, corsHeaders);
   }
 
-  const token = authHeader.slice(7);
-  try {
-    const payload = JSON.parse(atob(token));
-    if (payload.exp < Date.now()) {
-      return jsonResponse({ success: false, error: 'Unauthorized: Security token contextual boundary has expired.' }, 401, corsHeaders);
-    }
-  } catch (err) {
-    return jsonResponse({ success: false, error: 'Unauthorized: Execution failed due to malformed payload token.' }, 401, corsHeaders);
+  const token = authHeader.split(' ')[1];
+  // wrangler.toml থেকে গোপন চাবি নেওয়া হচ্ছে
+  const secret = env.JWT_SECRET || 'LocalDevelopmentSecretKey123!@#';
+  
+  const authResult = await verifyJWT(token, secret);
+  if (!authResult.valid) {
+    return jsonResponse({ success: false, error: `Unauthorized: ${authResult.error}` }, 401, corsHeaders);
   }
 
   // =========================================================================
@@ -249,10 +300,10 @@ export async function onRequest(context) {
       }
 
       // 7. Dynamic Matrix Data Channel Flow Validations
-      if (reqEmail && !profile.channels.email) return false;
-      if (reqPhone && !profile.channels.phone) return false;
-      if (reqWhatsapp && !profile.channels.whatsapp) return false;
-      if (reqSocial && !profile.channels.social) return false;
+      if (reqEmail && (!profile.channels || !profile.channels.email)) return false;
+      if (reqPhone && (!profile.channels || !profile.channels.phone)) return false;
+      if (reqWhatsapp && (!profile.channels || !profile.channels.whatsapp)) return false;
+      if (reqSocial && (!profile.channels || !profile.channels.social)) return false;
 
       return true;
     });
