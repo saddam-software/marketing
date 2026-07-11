@@ -1,5 +1,8 @@
 <div id="locationContactSearch" class="space-y-6 fade-in" aria-label="Location Based Smart Search Module">
   
+  <!-- ==========================================
+       META STATS SECTION
+       ========================================== -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
       <div>
@@ -10,6 +13,7 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
       </div>
     </div>
+    
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
       <div>
         <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Verified Master Profiles</p>
@@ -19,6 +23,7 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
       </div>
     </div>
+    
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
       <div>
         <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Avg Confidence Score</p>
@@ -28,6 +33,7 @@
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
       </div>
     </div>
+    
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
       <div>
         <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Geocoded Entities</p>
@@ -41,6 +47,9 @@
 
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
     
+    <!-- ==========================================
+         ADVANCED FILTERS SIDEBAR (Left Column)
+         ========================================== -->
     <div class="lg:col-span-1 space-y-4">
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
         <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
@@ -73,14 +82,14 @@
 
           <div>
             <label for="districtSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">District / State</label>
-            <select id="districtSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+            <select id="districtSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" disabled>
               <option value="">— Select District —</option>
             </select>
           </div>
 
           <div>
             <label for="thanaSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Thana / Upazila / Zone</label>
-            <select id="thanaSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+            <select id="thanaSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" disabled>
               <option value="">— Select Thana —</option>
             </select>
           </div>
@@ -148,8 +157,12 @@
       </div>
     </div>
 
+    <!-- ==========================================
+         SEARCH BAR & RESULTS (Right Column)
+         ========================================== -->
     <div class="lg:col-span-3 space-y-4 flex flex-col h-full">
       
+      <!-- NLP Search Input -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div class="relative">
           <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -162,11 +175,13 @@
           </div>
         </div>
         <div id="autocompleteSuggestions" class="hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-          </div>
+        </div>
       </div>
 
+      <!-- Data Table Area -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col flex-1 min-h-[550px]">
         
+        <!-- Table Header -->
         <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div class="flex items-center gap-3">
             <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm sm:text-base">
@@ -198,6 +213,7 @@
 
         <div id="locationSearchStatus" class="hidden px-4 py-2.5 border-b text-xs font-medium transition-all" role="alert"></div>
 
+        <!-- The Table Itself -->
         <div class="flex-1 overflow-x-auto relative min-h-[350px]">
           <table class="data-table w-full text-left border-collapse" id="locationResultTable">
             <thead class="sticky top-0 bg-slate-100 z-10 shadow-xs border-b border-slate-200">
@@ -236,6 +252,7 @@
           </table>
         </div>
 
+        <!-- Table Footer / Pagination -->
         <div class="p-4 border-t border-slate-200 bg-slate-50/80 rounded-b-xl flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
           <div id="locationResultMeta" class="font-medium tracking-wide">
             Awaiting parameters execution.
@@ -268,6 +285,9 @@
     </div>
   </div>
 
+  <!-- ==========================================
+       MODAL: MASTER PROFILE DETAILS
+       ========================================== -->
   <div id="masterProfileDetailsModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modalProfileTitle">
     <div class="bg-white w-full max-w-2xl rounded-xl shadow-xl border border-slate-200 overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
       <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
@@ -277,7 +297,8 @@
         <button id="closeProfileModalBtn" type="button" class="text-slate-400 hover:text-slate-600 text-lg font-bold px-2 transition-colors">&times;</button>
       </div>
       <div id="modalProfileBody" class="p-6 overflow-y-auto space-y-6 text-sm text-slate-700">
-        </div>
+        <!-- JS will populate details here -->
+      </div>
       <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
         <button id="verifyProfileInstanceBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs py-1.5 px-3 rounded transition-all">Verify Node</button>
         <button id="closeProfileModalBottomBtn" type="button" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-xs py-1.5 px-3 rounded transition-all">Close Entry</button>
