@@ -1,7 +1,7 @@
 // functions/api/[[path]].js
 // ============================================================
 //  Email & SMS Marketing Pro - Cloudflare Pages API Router (Secure Version)
-//  Handles secure authentication, login, dashboard stats, and settings.
+//  Handles authentication, API keys, dashboard, audit logs, contacts, and settings.
 // ============================================================
 
 import { KVMANAGER } from '../helpers/kv-manager.js';
@@ -10,9 +10,8 @@ import { AuditLogger } from '../helpers/audit-logger.js';
 import { RateLimiter } from '../helpers/rate-limiter.js';
 
 // ============================================================
-// 🛡️ NATIVE WEB CRYPTO JWT HELPERS (সিকিউরিটি ইঞ্জিন)
+// 🛡️ NATIVE WEB CRYPTO JWT HELPERS (নতুন সিকিউরিটি ইঞ্জিন)
 // ============================================================
-
 function bufferToBase64Url(buf) {
   return btoa(String.fromCharCode(...new Uint8Array(buf)))
     .replace(/\+/g, '-')
@@ -31,30 +30,22 @@ function base64UrlToBuffer(str) {
   return bytes.buffer;
 }
 
-// ডিজিটাল সিল বা নিরাপদ টোকেন তৈরি করার ফাংশন
 async function generateJWT(payload, secret) {
   const header = { alg: 'HS256', typ: 'JWT' };
   const encoder = new TextEncoder();
-  
   const encodedHeader = bufferToBase64Url(encoder.encode(JSON.stringify(header)));
   const encodedPayload = bufferToBase64Url(encoder.encode(JSON.stringify(payload)));
   const dataToSign = `${encodedHeader}.${encodedPayload}`;
   
   const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
+    'raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
   
   const signature = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(dataToSign));
   const encodedSignature = bufferToBase64Url(signature);
-  
   return `${dataToSign}.${encodedSignature}`;
 }
 
-// টোকেনটি আসল নাকি ভুয়া তা যাচাই করার ফাংশন
 async function verifyJWT(token, secret) {
   try {
     const parts = token.split('.');
@@ -62,14 +53,10 @@ async function verifyJWT(token, secret) {
     
     const [encodedHeader, encodedPayload, encodedSignature] = parts;
     const dataToSign = `${encodedHeader}.${encodedPayload}`;
-    
     const encoder = new TextEncoder();
+    
     const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['verify']
+      'raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']
     );
     
     const signatureBuffer = base64UrlToBuffer(encodedSignature);
@@ -80,30 +67,13 @@ async function verifyJWT(token, secret) {
     const decoder = new TextDecoder();
     const payload = JSON.parse(decoder.decode(base64UrlToBuffer(encodedPayload)));
     
-    // মেয়াদের সময় পার হয়ে গেছে কি না চেক করা
     if (payload.exp && (Date.now() / 1000) > payload.exp) {
       return { valid: false, error: 'Token has expired.' };
     }
-    
-    return { valid: true, user: payload };
+    return { valid: true, username: payload.username };
   } catch (err) {
     return { valid: false, error: 'Invalid Token.' };
   }
-}
-
-// ============================================================
-// 🔒 AUTHENTICATION MIDDLEWARE
-// ============================================================
-async function requireAuth(request, env) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { valid: false, error: 'Missing or invalid Authorization header.' };
-  }
-
-  const token = authHeader.split(' ')[1];
-  const secret = env.JWT_SECRET || 'SUPER_SECRET_BACKUP_KEY_123!@#';
-  
-  return await verifyJWT(token, secret);
 }
 
 // ============================================================
@@ -115,121 +85,196 @@ export async function onRequest(context) {
   const path = url.pathname;
   const method = request.method;
 
-  // CORS সেটিংস (অন্য ফ্রন্টএন্ড থেকে রিকোয়েস্ট অ্যালাউ করার জন্য)
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
 
-  if (method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   function jsonResponse(data, status = 200) {
     return new Response(JSON.stringify(data), {
-      status,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
+  const kv = new KVMANAGER(env.SECRETS_KV || null);
+  const auditLogger = new AuditLogger(kv);
+  const rateLimiter = new RateLimiter(kv);
+
+  const ADMIN_USERNAME = env.ADMIN_USERNAME || 'admin';
+  const ADMIN_PASSWORD = env.ADMIN_PASSWORD || 'admin123';
+  const JWT_SECRET = env.JWT_SECRET || 'LocalDevelopmentSecretKey123!@#';
+
+  async function requireAuth(req) {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return { valid: false, error: 'Missing authentication token' };
+    }
+    const token = authHeader.slice(7);
+    return await verifyJWT(token, JWT_SECRET);
+  }
+
   try {
-    const kv = env.SECRETS_KV;
-    const ADMIN_USERNAME = env.ADMIN_USERNAME || 'admin';
-    const ADMIN_PASSWORD = env.ADMIN_PASSWORD || 'password';
-    const JWT_SECRET = env.JWT_SECRET || 'SUPER_SECRET_BACKUP_KEY_123!@#';
-
-    // --------------------------------------------------------
-    // ১. লগইন রাউট (/api/login) - সম্পূর্ণ নিরাপদ করা হয়েছে
-    // --------------------------------------------------------
-    if (path === '/api/login' && method === 'POST') {
-      const { username, password } = await request.json();
-
-      // পাসওয়ার্ড ও ইউজারনেম ম্যাচিং
-      if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
-        return jsonResponse({ success: false, error: 'Invalid username or password.' }, 401);
+    // ==================== 1. AUTHENTICATION ====================
+    if (path === '/api/auth/login' && method === 'POST') {
+      const body = await request.json().catch(() => ({}));
+      const { username, password } = body;
+      const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+      
+      const allowed = await rateLimiter.check(`login:${clientIp}`, 5, 15 * 60);
+      if (!allowed) return jsonResponse({ success: false, error: 'Too many login attempts.' }, 429);
+      
+      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        const expireTime = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 24 Hours
+        const token = await generateJWT({ username, exp: expireTime }, JWT_SECRET);
+        await auditLogger.log('LOGIN_SUCCESS', { username, ip: clientIp });
+        return jsonResponse({ success: true, token, username, message: 'Login successful' });
+      } else {
+        await auditLogger.log('LOGIN_FAILED', { username, ip: clientIp });
+        return jsonResponse({ success: false, error: 'Invalid username or password' }, 401);
       }
+    }
 
-      // টোকেনের মেয়াদ বর্তমান সময় থেকে ২ ঘণ্টা (7200 সেকেন্ড) সেট করা হলো
-      const expireTime = Math.floor(Date.now() / 1000) + (2 * 60 * 60);
+    if (path === '/api/auth/logout' && method === 'POST') {
+      const auth = await requireAuth(request);
+      if (!auth.valid) return jsonResponse({ success: false, error: auth.error }, 401);
+      await auditLogger.log('LOGOUT', { username: auth.username });
+      return jsonResponse({ success: true, message: 'Logout successful' });
+    }
 
-      const payload = {
-        username: username,
-        role: 'admin',
-        exp: expireTime
-      };
+    if (path === '/api/auth/verify' && method === 'GET') {
+      const auth = await requireAuth(request);
+      if (!auth.valid) return jsonResponse({ success: false, error: auth.error }, 401);
+      return jsonResponse({ success: true, username: auth.username, message: 'Token valid' });
+    }
 
-      // ক্রিপ্টোগ্রাফিক ডিজিটাল সিলযুক্ত আসল JWT টোকেন তৈরি
-      const token = await generateJWT(payload, JWT_SECRET);
-
+    // ==================== 2. API KEY MANAGEMENT ====================
+    if (path === '/api/api-keys/stats' && method === 'GET') {
+      const auth = await requireAuth(request);
+      if (!auth.valid) return jsonResponse({ success: false, error: auth.error }, 401);
+      const apiName = url.searchParams.get('apiName') || 'brevo';
+      const limits = { brevo: 300, sms: 100, abstract: 250, call: 100 };
+      const limit = limits[apiName] || 100;
+      const today = new Date().toISOString().split('T')[0];
+      const used = parseInt(await kv.get(`api:usage:${apiName}:${today}`) || '0', 10);
       return jsonResponse({
-        success: true,
-        token: token,
-        user: { username, role: 'admin' }
+        success: true, data: { apiName, limit, used, remaining: Math.max(0, limit - used), date: today },
       });
     }
 
-    // --------------------------------------------------------
-    // ২. হেলথ বা স্ট্যাটাস রাউট (/api/health)
-    // --------------------------------------------------------
-    if (path === '/api/health' && method === 'GET') {
-      let kvStatus = 'OK';
-      try {
-        await kv.put('sys:health:check', '1');
-      } catch (e) {
-        kvStatus = 'ERROR';
+    if (path === '/api/api-keys/save' && method === 'POST') {
+      const auth = await requireAuth(request);
+      if (!auth.valid) return jsonResponse({ success: false, error: auth.error }, 401);
+      const body = await request.json().catch(() => ({}));
+      const { apiName, apiKey, provider, baseUrl, defaultSender } = body;
+      
+      const config = { key: apiKey, updatedAt: new Date().toISOString() };
+      if (provider) config.provider = provider;
+      if (baseUrl) config.baseUrl = baseUrl;
+      if (defaultSender) config.defaultSender = defaultSender;
+      
+      await kv.put(`api:key:${apiName}`, JSON.stringify(config));
+      await auditLogger.log('API_KEY_UPDATED', { username: auth.username, apiName });
+      return jsonResponse({ success: true, message: `${apiName} API configuration saved` });
+    }
+
+    if (path === '/api/api-keys/list' && method === 'GET') {
+      const auth = await requireAuth(request);
+      if (!auth.valid) return jsonResponse({ success: false, error: auth.error }, 401);
+      const apiNames = ['brevo', 'sms', 'abstract', 'call', 'text', 'website', 'location'];
+      const result = {};
+      for (const name of apiNames) {
+        const data = await kv.get(`api:key:${name}`);
+        if (data) result[name] = JSON.parse(data);
       }
+      return jsonResponse({ success: true, data: result });
+    }
+
+    // ==================== 3. AUDIT LOGS ====================
+    if (path === '/api/audit-logs' && method === 'GET') {
+      const auth = await requireAuth(request);
+      if (!auth.valid) return jsonResponse({ success: false, error: auth.error }, 401);
+      const date = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
+      const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+      const logs = await auditLogger.getLogsForDate(date, limit);
+      return jsonResponse({ success: true, date, totalEvents: logs.length, events: logs });
+    }
+
+    // ==================== 4. CONTACTS ====================
+    if (path.startsWith('/api/contacts/')) {
+      const auth = await requireAuth(request);
+      if (!auth.valid) return jsonResponse({ success: false, error: auth.error }, 401);
+      
+      if (path === '/api/contacts/list' && method === 'GET') {
+        const type = url.searchParams.get('type') || 'emails';
+        let list = await kv.getList(`contacts:${type}`) || [];
+        return jsonResponse({ success: true, type, total: list.length, contacts: list.slice(0, 100) });
+      }
+      // Export & Import logic could go here similar to the old file
+    }
+
+    // ==================== 5. DASHBOARD ====================
+    if (path === '/api/dashboard/stats' && method === 'GET') {
+      const auth = await requireAuth(request);
+      if (!auth.valid) return jsonResponse({ success: false, error: auth.error }, 401);
+      
+      const today = new Date().toISOString().split('T')[0];
+      const logs = await auditLogger.getLogsForDate(today);
+      const brevoUsage = parseInt(await kv.get(`api:usage:brevo:${today}`) || '0', 10);
+      const brevoLimit = 300;
 
       return jsonResponse({
         success: true,
-        status: 'Operational',
-        timestamp: new Date().toISOString(),
-        components: { kv: kvStatus },
+        stats: {
+          emailsToday: logs.filter(l => l.action === 'SCRAPE_EMAILS').reduce((s, l) => s + (l.details?.count || 0), 0),
+          emailsSentToday: logs.filter(l => l.action === 'SEND_EMAILS').reduce((s, l) => s + (l.details?.successCount || 0), 0),
+          smsSentToday: logs.filter(l => l.action === 'SEND_SMS').reduce((s, l) => s + (l.details?.successCount || 0), 0),
+          brevoRemaining: Math.max(0, brevoLimit - brevoUsage),
+          brevoLimit,
+          totalContacts: 0 // Fetch from KV in full implementation
+        },
       });
     }
 
-    // --------------------------------------------------------
-    // ৩. সেটিংস রাউট (/api/settings) - গেটওয়ে লক করা হয়েছে
-    // --------------------------------------------------------
+    if (path === '/api/dashboard/charts' && method === 'GET') {
+      const auth = await requireAuth(request);
+      if (!auth.valid) return jsonResponse({ success: false, error: auth.error }, 401);
+      // Dummy data for charts to prevent 404
+      return jsonResponse({ success: true, data: [] });
+    }
+
+    // ==================== 6. HEALTH CHECK ====================
+    if (path === '/api/health/status' && method === 'GET') {
+      return jsonResponse({ success: true, status: 'healthy', timestamp: new Date().toISOString() });
+    }
+
+    // ==================== 7. SETTINGS ====================
     if (path === '/api/settings' && method === 'GET') {
-      // মিডলওয়্যার দিয়ে টোকেন চেক করা হচ্ছে
-      const auth = await requireAuth(request, env);
-      if (!auth.valid) {
-        return jsonResponse({ success: false, error: auth.error }, 401);
-      }
+      const auth = await requireAuth(request);
+      if (!auth.valid) return jsonResponse({ success: false, error: auth.error }, 401);
 
-      // KV ডেটাবেস থেকে কনফিগারেশন কী-গুলো আনা হচ্ছে
-      const brevoKey = await kv.get('api:key:brevo');
-      const smsKey = await kv.get('api:key:sms');
-      const abstractKey = await kv.get('api:key:abstract');
-      const callKey = await kv.get('api:key:call');
-      const textKey = await kv.get('api:key:text');
-      const websiteKey = await kv.get('api:key:website');
-      const locationKey = await kv.get('api:key:location');
-
-      const settings = {
-        adminUsername: ADMIN_USERNAME,
-        brevoConfigured: !!(brevoKey || env.BREVO_API_KEY),
-        smsConfigured: !!smsKey,
-        abstractConfigured: !!abstractKey,
-        callConfigured: !!callKey,
-        textConfigured: !!textKey,
-        websiteConfigured: !!websiteKey,
-        locationConfigured: !!locationKey,
-        rateLimitLogin: '5 per 15 minutes',
-        retentionDays: 90,
-      };
-
-      return jsonResponse({ success: true, settings });
+      return jsonResponse({
+        success: true,
+        settings: {
+          adminUsername: ADMIN_USERNAME,
+          brevoConfigured: !!(await kv.get('api:key:brevo')),
+          smsConfigured: !!(await kv.get('api:key:sms')),
+          abstractConfigured: !!(await kv.get('api:key:abstract')),
+          callConfigured: !!(await kv.get('api:key:call')),
+          textConfigured: !!(await kv.get('api:key:text')),
+          websiteConfigured: !!(await kv.get('api:key:website')),
+          locationConfigured: !!(await kv.get('api:key:location')),
+        }
+      });
     }
 
-    // --------------------------------------------------------
-    // ৪. ৪MD বা নট ফাউন্ড রাউট (404 Fallback)
-    // --------------------------------------------------------
-    return jsonResponse({ success: false, error: 'API Endpoint API Route Not Found' }, 404);
+    // 404 Fallback
+    return jsonResponse({ success: false, error: 'Endpoint not found' }, 404);
 
   } catch (error) {
-    console.error('Router Critical Error:', error);
-    return jsonResponse({ success: false, error: 'Internal Server Error: ' + error.message }, 500);
+    console.error('[API ERROR]', error);
+    return jsonResponse({ success: false, error: `Server error: ${error.message}` }, 500);
   }
 }
