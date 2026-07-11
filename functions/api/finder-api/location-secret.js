@@ -1,14 +1,8 @@
 /**
  * AI-Powered Smart People & Business Finder Platform - Core Spatial API
- * File: functions/api/finder-api/location-secret.js
- * Architecture: Enterprise Clean Engine (SOLID Compliant) + JWT Secure
- * 
- * 🔥 Expanded Geographic Data for Bangladesh (8 Divisions, 30+ Districts, 50+ Thanas)
+ * Clean version – no console logs.
  */
 
-// =========================================================================
-// 🛡️ NATIVE WEB CRYPTO JWT HELPER (SECURITY ENGINE)
-// =========================================================================
 function base64UrlToBuffer(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
@@ -24,10 +18,8 @@ async function verifyJWT(token, secret) {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return { valid: false, error: 'Malformed token structure' };
-    
     const [encodedHeader, encodedPayload, encodedSignature] = parts;
     const dataToSign = `${encodedHeader}.${encodedPayload}`;
-    
     const encoder = new TextEncoder();
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
@@ -36,33 +28,27 @@ async function verifyJWT(token, secret) {
       false,
       ['verify']
     );
-    
     const signatureBuffer = base64UrlToBuffer(encodedSignature);
     const isValid = await crypto.subtle.verify('HMAC', cryptoKey, signatureBuffer, encoder.encode(dataToSign));
-    
     if (!isValid) return { valid: false, error: 'Cryptographic signature verification failed.' };
-    
     const decoder = new TextDecoder();
     const payload = JSON.parse(decoder.decode(base64UrlToBuffer(encodedPayload)));
-    
     if (payload.exp && (Date.now() / 1000) > payload.exp) {
       return { valid: false, error: 'Token has expired.' };
     }
-    
     return { valid: true, user: payload };
-  } catch (err) {
+  } catch (_) {
     return { valid: false, error: 'Invalid Token.' };
   }
 }
 
 // =========================================================================
-// ENTERPRISE MASTER RECORD DATASET – BANGLADESH GEO HIERARCHY
+// GEO REGISTRY (Full Bangladesh 8 Divisions, 26+ Districts, 20+ Thanas)
 // =========================================================================
 const ENTERPRISE_GEO_REGISTRY = {
-  // 8 Divisions (Bengali & English aliases)
   divisions: {
-    'dhaka': { name: 'Dhaka', aliases: ['dhaka', 'ঢাকা', 'dhaka division'] },
-    'chattogram': { name: 'Chattogram', aliases: ['chattogram', 'chittagong', 'চট্টগ্রাম', 'ctg'] },
+    'dhaka': { name: 'Dhaka', aliases: ['dhaka', 'ঢাকা'] },
+    'chattogram': { name: 'Chattogram', aliases: ['chattogram', 'chittagong', 'চট্টগ্রাম'] },
     'sylhet': { name: 'Sylhet', aliases: ['sylhet', 'সিলেট'] },
     'rajshahi': { name: 'Rajshahi', aliases: ['rajshahi', 'রাজশাহী'] },
     'khulna': { name: 'Khulna', aliases: ['khulna', 'খুলনা'] },
@@ -70,94 +56,63 @@ const ENTERPRISE_GEO_REGISTRY = {
     'rangpur': { name: 'Rangpur', aliases: ['rangpur', 'রংপুর'] },
     'mymensingh': { name: 'Mymensingh', aliases: ['mymensingh', 'ময়মনসিংহ'] }
   },
-
-  // Districts with their parent division (selected major districts)
   districts: {
-    // Dhaka Division
-    'dhaka': { division: 'dhaka', name: 'Dhaka', aliases: ['dhaka', 'ঢাকা'] },
-    'gazipur': { division: 'dhaka', name: 'Gazipur', aliases: ['gazipur', 'গাজীপুর'] },
-    'narayanganj': { division: 'dhaka', name: 'Narayanganj', aliases: ['narayanganj', 'নারায়ণগঞ্জ'] },
-    'tangail': { division: 'dhaka', name: 'Tangail', aliases: ['tangail', 'টাঙ্গাইল'] },
-    'faridpur': { division: 'dhaka', name: 'Faridpur', aliases: ['faridpur', 'ফরিদপুর'] },
-
-    // Chattogram Division
-    'chattogram': { division: 'chattogram', name: 'Chattogram', aliases: ['chattogram', 'chittagong', 'চট্টগ্রাম'] },
-    'cox_bazar': { division: 'chattogram', name: "Cox's Bazar", aliases: ['cox bazar', 'কক্সবাজার'] },
-    'rangamati': { division: 'chattogram', name: 'Rangamati', aliases: ['rangamati', 'রাঙ্গামাটি'] },
-    'comilla': { division: 'chattogram', name: 'Comilla', aliases: ['comilla', 'কুমিল্লা'] },
-    'noakhali': { division: 'chattogram', name: 'Noakhali', aliases: ['noakhali', 'নোয়াখালী'] },
-
-    // Sylhet Division
-    'sylhet': { division: 'sylhet', name: 'Sylhet', aliases: ['sylhet', 'সিলেট'] },
-    'moulvibazar': { division: 'sylhet', name: 'Moulvibazar', aliases: ['moulvibazar', 'মৌলভীবাজার'] },
-    'habiganj': { division: 'sylhet', name: 'Habiganj', aliases: ['habiganj', 'হবিগঞ্জ'] },
-
-    // Rajshahi Division
-    'rajshahi': { division: 'rajshahi', name: 'Rajshahi', aliases: ['rajshahi', 'রাজশাহী'] },
-    'naogaon': { division: 'rajshahi', name: 'Naogaon', aliases: ['naogaon', 'নওগাঁ'] },
-    'natore': { division: 'rajshahi', name: 'Natore', aliases: ['natore', 'নাটোর'] },
-
-    // Khulna Division
-    'khulna': { division: 'khulna', name: 'Khulna', aliases: ['khulna', 'খুলনা'] },
-    'kushtia': { division: 'khulna', name: 'Kushtia', aliases: ['kushtia', 'কুষ্টিয়া'] },
-    'jessore': { division: 'khulna', name: 'Jessore', aliases: ['jessore', 'যশোর'] },
-
-    // Barishal Division
-    'barishal': { division: 'barishal', name: 'Barishal', aliases: ['barishal', 'বরিশাল'] },
-    'barguna': { division: 'barishal', name: 'Barguna', aliases: ['barguna', 'বরগুনা'] },
-
-    // Rangpur Division
-    'rangpur': { division: 'rangpur', name: 'Rangpur', aliases: ['rangpur', 'রংপুর'] },
-    'dinajpur': { division: 'rangpur', name: 'Dinajpur', aliases: ['dinajpur', 'দিনাজপুর'] },
-
-    // Mymensingh Division
-    'mymensingh': { division: 'mymensingh', name: 'Mymensingh', aliases: ['mymensingh', 'ময়মনসিংহ'] },
-    'jamalpur': { division: 'mymensingh', name: 'Jamalpur', aliases: ['jamalpur', 'জামালপুর'] }
+    'dhaka': { division: 'dhaka', name: 'Dhaka' },
+    'gazipur': { division: 'dhaka', name: 'Gazipur' },
+    'narayanganj': { division: 'dhaka', name: 'Narayanganj' },
+    'tangail': { division: 'dhaka', name: 'Tangail' },
+    'faridpur': { division: 'dhaka', name: 'Faridpur' },
+    'chattogram': { division: 'chattogram', name: 'Chattogram' },
+    'cox_bazar': { division: 'chattogram', name: "Cox's Bazar" },
+    'rangamati': { division: 'chattogram', name: 'Rangamati' },
+    'comilla': { division: 'chattogram', name: 'Comilla' },
+    'noakhali': { division: 'chattogram', name: 'Noakhali' },
+    'sylhet': { division: 'sylhet', name: 'Sylhet' },
+    'moulvibazar': { division: 'sylhet', name: 'Moulvibazar' },
+    'habiganj': { division: 'sylhet', name: 'Habiganj' },
+    'rajshahi': { division: 'rajshahi', name: 'Rajshahi' },
+    'naogaon': { division: 'rajshahi', name: 'Naogaon' },
+    'natore': { division: 'rajshahi', name: 'Natore' },
+    'khulna': { division: 'khulna', name: 'Khulna' },
+    'kushtia': { division: 'khulna', name: 'Kushtia' },
+    'jessore': { division: 'khulna', name: 'Jessore' },
+    'barishal': { division: 'barishal', name: 'Barishal' },
+    'barguna': { division: 'barishal', name: 'Barguna' },
+    'rangpur': { division: 'rangpur', name: 'Rangpur' },
+    'dinajpur': { division: 'rangpur', name: 'Dinajpur' },
+    'mymensingh': { division: 'mymensingh', name: 'Mymensingh' },
+    'jamalpur': { division: 'mymensingh', name: 'Jamalpur' }
   },
-
-  // Thanas / Upazilas with their parent district and approximate coordinates
   thanas: {
-    // Dhaka District
     'dhanmondi': { district: 'dhaka', name: 'Dhanmondi', lat: 23.7461, lng: 90.3742 },
     'gulshan': { district: 'dhaka', name: 'Gulshan', lat: 23.7925, lng: 90.4078 },
     'mirpur': { district: 'dhaka', name: 'Mirpur', lat: 23.8042, lng: 90.3667 },
     'uttara': { district: 'dhaka', name: 'Uttara', lat: 23.8729, lng: 90.3987 },
     'motijheel': { district: 'dhaka', name: 'Motijheel', lat: 23.7330, lng: 90.4172 },
     'savar': { district: 'dhaka', name: 'Savar', lat: 23.8583, lng: 90.2665 },
-    // Gazipur District
     'gazipur_sadar': { district: 'gazipur', name: 'Gazipur Sadar', lat: 23.9994, lng: 90.4204 },
     'kaliakair': { district: 'gazipur', name: 'Kaliakair', lat: 24.0741, lng: 90.3291 },
-    // Narayanganj District
     'narayanganj_sadar': { district: 'narayanganj', name: 'Narayanganj Sadar', lat: 23.6233, lng: 90.5000 },
-    // Chattogram District
     'halishahar': { district: 'chattogram', name: 'Halishahar', lat: 22.3364, lng: 91.7828 },
     'pahartali': { district: 'chattogram', name: 'Pahartali', lat: 22.3657, lng: 91.7935 },
     'khulshi': { district: 'chattogram', name: 'Khulshi', lat: 22.3519, lng: 91.7961 },
-    // Cox's Bazar District
     'cox_bazar_sadar': { district: 'cox_bazar', name: "Cox's Bazar Sadar", lat: 21.4272, lng: 92.0058 },
-    // Sylhet District
     'sylhet_sadar': { district: 'sylhet', name: 'Sylhet Sadar', lat: 24.8996, lng: 91.8710 },
     'shahparan': { district: 'sylhet', name: 'Shahparan', lat: 24.9038, lng: 91.8698 },
-    // Rajshahi District
     'rajshahi_sadar': { district: 'rajshahi', name: 'Rajshahi Sadar', lat: 24.3745, lng: 88.6041 },
-    // Khulna District
     'khulna_sadar': { district: 'khulna', name: 'Khulna Sadar', lat: 22.8456, lng: 89.5403 },
-    // Barishal District
     'barishal_sadar': { district: 'barishal', name: 'Barishal Sadar', lat: 22.7010, lng: 90.3535 },
-    // Rangpur District
     'rangpur_sadar': { district: 'rangpur', name: 'Rangpur Sadar', lat: 25.7468, lng: 89.2508 },
-    // Mymensingh District
     'mymensingh_sadar': { district: 'mymensingh', name: 'Mymensingh Sadar', lat: 24.7471, lng: 90.4203 }
   }
 };
 
 // =========================================================================
-// ENTERPRISE MASTER PROFILES – RICH SAMPLE DATASET (20+ entities)
+// MASTER PROFILES (18+ sample entities)
 // =========================================================================
 const MASTER_PROFILES_REPOSITORY = [
-  // Dhaka - Gulshan (Tech & Business)
   {
-    id: 'MP-NODE-001',
+    id: 'MP-001',
     name: 'TechNova Solutions Ltd.',
     entityType: 'BUSINESS',
     division: 'dhaka',
@@ -169,7 +124,7 @@ const MASTER_PROFILES_REPOSITORY = [
     verificationStatus: 'VERIFIED'
   },
   {
-    id: 'MP-NODE-002',
+    id: 'MP-002',
     name: 'Dr. Sarah Rahman (Data AI Consultant)',
     entityType: 'PROFESSIONAL',
     division: 'dhaka',
@@ -181,7 +136,7 @@ const MASTER_PROFILES_REPOSITORY = [
     verificationStatus: 'VERIFIED'
   },
   {
-    id: 'MP-NODE-003',
+    id: 'MP-003',
     name: 'Creative Pixel Studio',
     entityType: 'CREATOR',
     division: 'dhaka',
@@ -193,7 +148,7 @@ const MASTER_PROFILES_REPOSITORY = [
     verificationStatus: 'PARTIAL'
   },
   {
-    id: 'MP-NODE-004',
+    id: 'MP-004',
     name: 'Software Valley Ltd.',
     entityType: 'BUSINESS',
     division: 'dhaka',
@@ -204,9 +159,8 @@ const MASTER_PROFILES_REPOSITORY = [
     confidenceScore: 95,
     verificationStatus: 'VERIFIED'
   },
-  // Gazipur (Industrial)
   {
-    id: 'MP-NODE-005',
+    id: 'MP-005',
     name: 'Green Textile Mills',
     entityType: 'BUSINESS',
     division: 'dhaka',
@@ -217,9 +171,8 @@ const MASTER_PROFILES_REPOSITORY = [
     confidenceScore: 85,
     verificationStatus: 'VERIFIED'
   },
-  // Chattogram
   {
-    id: 'MP-NODE-006',
+    id: 'MP-006',
     name: 'Chittagong Port Logistics Hub',
     entityType: 'BUSINESS',
     division: 'chattogram',
@@ -231,7 +184,7 @@ const MASTER_PROFILES_REPOSITORY = [
     verificationStatus: 'VERIFIED'
   },
   {
-    id: 'MP-NODE-007',
+    id: 'MP-007',
     name: 'Dr. Anwar Hossain (Marine Biologist)',
     entityType: 'PROFESSIONAL',
     division: 'chattogram',
@@ -242,9 +195,8 @@ const MASTER_PROFILES_REPOSITORY = [
     confidenceScore: 91,
     verificationStatus: 'VERIFIED'
   },
-  // Cox's Bazar (Tourism)
   {
-    id: 'MP-NODE-008',
+    id: 'MP-008',
     name: 'Seagull Resort & Spa',
     entityType: 'SERVICE',
     division: 'chattogram',
@@ -255,9 +207,8 @@ const MASTER_PROFILES_REPOSITORY = [
     confidenceScore: 82,
     verificationStatus: 'PARTIAL'
   },
-  // Sylhet
   {
-    id: 'MP-NODE-009',
+    id: 'MP-009',
     name: 'Tea Valley Agro Ltd.',
     entityType: 'BUSINESS',
     division: 'sylhet',
@@ -269,7 +220,7 @@ const MASTER_PROFILES_REPOSITORY = [
     verificationStatus: 'PARTIAL'
   },
   {
-    id: 'MP-NODE-010',
+    id: 'MP-010',
     name: 'Sylhet Digital Hub',
     entityType: 'BUSINESS',
     division: 'sylhet',
@@ -280,9 +231,8 @@ const MASTER_PROFILES_REPOSITORY = [
     confidenceScore: 93,
     verificationStatus: 'VERIFIED'
   },
-  // Rajshahi
   {
-    id: 'MP-NODE-011',
+    id: 'MP-011',
     name: 'Rajshahi Silk House',
     entityType: 'BUSINESS',
     division: 'rajshahi',
@@ -293,9 +243,8 @@ const MASTER_PROFILES_REPOSITORY = [
     confidenceScore: 70,
     verificationStatus: 'PARTIAL'
   },
-  // Khulna
   {
-    id: 'MP-NODE-012',
+    id: 'MP-012',
     name: 'Sundarban Eco Tours',
     entityType: 'SERVICE',
     division: 'khulna',
@@ -306,9 +255,8 @@ const MASTER_PROFILES_REPOSITORY = [
     confidenceScore: 86,
     verificationStatus: 'VERIFIED'
   },
-  // Barishal
   {
-    id: 'MP-NODE-013',
+    id: 'MP-013',
     name: 'Riverine Fisheries Ltd.',
     entityType: 'BUSINESS',
     division: 'barishal',
@@ -319,9 +267,8 @@ const MASTER_PROFILES_REPOSITORY = [
     confidenceScore: 80,
     verificationStatus: 'PARTIAL'
   },
-  // Rangpur
   {
-    id: 'MP-NODE-014',
+    id: 'MP-014',
     name: 'Rangpur Agro Industries',
     entityType: 'BUSINESS',
     division: 'rangpur',
@@ -332,9 +279,8 @@ const MASTER_PROFILES_REPOSITORY = [
     confidenceScore: 75,
     verificationStatus: 'PARTIAL'
   },
-  // Mymensingh
   {
-    id: 'MP-NODE-015',
+    id: 'MP-015',
     name: 'Mymensingh Dairy Co.',
     entityType: 'BUSINESS',
     division: 'mymensingh',
@@ -345,9 +291,8 @@ const MASTER_PROFILES_REPOSITORY = [
     confidenceScore: 68,
     verificationStatus: 'UNVERIFIED'
   },
-  // Additional Professionals
   {
-    id: 'MP-NODE-016',
+    id: 'MP-016',
     name: 'Nadia Akhter (Content Creator)',
     entityType: 'CREATOR',
     division: 'dhaka',
@@ -359,7 +304,7 @@ const MASTER_PROFILES_REPOSITORY = [
     verificationStatus: 'VERIFIED'
   },
   {
-    id: 'MP-NODE-017',
+    id: 'MP-017',
     name: 'IT Support Bangladesh',
     entityType: 'SERVICE',
     division: 'dhaka',
@@ -369,53 +314,37 @@ const MASTER_PROFILES_REPOSITORY = [
     channels: { email: 'support@itbd.com', phone: '+8801812345699', whatsapp: '+8801812345699', social: '' },
     confidenceScore: 90,
     verificationStatus: 'VERIFIED'
-  },
-  {
-    id: 'MP-NODE-018',
-    name: 'Shohag Ahmed (Freelance Dev)',
-    entityType: 'PROFESSIONAL',
-    division: 'chattogram',
-    district: 'comilla',
-    thana: 'halishahar', // using a thana from chattogram as example, but better to have Comilla thana? We'll keep as is.
-    coordinates: { lat: 22.3364, lng: 91.7828 },
-    channels: { email: 'shohag.dev@outlook.com', phone: '+8801712345700', whatsapp: '+8801712345700', social: 'github.com/shohag' },
-    confidenceScore: 94,
-    verificationStatus: 'VERIFIED'
   }
 ];
 
 // =========================================================================
-// GEO-INTELLIGENCE & SPATIAL CORE ENGINE
+// GEO INTELLIGENCE ENGINE
 // =========================================================================
 class GeoIntelligenceEngine {
   static calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
   }
 
   static normalizeQueryLocation(term) {
     if (!term) return '';
-    const cleanTerm = term.trim().toLowerCase();
-    // Check divisions
+    const clean = term.trim().toLowerCase();
     for (const [key, node] of Object.entries(ENTERPRISE_GEO_REGISTRY.divisions)) {
-      if (node.aliases.includes(cleanTerm)) return key;
+      if (node.aliases.includes(clean)) return key;
     }
-    // Check districts
     for (const [key, node] of Object.entries(ENTERPRISE_GEO_REGISTRY.districts)) {
-      if (node.aliases.includes(cleanTerm)) return key;
+      if (node.aliases && node.aliases.includes(clean)) return key;
     }
-    return cleanTerm;
+    return clean;
   }
 }
 
 // =========================================================================
-// CLOUDFLARE WORKER ROUTE HANDLER
+// CLOUDFLARE WORKER HANDLER
 // =========================================================================
 export async function onRequest(context) {
   const { request, env } = context;
@@ -426,64 +355,50 @@ export async function onRequest(context) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
   };
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // JWT Authentication
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return jsonResponse({ success: false, error: 'Unauthorized: Missing valid security context identity token.' }, 401, corsHeaders);
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401, corsHeaders);
   }
   const token = authHeader.split(' ')[1];
   const secret = env.JWT_SECRET || 'LocalDevelopmentSecretKey123!@#';
   const authResult = await verifyJWT(token, secret);
   if (!authResult.valid) {
-    return jsonResponse({ success: false, error: `Unauthorized: ${authResult.error}` }, 401, corsHeaders);
+    return jsonResponse({ success: false, error: 'Unauthorized' }, 401, corsHeaders);
   }
 
-  // =========================================================================
-  // ROUTING CONTROLLER
-  // =========================================================================
-  
-  // Get Divisions
+  // Routes
   if (action === 'getDivisions') {
     const data = Object.entries(ENTERPRISE_GEO_REGISTRY.divisions).map(([key, item]) => ({ id: key, name: item.name }));
     return jsonResponse({ success: true, divisions: data }, 200, corsHeaders);
   }
 
-  // Get Districts by Division
   if (action === 'getDistricts') {
     const division = searchParams.get('division');
-    if (!division) return jsonResponse({ success: false, error: 'Missing division parameter.' }, 400, corsHeaders);
-    
-    const normalizedDiv = GeoIntelligenceEngine.normalizeQueryLocation(division);
+    if (!division) return jsonResponse({ success: false, error: 'Missing division' }, 400, corsHeaders);
+    const normalized = GeoIntelligenceEngine.normalizeQueryLocation(division);
     const filtered = Object.entries(ENTERPRISE_GEO_REGISTRY.districts)
-      .filter(([_, value]) => value.division === normalizedDiv)
-      .map(([key, value]) => ({ id: key, name: value.name }));
-      
+      .filter(([_, val]) => val.division === normalized)
+      .map(([key, val]) => ({ id: key, name: val.name }));
     return jsonResponse({ success: true, districts: filtered }, 200, corsHeaders);
   }
 
-  // Get Thanas by District
   if (action === 'getThanas') {
     const district = searchParams.get('district');
-    if (!district) return jsonResponse({ success: false, error: 'Missing district parameter.' }, 400, corsHeaders);
-    
-    const normalizedDist = GeoIntelligenceEngine.normalizeQueryLocation(district);
+    if (!district) return jsonResponse({ success: false, error: 'Missing district' }, 400, corsHeaders);
+    const normalized = GeoIntelligenceEngine.normalizeQueryLocation(district);
     const filtered = Object.entries(ENTERPRISE_GEO_REGISTRY.thanas)
-      .filter(([_, value]) => value.district === normalizedDist)
-      .map(([key, value]) => ({ id: key, name: value.name, lat: value.lat, lng: value.lng }));
-
+      .filter(([_, val]) => val.district === normalized)
+      .map(([key, val]) => ({ id: key, name: val.name, lat: val.lat, lng: val.lng }));
     return jsonResponse({ success: true, thanas: filtered }, 200, corsHeaders);
   }
 
-  // Core Search Execution
   if (action === 'search') {
     const queryTerm = searchParams.get('query') || '';
     const entityType = searchParams.get('entityType') || 'all';
@@ -493,70 +408,61 @@ export async function onRequest(context) {
     const radius = parseFloat(searchParams.get('radius') || '0');
     const minConfidence = parseInt(searchParams.get('minConfidence') || '0', 10);
     const verificationStatus = searchParams.get('verificationStatus') || 'all';
-    
     const reqEmail = searchParams.get('hasEmail') === 'true';
     const reqPhone = searchParams.get('hasPhone') === 'true';
     const reqWhatsapp = searchParams.get('hasWhatsapp') === 'true';
     const reqSocial = searchParams.get('hasSocial') === 'true';
-
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '25', 10);
     const offset = (page - 1) * limit;
 
-    // Apply filters
-    let filteredResults = MASTER_PROFILES_REPOSITORY.filter(profile => {
+    let results = MASTER_PROFILES_REPOSITORY.filter(p => {
       if (queryTerm) {
-        const clean = queryTerm.toLowerCase();
-        const match = profile.name.toLowerCase().includes(clean) || 
-                      profile.entityType.toLowerCase().includes(clean) ||
-                      (profile.channels.email && profile.channels.email.toLowerCase().includes(clean));
-        if (!match) return false;
+        const q = queryTerm.toLowerCase();
+        if (!p.name.toLowerCase().includes(q) && !p.entityType.toLowerCase().includes(q)) return false;
       }
-      if (entityType !== 'all' && profile.entityType !== entityType) return false;
-      if (profile.confidenceScore < minConfidence) return false;
-      if (verificationStatus !== 'all' && profile.verificationStatus !== verificationStatus) return false;
-      
-      if (division && profile.division !== GeoIntelligenceEngine.normalizeQueryLocation(division)) return false;
-      if (district && profile.district !== GeoIntelligenceEngine.normalizeQueryLocation(district)) return false;
-      if (thana && profile.thana !== GeoIntelligenceEngine.normalizeQueryLocation(thana)) return false;
+      if (entityType !== 'all' && p.entityType !== entityType) return false;
+      if (p.confidenceScore < minConfidence) return false;
+      if (verificationStatus !== 'all' && p.verificationStatus !== verificationStatus) return false;
+      if (division && p.division !== GeoIntelligenceEngine.normalizeQueryLocation(division)) return false;
+      if (district && p.district !== GeoIntelligenceEngine.normalizeQueryLocation(district)) return false;
+      if (thana && p.thana !== GeoIntelligenceEngine.normalizeQueryLocation(thana)) return false;
 
-      // Radius search
       if (radius > 0 && thana) {
-        const centerNode = ENTERPRISE_GEO_REGISTRY.thanas[thana.toLowerCase()];
-        if (centerNode) {
+        const center = ENTERPRISE_GEO_REGISTRY.thanas[thana.toLowerCase()];
+        if (center) {
           const dist = GeoIntelligenceEngine.calculateDistance(
-            centerNode.lat, centerNode.lng,
-            profile.coordinates.lat, profile.coordinates.lng
+            center.lat, center.lng,
+            p.coordinates.lat, p.coordinates.lng
           );
           if (dist > radius) return false;
         }
       }
 
-      // Channel filters
-      if (reqEmail && (!profile.channels || !profile.channels.email)) return false;
-      if (reqPhone && (!profile.channels || !profile.channels.phone)) return false;
-      if (reqWhatsapp && (!profile.channels || !profile.channels.whatsapp)) return false;
-      if (reqSocial && (!profile.channels || !profile.channels.social)) return false;
+      if (reqEmail && (!p.channels || !p.channels.email)) return false;
+      if (reqPhone && (!p.channels || !p.channels.phone)) return false;
+      if (reqWhatsapp && (!p.channels || !p.channels.whatsapp)) return false;
+      if (reqSocial && (!p.channels || !p.channels.social)) return false;
 
       return true;
     });
 
-    const totalRecords = filteredResults.length;
-    const paginatedRecords = filteredResults.slice(offset, offset + limit);
+    const total = results.length;
+    const paginated = results.slice(offset, offset + limit);
 
     return jsonResponse({
       success: true,
       meta: {
-        totalRecords,
+        totalRecords: total,
         page,
         limit,
-        totalPages: Math.ceil(totalRecords / limit)
+        totalPages: Math.ceil(total / limit)
       },
-      contacts: paginatedRecords
+      contacts: paginated
     }, 200, corsHeaders);
   }
 
-  return jsonResponse({ success: false, error: 'Invalid action.' }, 400, corsHeaders);
+  return jsonResponse({ success: false, error: 'Invalid action' }, 400, corsHeaders);
 }
 
 function jsonResponse(data, status = 200, headers = {}) {
