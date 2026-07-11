@@ -41,7 +41,7 @@ class SmartLocationFinder {
         this.cacheDOM();
         this.bindEvents();
         this.loadGeoHierarchy();
-        this.updateStatsBar(); 
+        this.updateStatsBar();
     }
 
     cacheDOM() {
@@ -102,7 +102,7 @@ class SmartLocationFinder {
 
         // Search Action
         this.searchLocationBtn.addEventListener('click', () => {
-            this.state.pagination.currentPage = 1; // Reset to page 1 on new search
+            this.state.pagination.currentPage = 1;
             this.executeSearch();
         });
         
@@ -150,68 +150,111 @@ class SmartLocationFinder {
         };
     }
 
+    // ===== সম্পূর্ণ নতুন loadGeoHierarchy (ক্যাসকেডিং ড্রপডাউন) =====
     async loadGeoHierarchy() {
         const headers = this.getAuthHeaders();
 
+        // 1. Division লোড করুন
         try {
-            // ১. Division লোড করা
             const divResponse = await fetch('/api/finder-api/location-secret?action=getDivisions', { headers });
             const divData = await divResponse.json();
             
             if (divData.success && divData.divisions) {
                 this.divisionSelect.innerHTML = '<option value="">— Select Division —</option>';
                 divData.divisions.forEach(div => {
-                    let option = document.createElement('option');
+                    const option = document.createElement('option');
                     option.value = div.id;
                     option.textContent = div.name;
                     this.divisionSelect.appendChild(option);
                 });
+                this.divisionSelect.disabled = false;
+            } else {
+                this.divisionSelect.innerHTML = '<option value="">Failed to load divisions</option>';
+                this.divisionSelect.disabled = true;
+            }
+        } catch (error) {
+            console.error('Division load failed:', error);
+            this.divisionSelect.innerHTML = '<option value="">Error loading divisions</option>';
+            this.divisionSelect.disabled = true;
+        }
+
+        // 2. Division পরিবর্তনে District লোড করুন
+        this.divisionSelect.addEventListener('change', async (e) => {
+            const divisionId = e.target.value;
+            
+            // Thana রিসেট করুন
+            this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
+            this.thanaSelect.disabled = true;
+
+            if (!divisionId) {
+                this.districtSelect.innerHTML = '<option value="">— Select District —</option>';
+                this.districtSelect.disabled = true;
+                return;
             }
 
-            // ২. Division সিলেক্ট করলে District লোড হবে
-            this.divisionSelect.addEventListener('change', async (e) => {
-                this.districtSelect.innerHTML = '<option value="">— Select District —</option>';
-                this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
-                
-                const divisionId = e.target.value;
-                if (!divisionId) return;
+            this.districtSelect.innerHTML = '<option value="">Loading districts...</option>';
+            this.districtSelect.disabled = true;
 
+            try {
                 const distResponse = await fetch(`/api/finder-api/location-secret?action=getDistricts&division=${divisionId}`, { headers });
                 const distData = await distResponse.json();
                 
-                if (distData.success && distData.districts) {
+                if (distData.success && distData.districts && distData.districts.length > 0) {
+                    this.districtSelect.innerHTML = '<option value="">— Select District —</option>';
                     distData.districts.forEach(dist => {
-                        let opt = document.createElement('option');
+                        const opt = document.createElement('option');
                         opt.value = dist.id;
                         opt.textContent = dist.name;
                         this.districtSelect.appendChild(opt);
                     });
+                    this.districtSelect.disabled = false;
+                } else {
+                    this.districtSelect.innerHTML = '<option value="">No districts found</option>';
+                    this.districtSelect.disabled = true;
                 }
-            });
+            } catch (error) {
+                console.error('District load failed:', error);
+                this.districtSelect.innerHTML = '<option value="">Error loading districts</option>';
+                this.districtSelect.disabled = true;
+            }
+        });
 
-            // ৩. District সিলেক্ট করলে Thana লোড হবে
-            this.districtSelect.addEventListener('change', async (e) => {
+        // 3. District পরিবর্তনে Thana লোড করুন
+        this.districtSelect.addEventListener('change', async (e) => {
+            const districtId = e.target.value;
+
+            if (!districtId) {
                 this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
-                
-                const districtId = e.target.value;
-                if (!districtId) return;
+                this.thanaSelect.disabled = true;
+                return;
+            }
 
+            this.thanaSelect.innerHTML = '<option value="">Loading thanas...</option>';
+            this.thanaSelect.disabled = true;
+
+            try {
                 const thanaResponse = await fetch(`/api/finder-api/location-secret?action=getThanas&district=${districtId}`, { headers });
                 const thanaData = await thanaResponse.json();
                 
-                if (thanaData.success && thanaData.thanas) {
+                if (thanaData.success && thanaData.thanas && thanaData.thanas.length > 0) {
+                    this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
                     thanaData.thanas.forEach(thana => {
-                        let opt = document.createElement('option');
+                        const opt = document.createElement('option');
                         opt.value = thana.id;
                         opt.textContent = thana.name;
                         this.thanaSelect.appendChild(opt);
                     });
+                    this.thanaSelect.disabled = false;
+                } else {
+                    this.thanaSelect.innerHTML = '<option value="">No thanas found</option>';
+                    this.thanaSelect.disabled = true;
                 }
-            });
-
-        } catch (error) {
-            console.error("Geographic data loading failed:", error);
-        }
+            } catch (error) {
+                console.error('Thana load failed:', error);
+                this.thanaSelect.innerHTML = '<option value="">Error loading thanas</option>';
+                this.thanaSelect.disabled = true;
+            }
+        });
     }
 
     resetFilters() {
@@ -260,7 +303,7 @@ class SmartLocationFinder {
         this.state.filters.thana = this.thanaSelect.value;
         this.state.filters.verificationStatus = this.verificationStatusSelect.value;
 
-        // API Query Parameters তৈরি করা হচ্ছে
+        // API Query Parameters
         const queryParams = new URLSearchParams({
             action: 'search',
             query: this.state.searchQuery,
@@ -286,7 +329,6 @@ class SmartLocationFinder {
                 return;
             }
 
-            // আসল ব্যাকএন্ড API-তে কল করা (location-secret.js)
             const response = await fetch(`/api/finder-api/location-secret?${queryParams.toString()}`, {
                 method: 'GET',
                 headers: this.getAuthHeaders()
@@ -295,17 +337,13 @@ class SmartLocationFinder {
             const data = await response.json();
 
             if (data.success) {
-                // মক ডেটার বদলে সার্ভার থেকে আসা আসল ডেটা সেভ করা হচ্ছে
                 this.state.data = data.contacts;
-                
-                // পেজিনেশন আপডেট
                 this.state.pagination.totalRecords = data.meta.totalRecords;
                 this.state.pagination.totalPages = data.meta.totalPages;
                 
                 this.renderTable();
                 this.updatePaginationUI();
             } else {
-                // সার্ভার থেকে কোনো এরর আসলে সেটা দেখানো
                 this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-10">Search Error: ${data.error}</td></tr>`;
             }
 
@@ -329,7 +367,6 @@ class SmartLocationFinder {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-blue-50/50 transition-colors cursor-pointer group";
             
-            // লোকেশন টেক্সট সুন্দর করে সাজানো
             const locationText = [profile.thana, profile.district].filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
 
             tr.innerHTML = `
@@ -385,13 +422,11 @@ class SmartLocationFinder {
     }
 
     openProfileModal(profileId) {
-        // ডাইনামিক ডেটা খুঁজে বের করা
         const profile = this.state.data.find(p => p.id === profileId);
         if(!profile) return;
 
         document.getElementById('modalProfileTitle').innerHTML = `<span>🛡️</span> Entity Reference: #${profile.id}`;
         
-        // প্রোফাইলের বিস্তারিত তথ্য মডালে দেখানো
         document.getElementById('modalProfileBody').innerHTML = `
             <div class="p-4 bg-blue-50 rounded-lg border border-blue-100 text-blue-800 text-sm">
                 <strong>System Note:</strong> Live Data Matrix established securely. 
@@ -431,7 +466,6 @@ class SmartLocationFinder {
     }
 
     updateStatsBar() {
-        // In a full production app, you might fetch these stats directly from an API too.
         document.getElementById('metaTotalProfiles').textContent = 'Live Data';
         document.getElementById('metaVerifiedProfiles').textContent = 'Secured';
         document.getElementById('metaAvgConfidence').textContent = 'Engine';
