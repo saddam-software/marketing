@@ -7,22 +7,25 @@ kv_namespaces = [
   { binding = "SECRETS_KV", id = "YOUR_KV_NAMESPACE_ID", preview_id = "YOUR_KV_PREVIEW_ID" }
 ]
 
-
 # ===== Cloudflare Pages Functions Routes =====
 # এই সেকশনটি যোগ করেছি যাতে /api/ পাথগুলো সঠিকভাবে রুট হয়
 routes = [
   { pattern = "example.com/api/*", zone_name = "example.com" }
 ]
 
+# Environment variables (Local / Preview Development)
+# আপনি যখন লোকাল কম্পিউটারে টেস্ট করবেন, তখন এই চাবিটি কাজ করবে
+[vars]
+JWT_SECRET = "LocalDevelopmentSecretKey123!@#"
 
-
-
-# Environment variables (production)
+# Environment variables (Production)
+# আপনার আসল লাইভ ওয়েবসাইটের জন্য ভেরিয়েবল
 [env.production]
 vars = {
   ADMIN_USERNAME = "saddam",
   ADMIN_PASSWORD = "SecurePass@2024",
-  BREVO_API_KEY = "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"
+  BREVO_API_KEY = "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",
+  JWT_SECRET = "MySuperSecretProductionKeyThatNoOneCanGuess2026!@#"
 }
 
 # Bindings for production (same as top-level)
