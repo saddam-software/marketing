@@ -1,6 +1,6 @@
 /**
  * AI-Powered Smart People & Business Finder Platform - Core Spatial API
- * D1 Database integration – Full version.
+ * D1 Database integration with error logging.
  */
 
 function base64UrlToBuffer(str) {
@@ -134,7 +134,7 @@ class GeoIntelligenceEngine {
 }
 
 // =========================================================================
-// CLOUDFLARE WORKER HANDLER – D1 VERSION
+// CLOUDFLARE WORKER HANDLER – D1 VERSION with error handling
 // =========================================================================
 export async function onRequest(context) {
   const { request, env } = context;
@@ -164,189 +164,206 @@ export async function onRequest(context) {
     return jsonResponse({ success: false, error: 'Unauthorized' }, 401, corsHeaders);
   }
 
-  // ----- getDivisions (static) -----
-  if (action === 'getDivisions') {
-    const data = Object.entries(ENTERPRISE_GEO_REGISTRY.divisions).map(([key, item]) => ({ id: key, name: item.name }));
-    return jsonResponse({ success: true, divisions: data }, 200, corsHeaders);
-  }
-
-  // ----- getDistricts (static) -----
-  if (action === 'getDistricts') {
-    const division = searchParams.get('division');
-    if (!division) return jsonResponse({ success: false, error: 'Missing division' }, 400, corsHeaders);
-    const normalized = GeoIntelligenceEngine.normalizeQueryLocation(division);
-    const filtered = Object.entries(ENTERPRISE_GEO_REGISTRY.districts)
-      .filter(([_, val]) => val.division === normalized)
-      .map(([key, val]) => ({ id: key, name: val.name }));
-    return jsonResponse({ success: true, districts: filtered }, 200, corsHeaders);
-  }
-
-  // ----- getThanas (static) -----
-  if (action === 'getThanas') {
-    const district = searchParams.get('district');
-    if (!district) return jsonResponse({ success: false, error: 'Missing district' }, 400, corsHeaders);
-    const normalized = GeoIntelligenceEngine.normalizeQueryLocation(district);
-    const filtered = Object.entries(ENTERPRISE_GEO_REGISTRY.thanas)
-      .filter(([_, val]) => val.district === normalized)
-      .map(([key, val]) => ({ id: key, name: val.name, lat: val.lat, lng: val.lng }));
-    return jsonResponse({ success: true, thanas: filtered }, 200, corsHeaders);
-  }
-
-  // ================================================================
-  // verifyProfile – D1
-  // ================================================================
-  if (action === 'verifyProfile') {
-    if (request.method !== 'POST') {
-      return jsonResponse({ success: false, error: 'Method not allowed' }, 405, corsHeaders);
-    }
-    let body;
-    try { body = await request.json(); } catch (_) {
-      return jsonResponse({ success: false, error: 'Invalid JSON body' }, 400, corsHeaders);
-    }
-    const { profileId } = body;
-    if (!profileId) {
-      return jsonResponse({ success: false, error: 'Missing profileId' }, 400, corsHeaders);
+  try {
+    // ----- getDivisions (static) -----
+    if (action === 'getDivisions') {
+      const data = Object.entries(ENTERPRISE_GEO_REGISTRY.divisions).map(([key, item]) => ({ id: key, name: item.name }));
+      return jsonResponse({ success: true, divisions: data }, 200, corsHeaders);
     }
 
-    try {
-      const updateQuery = `
-        UPDATE profiles 
-        SET verificationStatus = 'VERIFIED', 
-            confidenceScore = GREATEST(confidenceScore, 92)
-        WHERE id = ?
-        RETURNING id, verificationStatus, confidenceScore
-      `;
-      const result = await env.DB.prepare(updateQuery).bind(profileId).first();
-      if (!result) {
-        return jsonResponse({ success: false, error: 'Profile not found' }, 404, corsHeaders);
+    // ----- getDistricts (static) -----
+    if (action === 'getDistricts') {
+      const division = searchParams.get('division');
+      if (!division) return jsonResponse({ success: false, error: 'Missing division' }, 400, corsHeaders);
+      const normalized = GeoIntelligenceEngine.normalizeQueryLocation(division);
+      const filtered = Object.entries(ENTERPRISE_GEO_REGISTRY.districts)
+        .filter(([_, val]) => val.division === normalized)
+        .map(([key, val]) => ({ id: key, name: val.name }));
+      return jsonResponse({ success: true, districts: filtered }, 200, corsHeaders);
+    }
+
+    // ----- getThanas (static) -----
+    if (action === 'getThanas') {
+      const district = searchParams.get('district');
+      if (!district) return jsonResponse({ success: false, error: 'Missing district' }, 400, corsHeaders);
+      const normalized = GeoIntelligenceEngine.normalizeQueryLocation(district);
+      const filtered = Object.entries(ENTERPRISE_GEO_REGISTRY.thanas)
+        .filter(([_, val]) => val.district === normalized)
+        .map(([key, val]) => ({ id: key, name: val.name, lat: val.lat, lng: val.lng }));
+      return jsonResponse({ success: true, thanas: filtered }, 200, corsHeaders);
+    }
+
+    // ----- verifyProfile (D1) -----
+    if (action === 'verifyProfile') {
+      if (request.method !== 'POST') {
+        return jsonResponse({ success: false, error: 'Method not allowed' }, 405, corsHeaders);
       }
+      let body;
+      try { body = await request.json(); } catch (_) {
+        return jsonResponse({ success: false, error: 'Invalid JSON body' }, 400, corsHeaders);
+      }
+      const { profileId } = body;
+      if (!profileId) {
+        return jsonResponse({ success: false, error: 'Missing profileId' }, 400, corsHeaders);
+      }
+
+      // Check if DB binding exists
+      if (!env.DB) {
+        return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
+      }
+
+      try {
+        const updateQuery = `
+          UPDATE profiles 
+          SET verificationStatus = 'VERIFIED', 
+              confidenceScore = GREATEST(confidenceScore, 92)
+          WHERE id = ?
+          RETURNING id, verificationStatus, confidenceScore
+        `;
+        const result = await env.DB.prepare(updateQuery).bind(profileId).first();
+        if (!result) {
+          return jsonResponse({ success: false, error: 'Profile not found' }, 404, corsHeaders);
+        }
+        return jsonResponse({
+          success: true,
+          profile: {
+            id: result.id,
+            verificationStatus: result.verificationStatus,
+            confidenceScore: result.confidenceScore
+          }
+        }, 200, corsHeaders);
+      } catch (err) {
+        console.error('verifyProfile error:', err);
+        return jsonResponse({ success: false, error: 'Database error: ' + err.message }, 500, corsHeaders);
+      }
+    }
+
+    // ----- search (D1) -----
+    if (action === 'search') {
+      // Check if DB binding exists
+      if (!env.DB) {
+        return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
+      }
+
+      const queryTerm = searchParams.get('query') || '';
+      const entityType = searchParams.get('entityType') || 'all';
+      const division = searchParams.get('division') || '';
+      const district = searchParams.get('district') || '';
+      const thana = searchParams.get('thana') || '';
+      const radius = parseFloat(searchParams.get('radius') || '0');
+      const minConfidence = parseInt(searchParams.get('minConfidence') || '0', 10);
+      const verificationStatus = searchParams.get('verificationStatus') || 'all';
+      const reqEmail = searchParams.get('hasEmail') === 'true';
+      const reqPhone = searchParams.get('hasPhone') === 'true';
+      const reqWhatsapp = searchParams.get('hasWhatsapp') === 'true';
+      const reqSocial = searchParams.get('hasSocial') === 'true';
+      const page = parseInt(searchParams.get('page') || '1', 10);
+      const limit = parseInt(searchParams.get('limit') || '25', 10);
+      const offset = (page - 1) * limit;
+
+      const conditions = [];
+      const params = [];
+
+      if (queryTerm) {
+        conditions.push(`(name LIKE ? OR entityType LIKE ?)`);
+        const q = `%${queryTerm}%`;
+        params.push(q, q);
+      }
+      if (entityType !== 'all') {
+        conditions.push(`entityType = ?`);
+        params.push(entityType);
+      }
+      if (minConfidence > 0) {
+        conditions.push(`confidenceScore >= ?`);
+        params.push(minConfidence);
+      }
+      if (verificationStatus !== 'all') {
+        conditions.push(`verificationStatus = ?`);
+        params.push(verificationStatus);
+      }
+      if (division) {
+        const normDiv = GeoIntelligenceEngine.normalizeQueryLocation(division);
+        conditions.push(`division = ?`);
+        params.push(normDiv);
+      }
+      if (district) {
+        const normDist = GeoIntelligenceEngine.normalizeQueryLocation(district);
+        conditions.push(`district = ?`);
+        params.push(normDist);
+      }
+      if (thana) {
+        const normThana = GeoIntelligenceEngine.normalizeQueryLocation(thana);
+        conditions.push(`thana = ?`);
+        params.push(normThana);
+      }
+      if (reqEmail) conditions.push(`email IS NOT NULL AND email != ''`);
+      if (reqPhone) conditions.push(`phone IS NOT NULL AND phone != ''`);
+      if (reqWhatsapp) conditions.push(`whatsapp IS NOT NULL AND whatsapp != ''`);
+      if (reqSocial) conditions.push(`social IS NOT NULL AND social != ''`);
+
+      let whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+      // Count total
+      const countQuery = `SELECT COUNT(*) as total FROM profiles ${whereClause}`;
+      const countResult = await env.DB.prepare(countQuery).bind(...params).first();
+      let totalRecords = countResult ? countResult.total : 0;
+
+      // Data query
+      const dataQuery = `
+        SELECT 
+          id, name, entityType, division, district, thana,
+          lat, lng,
+          email, phone, whatsapp, social,
+          confidenceScore, verificationStatus
+        FROM profiles
+        ${whereClause}
+        LIMIT ? OFFSET ?
+      `;
+      const dataParams = [...params, limit, offset];
+      const dataResult = await env.DB.prepare(dataQuery).bind(...dataParams).all();
+      let results = dataResult.results || [];
+
+      // Apply radius filter in JS (since D1 SQLite lacks trig functions)
+      if (radius > 0 && thana) {
+        const center = ENTERPRISE_GEO_REGISTRY.thanas[thana.toLowerCase()];
+        if (center) {
+          results = results.filter(p => {
+            const dist = GeoIntelligenceEngine.calculateDistance(
+              center.lat, center.lng,
+              p.lat, p.lng
+            );
+            return dist <= radius;
+          });
+          totalRecords = results.length;
+        }
+      }
+
+      // Ensure pagination matches filtered results
+      const paginated = results.slice(0, limit);
+
       return jsonResponse({
         success: true,
-        profile: {
-          id: result.id,
-          verificationStatus: result.verificationStatus,
-          confidenceScore: result.confidenceScore
-        }
+        meta: {
+          totalRecords: totalRecords,
+          page,
+          limit,
+          totalPages: Math.ceil(totalRecords / limit)
+        },
+        contacts: paginated
       }, 200, corsHeaders);
-    } catch (err) {
-      return jsonResponse({ success: false, error: 'Database error: ' + err.message }, 500, corsHeaders);
     }
+
+    // invalid action
+    return jsonResponse({ success: false, error: 'Invalid action' }, 400, corsHeaders);
+
+  } catch (error) {
+    // Global error handler for any uncaught exception
+    console.error('Unhandled error:', error);
+    return jsonResponse({ 
+      success: false, 
+      error: 'Internal server error: ' + error.message 
+    }, 500, corsHeaders);
   }
-
-  // ================================================================
-  // search – D1 with pagination & filters
-  // ================================================================
-  if (action === 'search') {
-    const queryTerm = searchParams.get('query') || '';
-    const entityType = searchParams.get('entityType') || 'all';
-    const division = searchParams.get('division') || '';
-    const district = searchParams.get('district') || '';
-    const thana = searchParams.get('thana') || '';
-    const radius = parseFloat(searchParams.get('radius') || '0');
-    const minConfidence = parseInt(searchParams.get('minConfidence') || '0', 10);
-    const verificationStatus = searchParams.get('verificationStatus') || 'all';
-    const reqEmail = searchParams.get('hasEmail') === 'true';
-    const reqPhone = searchParams.get('hasPhone') === 'true';
-    const reqWhatsapp = searchParams.get('hasWhatsapp') === 'true';
-    const reqSocial = searchParams.get('hasSocial') === 'true';
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '25', 10);
-    const offset = (page - 1) * limit;
-
-    const conditions = [];
-    const params = [];
-
-    if (queryTerm) {
-      conditions.push(`(name LIKE ? OR entityType LIKE ?)`);
-      const q = `%${queryTerm}%`;
-      params.push(q, q);
-    }
-    if (entityType !== 'all') {
-      conditions.push(`entityType = ?`);
-      params.push(entityType);
-    }
-    if (minConfidence > 0) {
-      conditions.push(`confidenceScore >= ?`);
-      params.push(minConfidence);
-    }
-    if (verificationStatus !== 'all') {
-      conditions.push(`verificationStatus = ?`);
-      params.push(verificationStatus);
-    }
-    if (division) {
-      const normDiv = GeoIntelligenceEngine.normalizeQueryLocation(division);
-      conditions.push(`division = ?`);
-      params.push(normDiv);
-    }
-    if (district) {
-      const normDist = GeoIntelligenceEngine.normalizeQueryLocation(district);
-      conditions.push(`district = ?`);
-      params.push(normDist);
-    }
-    if (thana) {
-      const normThana = GeoIntelligenceEngine.normalizeQueryLocation(thana);
-      conditions.push(`thana = ?`);
-      params.push(normThana);
-    }
-    if (reqEmail) conditions.push(`email IS NOT NULL AND email != ''`);
-    if (reqPhone) conditions.push(`phone IS NOT NULL AND phone != ''`);
-    if (reqWhatsapp) conditions.push(`whatsapp IS NOT NULL AND whatsapp != ''`);
-    if (reqSocial) conditions.push(`social IS NOT NULL AND social != ''`);
-
-    let whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-
-    // Count total
-    const countQuery = `SELECT COUNT(*) as total FROM profiles ${whereClause}`;
-    const countResult = await env.DB.prepare(countQuery).bind(...params).first();
-    let totalRecords = countResult ? countResult.total : 0;
-
-    // Data query
-    const dataQuery = `
-      SELECT 
-        id, name, entityType, division, district, thana,
-        lat, lng,
-        email, phone, whatsapp, social,
-        confidenceScore, verificationStatus
-      FROM profiles
-      ${whereClause}
-      LIMIT ? OFFSET ?
-    `;
-    const dataParams = [...params, limit, offset];
-    const dataResult = await env.DB.prepare(dataQuery).bind(...dataParams).all();
-    let results = dataResult.results || [];
-
-    // Apply radius filter in JS (since D1 SQLite lacks trig functions)
-    if (radius > 0 && thana) {
-      const center = ENTERPRISE_GEO_REGISTRY.thanas[thana.toLowerCase()];
-      if (center) {
-        results = results.filter(p => {
-          const dist = GeoIntelligenceEngine.calculateDistance(
-            center.lat, center.lng,
-            p.lat, p.lng
-          );
-          return dist <= radius;
-        });
-        // Recalculate total after radius filtering
-        totalRecords = results.length;
-      }
-    }
-
-    // Ensure pagination matches filtered results (re-slice)
-    const paginated = results.slice(0, limit);
-
-    return jsonResponse({
-      success: true,
-      meta: {
-        totalRecords: totalRecords,
-        page,
-        limit,
-        totalPages: Math.ceil(totalRecords / limit)
-      },
-      contacts: paginated
-    }, 200, corsHeaders);
-  }
-
-  return jsonResponse({ success: false, error: 'Invalid action' }, 400, corsHeaders);
 }
 
 function jsonResponse(data, status = 200, headers = {}) {
