@@ -330,64 +330,88 @@
             this.tablePaginationWrapper.classList.add('hidden');
         }
 
-        async executeSearch() {
-            this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center py-10"><div class="animate-pulse flex flex-col items-center"><div class="h-8 w-8 bg-blue-200 rounded-full mb-3"></div><div class="text-sm text-slate-500">Executing Smart AI Search via Engine...</div></div></td></tr>`;
-            
-            this.state.searchQuery = this.smartNlpSearchInput.value;
-            this.state.filters.entityType = this.entityTypeSelect.value;
-            this.state.filters.division = this.divisionSelect.value;
-            this.state.filters.district = this.districtSelect.value;
-            this.state.filters.thana = this.thanaSelect.value;
-            this.state.filters.verificationStatus = this.verificationStatusSelect.value;
+async executeSearch() {
+    // Loading state
+    this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center py-10"><div class="animate-pulse flex flex-col items-center"><div class="h-8 w-8 bg-blue-200 rounded-full mb-3"></div><div class="text-sm text-slate-500">Executing Smart AI Search via Engine...</div></div></td></tr>`;
+    
+    // Collect filter values
+    this.state.searchQuery = this.smartNlpSearchInput.value;
+    this.state.filters.entityType = this.entityTypeSelect.value;
+    this.state.filters.division = this.divisionSelect.value;
+    this.state.filters.district = this.districtSelect.value;
+    this.state.filters.thana = this.thanaSelect.value;
+    this.state.filters.verificationStatus = this.verificationStatusSelect.value;
 
-            const queryParams = new URLSearchParams({
-                action: 'search',
-                query: this.state.searchQuery,
-                entityType: this.state.filters.entityType,
-                division: this.state.filters.division,
-                district: this.state.filters.district,
-                thana: this.state.filters.thana,
-                radius: this.state.filters.radius,
-                minConfidence: this.state.filters.minConfidence,
-                verificationStatus: this.state.filters.verificationStatus,
-                hasEmail: this.hasEmailCheck.checked,
-                hasPhone: this.hasPhoneCheck.checked,
-                hasWhatsapp: this.hasWhatsappCheck.checked,
-                hasSocial: this.hasSocialCheck.checked,
-                page: this.state.pagination.currentPage,
-                limit: this.state.pagination.limit
-            });
+    // 🐛 DEBUG: দেখি কী কী ভ্যালু পাঠাচ্ছি
+    console.log('🔍 Search Parameters:', {
+        division: this.state.filters.division,
+        district: this.state.filters.district,
+        thana: this.state.filters.thana,
+        entityType: this.state.filters.entityType,
+        minConfidence: this.state.filters.minConfidence,
+        verificationStatus: this.state.filters.verificationStatus,
+        hasEmail: this.hasEmailCheck.checked,
+        hasPhone: this.hasPhoneCheck.checked,
+        hasWhatsapp: this.hasWhatsappCheck.checked,
+        hasSocial: this.hasSocialCheck.checked,
+        page: this.state.pagination.currentPage,
+        limit: this.state.pagination.limit
+    });
 
-            try {
-                const token = localStorage.getItem('emailExtractorToken');
-                if(!token) {
-                    this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-10 font-bold">Authentication Error: Token missing. Please log in again.</td></tr>`;
-                    return;
-                }
+    const queryParams = new URLSearchParams({
+        action: 'search',
+        query: this.state.searchQuery,
+        entityType: this.state.filters.entityType,
+        division: this.state.filters.division,
+        district: this.state.filters.district,
+        thana: this.state.filters.thana,
+        radius: this.state.filters.radius,
+        minConfidence: this.state.filters.minConfidence,
+        verificationStatus: this.state.filters.verificationStatus,
+        hasEmail: this.hasEmailCheck.checked,
+        hasPhone: this.hasPhoneCheck.checked,
+        hasWhatsapp: this.hasWhatsappCheck.checked,
+        hasSocial: this.hasSocialCheck.checked,
+        page: this.state.pagination.currentPage,
+        limit: this.state.pagination.limit
+    });
 
-                const response = await fetch(`/api/finder-api/location-secret?${queryParams.toString()}`, {
-                    method: 'GET',
-                    headers: this.getAuthHeaders()
-                });
-                
-                const data = await response.json();
+    // 🐛 DEBUG: পুরো URL দেখি
+    console.log('🔗 Full API URL:', `/api/finder-api/location-secret?${queryParams.toString()}`);
 
-                if (data.success) {
-                    this.state.data = data.contacts;
-                    this.state.pagination.totalRecords = data.meta.totalRecords;
-                    this.state.pagination.totalPages = data.meta.totalPages;
-                    
-                    this.renderTable();
-                    this.updatePaginationUI();
-                } else {
-                    this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-10">Search Error: ${data.error}</td></tr>`;
-                }
-
-            } catch (error) {
-                console.error("Search Execution Failed:", error);
-                this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-10">Network connection failed. Please check your internet or try again.</td></tr>`;
-            }
+    try {
+        const token = localStorage.getItem('emailExtractorToken');
+        if(!token) {
+            this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-10 font-bold">Authentication Error: Token missing. Please log in again.</td></tr>`;
+            return;
         }
+
+        const response = await fetch(`/api/finder-api/location-secret?${queryParams.toString()}`, {
+            method: 'GET',
+            headers: this.getAuthHeaders()
+        });
+        
+        const data = await response.json();
+
+        // 🐛 DEBUG: সার্ভার থেকে কী ডেটা আসছে
+        console.log('📦 Server Response:', data);
+
+        if (data.success) {
+            this.state.data = data.contacts;
+            this.state.pagination.totalRecords = data.meta.totalRecords;
+            this.state.pagination.totalPages = data.meta.totalPages;
+            
+            this.renderTable();
+            this.updatePaginationUI();
+        } else {
+            this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-10">Search Error: ${data.error}</td></tr>`;
+        }
+
+    } catch (error) {
+        console.error("Search Execution Failed:", error);
+        this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-10">Network connection failed. Please check your internet or try again.</td></tr>`;
+    }
+}
 
         renderTable() {
             this.locationResultBody.innerHTML = '';
