@@ -4,6 +4,7 @@
  * Clean version – no debug logs, only critical errors.
  * 
  * Updated: Verify Node feature (Option A) implemented.
+ * Updated: Export Directory CSV functionality added.
  */
 
 (function() {
@@ -104,6 +105,8 @@
             this.closeProfileModalBottomBtn = document.getElementById('closeProfileModalBottomBtn');
             // Verify Node button
             this.verifyProfileInstanceBtn = document.getElementById('verifyProfileInstanceBtn');
+            // Export button
+            this.exportLocationCsvBtn = document.getElementById('exportLocationCsv');
         }
 
         bindEvents() {
@@ -146,6 +149,8 @@
             this.closeProfileModalBottomBtn?.addEventListener('click', () => this.toggleModal(false));
             // Verify Node click handler
             this.verifyProfileInstanceBtn?.addEventListener('click', () => this.verifyCurrentProfile());
+            // Export CSV click handler
+            this.exportLocationCsvBtn?.addEventListener('click', () => this.exportToCSV());
         }
 
         getAuthHeaders() {
@@ -281,6 +286,10 @@
                 </tr>`;
             this.locationResultCount.textContent = '0 Records';
             this.tablePaginationWrapper.classList.add('hidden');
+            // Disable export button when data is empty
+            if (this.exportLocationCsvBtn) {
+                this.exportLocationCsvBtn.disabled = true;
+            }
         }
 
         async executeSearch() {
@@ -345,6 +354,11 @@
             this.locationResultBody.innerHTML = '';
             this.locationResultCount.textContent = `${this.state.pagination.totalRecords} Records Found (Page ${this.state.pagination.currentPage})`;
             this.locationResultMeta.textContent = 'Showing real-time results directly from Master Engine.';
+
+            // Enable/disable export button based on data presence
+            if (this.exportLocationCsvBtn) {
+                this.exportLocationCsvBtn.disabled = (this.state.data.length === 0);
+            }
 
             if (this.state.data.length === 0) {
                 this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-slate-500 py-10">No verified profiles found matching your criteria. Try loosening the filters.</td></tr>`;
@@ -523,6 +537,61 @@
                 btn.textContent = originalText;
                 btn.disabled = false;
             }
+        }
+
+        // ================= EXPORT CSV FEATURE =================
+        exportToCSV() {
+            const data = this.state.data;
+            if (!data || data.length === 0) {
+                alert('No data to export.');
+                return;
+            }
+
+            // Define CSV headers
+            const headers = [
+                'ID',
+                'Name',
+                'Entity Type',
+                'Verification Status',
+                'Confidence Score',
+                'Email',
+                'Phone',
+                'WhatsApp',
+                'Social'
+            ];
+
+            // Build CSV rows
+            const rows = data.map(profile => {
+                const channels = profile.channels || {};
+                return [
+                    profile.id || '',
+                    profile.name || '',
+                    profile.entityType || '',
+                    profile.verificationStatus || '',
+                    profile.confidenceScore || '',
+                    channels.email || '',
+                    channels.phone || '',
+                    channels.whatsapp || '',
+                    channels.social || ''
+                ];
+            });
+
+            // Combine headers and rows
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.join(','))
+            ].join('\n');
+
+            // Create a Blob and trigger download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.setAttribute('download', `location_contacts_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
     }
 
