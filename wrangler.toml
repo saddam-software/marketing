@@ -2,7 +2,7 @@ name = "email-extractor-pro"
 type = "javascript"
 compatibility_date = "2024-11-01"
 
-# KV Namespace
+# KV Namespace (ঐচ্ছিক)
 kv_namespaces = [
   { binding = "SECRETS_KV", id = "YOUR_KV_NAMESPACE_ID", preview_id = "YOUR_KV_PREVIEW_ID" }
 ]
@@ -13,22 +13,34 @@ binding = "DB"
 database_name = "profiles-db"
 database_id = "9d11ebc2-47db-45d7-9ec1-e36ed8f644d8"
 
-# ===== Pages Routes (যদি Pages-এ API রাউটিং করেন) =====
+# ===== Pages Routes (ঐচ্ছিক) =====
 routes = [
   { pattern = "example.com/api/*", zone_name = "example.com" }
 ]
 
-# ===== লোকাল ডেভেলপমেন্ট ভেরিয়েবল =====
+# ===== মাল্টি-সোর্স API কী (এখানে বসান) =====
 [vars]
 JWT_SECRET = "LocalDevelopmentSecretKey123!@#"
+
+# গুগল প্লেসেস API (https://console.cloud.google.com/)
+GOOGLE_PLACES_API_KEY = "YOUR_GOOGLE_API_KEY"  
+
+# ফোরস্কয়ার API (https://foursquare.com/developers/)
+FOURSQUARE_API_KEY = "YOUR_FOURSQUARE_API_KEY"
+
+# ইয়েলপ ফিউশন API (https://www.yelp.com/developers)
+YELP_API_KEY = "YOUR_YELP_API_KEY"
 
 # ===== প্রোডাকশন এনভায়রনমেন্ট =====
 [env.production]
 vars = {
   ADMIN_USERNAME = "saddam",
   ADMIN_PASSWORD = "SecurePass@2024",
-  BREVO_API_KEY = "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",
-  JWT_SECRET = "MySuperSecretProductionKeyThatNoOneCanGuess2026!@#"
+  BREVO_API_KEY = "xkeysib-....",
+  JWT_SECRET = "MySuperSecretProductionKey...",
+  GOOGLE_PLACES_API_KEY = "YOUR_GOOGLE_API_KEY",
+  FOURSQUARE_API_KEY = "YOUR_FOURSQUARE_API_KEY",
+  YELP_API_KEY = "YOUR_YELP_API_KEY"
 }
 
 # প্রোডাকশন KV
