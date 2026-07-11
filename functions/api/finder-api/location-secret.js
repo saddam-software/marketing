@@ -1,6 +1,6 @@
 /**
  * AI-Powered Smart People & Business Finder Platform - Core Spatial API
- * D1 Database integration with Auto-Fetch from Google Places API.
+ * MULTI-SOURCE AUTO-CACHING ENGINE (Google + OSM + Foursquare + Yelp)
  */
 
 function base64UrlToBuffer(str) {
@@ -43,7 +43,7 @@ async function verifyJWT(token, secret) {
 }
 
 // =========================================================================
-// GEO REGISTRY (Static – unchanged)
+// STATIC GEO REGISTRY (Bangladesh 8 Divisions, 26+ Districts, 20+ Thanas)
 // =========================================================================
 const ENTERPRISE_GEO_REGISTRY = {
   divisions: {
@@ -108,7 +108,7 @@ const ENTERPRISE_GEO_REGISTRY = {
 };
 
 // =========================================================================
-// GEO INTELLIGENCE ENGINE
+// GEO INTELLIGENCE ENGINE (Helper)
 // =========================================================================
 class GeoIntelligenceEngine {
   static calculateDistance(lat1, lon1, lat2, lon2) {
@@ -131,114 +131,170 @@ class GeoIntelligenceEngine {
     }
     return clean;
   }
+
+  // ঠিকানা থেকে Division/ District বের করার সহজ ফাংশন
+  static extractDivisionFromAddress(address) {
+    if (!address) return '';
+    const lower = address.toLowerCase();
+    for (const [key, node] of Object.entries(ENTERPRISE_GEO_REGISTRY.divisions)) {
+      if (lower.includes(key) || node.aliases.some(a => lower.includes(a))) return key;
+    }
+    return '';
+  }
+  static extractDistrictFromAddress(address) {
+    if (!address) return '';
+    const lower = address.toLowerCase();
+    for (const [key, node] of Object.entries(ENTERPRISE_GEO_REGISTRY.districts)) {
+      if (lower.includes(key) || lower.includes(node.name.toLowerCase())) return key;
+    }
+    return '';
+  }
 }
 
 // =========================================================================
-// GOOGLE PLACES API INTEGRATION
+// EXTERNAL DATA FETCHERS (MULTI-SOURCE)
 // =========================================================================
 
-// গুগল থেকে ম্যাপিং (Entity Type)
-function mapGoogleTypesToEntityType(types) {
-  if (!types) return 'BUSINESS';
-  if (types.some(t => ['lodging', 'hotel', 'spa'].includes(t))) return 'SERVICE';
-  if (types.some(t => ['restaurant', 'food', 'cafe'].includes(t))) return 'BUSINESS';
-  if (types.some(t => ['doctor', 'health', 'hospital'].includes(t))) return 'PROFESSIONAL';
-  if (types.some(t => ['school', 'university'].includes(t))) return 'SERVICE';
-  return 'BUSINESS';
-}
-
-// ঠিকানা থেকে বিভাগ ও জেলা বের করা (বাংলাদেশের জন্য)
-function extractDivisionAndDistrict(components) {
-  let division = '';
-  let district = '';
-  if (!components) return { division, district };
-
-  // লং নেম দিয়ে খোঁজ
-  const divMap = {
-    'dhaka': 'dhaka', 'ঢাকা': 'dhaka',
-    'chittagong': 'chattogram', 'চট্টগ্রাম': 'chattogram',
-    'sylhet': 'sylhet', 'সিলেট': 'sylhet',
-    'rajshahi': 'rajshahi', 'রাজশাহী': 'rajshahi',
-    'khulna': 'khulna', 'খুলনা': 'khulna',
-    'barisal': 'barishal', 'বরিশাল': 'barishal',
-    'rangpur': 'rangpur', 'রংপুর': 'rangpur',
-    'mymensingh': 'mymensingh', 'ময়মনসিংহ': 'mymensingh'
-  };
-
-  // বাংলাদেশের জেলাগুলোর ম্যাপ (সাধারণ কিছু)
-  const distMap = {
-    'dhaka': 'dhaka', 'gazipur': 'gazipur', 'narayanganj': 'narayanganj',
-    'tangail': 'tangail', 'faridpur': 'faridpur', 'chattogram': 'chattogram',
-    'cox\'s bazar': 'cox_bazar', 'rangamati': 'rangamati', 'comilla': 'comilla',
-    'noakhali': 'noakhali', 'sylhet': 'sylhet', 'moulvibazar': 'moulvibazar',
-    'habiganj': 'habiganj', 'rajshahi': 'rajshahi', 'naogaon': 'naogaon',
-    'natore': 'natore', 'khulna': 'khulna', 'kushtia': 'kushtia',
-    'jessore': 'jessore', 'barishal': 'barishal', 'barguna': 'barguna',
-    'rangpur': 'rangpur', 'dinajpur': 'dinajpur', 'mymensingh': 'mymensingh',
-    'jamalpur': 'jamalpur'
-  };
-
-  for (const comp of components) {
-    const lname = comp.long_name.toLowerCase();
-    const sname = comp.short_name.toLowerCase();
-    if (comp.types.includes('administrative_area_level_1')) {
-      const found = divMap[lname] || divMap[sname];
-      if (found) division = found;
-    }
-    if (comp.types.includes('administrative_area_level_2') || comp.types.includes('locality')) {
-      const found = distMap[lname] || distMap[sname];
-      if (found) district = found;
-    }
-  }
-
-  return { division, district };
-}
-
-// গুগল প্লেস API-তে কল করা
-async function fetchFromGoogle(query, apiKey) {
-  if (!apiKey) {
-    console.warn('Google API Key missing');
-    return [];
-  }
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
+// 1. Google Places API
+async function fetchFromGoogle(query, env) {
+  const key = env.GOOGLE_PLACES_API_KEY;
+  if (!key || key === 'YOUR_GOOGLE_API_KEY') return [];
   try {
-    const response = await fetch(url);
-    const data = await response.json();
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      console.warn('Google API error:', data.status);
-      return [];
-    }
-    return data.results || [];
-  } catch (e) {
-    console.error('Google fetch error:', e);
-    return [];
-  }
+    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${key}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data.status !== 'OK') return [];
+    return data.results.map(place => ({
+      source: 'google',
+      id: `google_${place.place_id}`,
+      name: place.name,
+      address: place.formatted_address,
+      lat: place.geometry.location.lat,
+      lng: place.geometry.location.lng,
+      phone: place.formatted_phone_number || '',
+      website: place.website || '',
+      types: place.types || [],
+      confidence: 75
+    }));
+  } catch (e) { return []; }
 }
 
-// গুগলের ডেটা আমাদের ডেটাবেজ ফরম্যাটে রূপান্তর
-function mapGooglePlaceToProfile(place) {
-  const { division, district } = extractDivisionAndDistrict(place.address_components);
-  
-  return {
-    id: place.place_id,
-    name: place.name || 'Unknown',
-    entityType: mapGoogleTypesToEntityType(place.types),
-    division: division || '',
-    district: district || '',
-    thana: '', // থানা সাধারণত পাই না
-    lat: place.geometry?.location?.lat || 0,
-    lng: place.geometry?.location?.lng || 0,
-    email: '', // গুগল ইমেইল দেয় না
-    phone: place.formatted_phone_number || '',
-    whatsapp: '',
-    social: place.website || '',
-    confidenceScore: 60, // নতুন ডেটা, মিডিয়াম কনফিডেন্স
-    verificationStatus: 'PARTIAL' // যেহেতু অটো আনা, তাই আংশিক
-  };
+// 2. OpenStreetMap Nominatim (100% Free, No API Key!)
+async function fetchFromOSM(query, env) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10`;
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'YourApp/1.0 (your-email@example.com)' } // OSM নীতিমালা অনুযায়ী
+    });
+    const data = await resp.json();
+    if (!Array.isArray(data)) return [];
+    return data.map(item => ({
+      source: 'osm',
+      id: `osm_${item.osm_type}_${item.osm_id}`,
+      name: item.display_name.split(',')[0],
+      address: item.display_name,
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon),
+      phone: '',
+      website: '',
+      types: [item.class],
+      confidence: 50 // OSM ডেটা কম কনফিডেন্স
+    }));
+  } catch (e) { return []; }
+}
+
+// 3. Foursquare Places API
+async function fetchFromFoursquare(query, env) {
+  const key = env.FOURSQUARE_API_KEY;
+  if (!key || key === 'YOUR_FOURSQUARE_API_KEY') return [];
+  try {
+    const url = `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(query)}&limit=10`;
+    const resp = await fetch(url, {
+      headers: { 'Authorization': key }
+    });
+    const data = await resp.json();
+    if (!data.results) return [];
+    return data.results.map(place => ({
+      source: 'foursquare',
+      id: `fsq_${place.fsq_id}`,
+      name: place.name,
+      address: place.location?.formatted_address || '',
+      lat: place.geocodes?.main?.latitude || 0,
+      lng: place.geocodes?.main?.longitude || 0,
+      phone: place.tel || '',
+      website: place.website || '',
+      types: place.categories?.map(c => c.name) || [],
+      confidence: 65
+    }));
+  } catch (e) { return []; }
+}
+
+// 4. Yelp Fusion API
+async function fetchFromYelp(query, env) {
+  const key = env.YELP_API_KEY;
+  if (!key || key === 'YOUR_YELP_API_KEY') return [];
+  try {
+    const url = `https://api.yelp.com/v3/businesses/search?term=${encodeURIComponent(query)}&limit=10`;
+    const resp = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${key}` }
+    });
+    const data = await resp.json();
+    if (!data.businesses) return [];
+    return data.businesses.map(biz => ({
+      source: 'yelp',
+      id: `yelp_${biz.id}`,
+      name: biz.name,
+      address: biz.location?.address1 || '',
+      lat: biz.coordinates?.latitude || 0,
+      lng: biz.coordinates?.longitude || 0,
+      phone: biz.phone || '',
+      website: biz.url || '',
+      types: biz.categories?.map(c => c.title) || [],
+      confidence: 70
+    }));
+  } catch (e) { return []; }
+}
+
+// 5. Generic Normalizer & Inserter
+async function normalizeAndInsertProfiles(rawItems, env) {
+  let inserted = 0;
+  for (const item of rawItems) {
+    if (!item.name || !item.lat) continue;
+    const division = GeoIntelligenceEngine.extractDivisionFromAddress(item.address);
+    const district = GeoIntelligenceEngine.extractDistrictFromAddress(item.address);
+    const entityType = (item.types && item.types.some(t => ['restaurant', 'hotel', 'spa', 'tourism'].includes(t))) ? 'SERVICE' : 'BUSINESS';
+
+    const query = `
+      INSERT OR IGNORE INTO profiles 
+      (id, name, entityType, division, district, thana, lat, lng, email, phone, whatsapp, social, confidenceScore, verificationStatus)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const params = [
+      item.id,
+      item.name.substring(0, 100),
+      entityType,
+      division || 'dhaka',
+      district || 'dhaka',
+      '',
+      item.lat,
+      item.lng,
+      '',
+      item.phone || '',
+      '',
+      item.website || '',
+      item.confidence || 60,
+      'UNVERIFIED'
+    ];
+    try {
+      const result = await env.DB.prepare(query).bind(...params).run();
+      if (result.meta?.changes > 0) inserted++;
+    } catch (e) { /* skip duplicates */ }
+  }
+  return inserted;
 }
 
 // =========================================================================
-// CLOUDFLARE WORKER HANDLER – D1 + AUTO FETCH
+// CLOUDFLARE WORKER HANDLER
 // =========================================================================
 export async function onRequest(context) {
   const { request, env } = context;
@@ -269,13 +325,11 @@ export async function onRequest(context) {
   }
 
   try {
-    // ----- getDivisions (static) -----
+    // ----- static routes (getDivisions, getDistricts, getThanas) -----
     if (action === 'getDivisions') {
       const data = Object.entries(ENTERPRISE_GEO_REGISTRY.divisions).map(([key, item]) => ({ id: key, name: item.name }));
       return jsonResponse({ success: true, divisions: data }, 200, corsHeaders);
     }
-
-    // ----- getDistricts (static) -----
     if (action === 'getDistricts') {
       const division = searchParams.get('division');
       if (!division) return jsonResponse({ success: false, error: 'Missing division' }, 400, corsHeaders);
@@ -285,8 +339,6 @@ export async function onRequest(context) {
         .map(([key, val]) => ({ id: key, name: val.name }));
       return jsonResponse({ success: true, districts: filtered }, 200, corsHeaders);
     }
-
-    // ----- getThanas (static) -----
     if (action === 'getThanas') {
       const district = searchParams.get('district');
       if (!district) return jsonResponse({ success: false, error: 'Missing district' }, 400, corsHeaders);
@@ -307,12 +359,8 @@ export async function onRequest(context) {
         return jsonResponse({ success: false, error: 'Invalid JSON body' }, 400, corsHeaders);
       }
       const { profileId } = body;
-      if (!profileId) {
-        return jsonResponse({ success: false, error: 'Missing profileId' }, 400, corsHeaders);
-      }
-      if (!env.DB) {
-        return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
-      }
+      if (!profileId) return jsonResponse({ success: false, error: 'Missing profileId' }, 400, corsHeaders);
+      if (!env.DB) return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
 
       try {
         const updateQuery = `
@@ -323,28 +371,16 @@ export async function onRequest(context) {
           RETURNING id, verificationStatus, confidenceScore
         `;
         const result = await env.DB.prepare(updateQuery).bind(profileId).first();
-        if (!result) {
-          return jsonResponse({ success: false, error: 'Profile not found' }, 404, corsHeaders);
-        }
-        return jsonResponse({
-          success: true,
-          profile: {
-            id: result.id,
-            verificationStatus: result.verificationStatus,
-            confidenceScore: result.confidenceScore
-          }
-        }, 200, corsHeaders);
+        if (!result) return jsonResponse({ success: false, error: 'Profile not found' }, 404, corsHeaders);
+        return jsonResponse({ success: true, profile: result }, 200, corsHeaders);
       } catch (err) {
-        console.error('verifyProfile error:', err);
-        return jsonResponse({ success: false, error: 'Database error: ' + err.message }, 500, corsHeaders);
+        return jsonResponse({ success: false, error: 'DB error: ' + err.message }, 500, corsHeaders);
       }
     }
 
-    // ----- search (D1 + Auto Fetch) -----
+    // ----- SEARCH (MAIN LOGIC WITH AUTO-FETCH) -----
     if (action === 'search') {
-      if (!env.DB) {
-        return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
-      }
+      if (!env.DB) return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
 
       const queryTerm = searchParams.get('query') || '';
       const entityType = searchParams.get('entityType') || 'all';
@@ -362,171 +398,106 @@ export async function onRequest(context) {
       const limit = parseInt(searchParams.get('limit') || '25', 10);
       const offset = (page - 1) * limit;
 
-      // --- ১. D1-এ সার্চ করুন ---
+      // Build D1 Search Query
       const conditions = [];
       const params = [];
-
-      if (queryTerm) {
-        conditions.push(`(name LIKE ? OR entityType LIKE ?)`);
-        const q = `%${queryTerm}%`;
-        params.push(q, q);
-      }
-      if (entityType !== 'all') {
-        conditions.push(`entityType = ?`);
-        params.push(entityType);
-      }
-      if (minConfidence > 0) {
-        conditions.push(`confidenceScore >= ?`);
-        params.push(minConfidence);
-      }
-      if (verificationStatus !== 'all') {
-        conditions.push(`verificationStatus = ?`);
-        params.push(verificationStatus);
-      }
-      if (division) {
-        const normDiv = GeoIntelligenceEngine.normalizeQueryLocation(division);
-        conditions.push(`division = ?`);
-        params.push(normDiv);
-      }
-      if (district) {
-        const normDist = GeoIntelligenceEngine.normalizeQueryLocation(district);
-        conditions.push(`district = ?`);
-        params.push(normDist);
-      }
-      if (thana) {
-        const normThana = GeoIntelligenceEngine.normalizeQueryLocation(thana);
-        conditions.push(`thana = ?`);
-        params.push(normThana);
-      }
+      if (queryTerm) { conditions.push(`(name LIKE ? OR entityType LIKE ?)`); const q = `%${queryTerm}%`; params.push(q, q); }
+      if (entityType !== 'all') { conditions.push(`entityType = ?`); params.push(entityType); }
+      if (minConfidence > 0) { conditions.push(`confidenceScore >= ?`); params.push(minConfidence); }
+      if (verificationStatus !== 'all') { conditions.push(`verificationStatus = ?`); params.push(verificationStatus); }
+      if (division) { const norm = GeoIntelligenceEngine.normalizeQueryLocation(division); conditions.push(`division = ?`); params.push(norm); }
+      if (district) { const norm = GeoIntelligenceEngine.normalizeQueryLocation(district); conditions.push(`district = ?`); params.push(norm); }
+      if (thana) { const norm = GeoIntelligenceEngine.normalizeQueryLocation(thana); conditions.push(`thana = ?`); params.push(norm); }
       if (reqEmail) conditions.push(`email IS NOT NULL AND email != ''`);
       if (reqPhone) conditions.push(`phone IS NOT NULL AND phone != ''`);
       if (reqWhatsapp) conditions.push(`whatsapp IS NOT NULL AND whatsapp != ''`);
       if (reqSocial) conditions.push(`social IS NOT NULL AND social != ''`);
 
       let whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-
-      // D1 থেকে ডেটা কাউন্ট
       const countQuery = `SELECT COUNT(*) as total FROM profiles ${whereClause}`;
       const countResult = await env.DB.prepare(countQuery).bind(...params).first();
       let totalRecords = countResult ? countResult.total : 0;
 
-      let results = [];
-      // যদি রেজাল্ট কম হয় এবং query টার্মটি ২ অক্ষরের বেশি হয়, তাহলে গুগল থেকে আনব
-      if (totalRecords < 5 && queryTerm.length > 2) {
-        const apiKey = env.GOOGLE_PLACES_API_KEY || '';
-        if (apiKey) {
-          console.log('🔄 Fetching from Google for:', queryTerm);
-          const googlePlaces = await fetchFromGoogle(queryTerm, apiKey);
-          
-          if (googlePlaces.length > 0) {
-            // প্রতিটি প্লেস ডেটাবেজে সেভ করি
-            let insertedCount = 0;
-            for (const place of googlePlaces) {
-              const profile = mapGooglePlaceToProfile(place);
-              try {
-                const insertQuery = `
-                  INSERT OR IGNORE INTO profiles (
-                    id, name, entityType, division, district, thana, 
-                    lat, lng, email, phone, whatsapp, social, 
-                    confidenceScore, verificationStatus
-                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `;
-                await env.DB.prepare(insertQuery).bind(
-                  profile.id,
-                  profile.name,
-                  profile.entityType,
-                  profile.division,
-                  profile.district,
-                  profile.thana,
-                  profile.lat,
-                  profile.lng,
-                  profile.email,
-                  profile.phone,
-                  profile.whatsapp,
-                  profile.social,
-                  profile.confidenceScore,
-                  profile.verificationStatus
-                ).run();
-                insertedCount++;
-              } catch (e) {
-                console.error('Insert error for', profile.id, e.message);
-              }
-            }
-            console.log(`✅ Inserted ${insertedCount} new profiles from Google.`);
-
-            // D1 থেকে নতুন করে রিলোড করি (সদ্য সেভ করা ডেটাসহ)
-            const newCountQuery = `SELECT COUNT(*) as total FROM profiles ${whereClause}`;
-            const newCountResult = await env.DB.prepare(newCountQuery).bind(...params).first();
-            totalRecords = newCountResult ? newCountResult.total : 0;
+      // ---- AUTO-FETCH LOGIC: যদি D1-এ কম ডেটা থাকে এবং সার্চ টার্ম দেওয়া থাকে ----
+      if (totalRecords < 3 && queryTerm && queryTerm.length > 2) {
+        console.log(`🔄 Low results (${totalRecords}) for "${queryTerm}". Fetching from external APIs...`);
+        
+        // সমস্ত API থেকে সমান্তরালে (Parallel) ডেটা আনা
+        const fetchPromises = [
+          fetchFromGoogle(queryTerm, env),
+          fetchFromOSM(queryTerm, env),
+          fetchFromFoursquare(queryTerm, env),
+          fetchFromYelp(queryTerm, env)
+        ];
+        const results = await Promise.allSettled(fetchPromises);
+        
+        let allItems = [];
+        for (const result of results) {
+          if (result.status === 'fulfilled' && Array.isArray(result.value)) {
+            allItems = allItems.concat(result.value);
           }
-        } else {
-          console.warn('⚠️ Google API Key not configured.');
+        }
+
+        if (allItems.length > 0) {
+          // সাজানোর পর সর্বোচ্চ ২০টি ইউনিক ডেটা নেওয়া
+          const uniqueMap = new Map();
+          for (const item of allItems) {
+            if (!uniqueMap.has(item.id)) uniqueMap.set(item.id, item);
+          }
+          const uniqueItems = Array.from(uniqueMap.values()).slice(0, 20);
+          
+          // D1-এ সেভ করা
+          const inserted = await normalizeAndInsertProfiles(uniqueItems, env);
+          console.log(`✅ Inserted ${inserted} new profiles from external sources.`);
+
+          // আবার D1 থেকে রিলোড (হয়তো এখন ডেটা বেশি)
+          const newCount = await env.DB.prepare(countQuery).bind(...params).first();
+          totalRecords = newCount ? newCount.total : 0;
         }
       }
 
-      // D1 থেকে চূড়ান্ত ডেটা কোয়েরি
+      // ফাইনাল ডেটা কোয়েরি (পেজিনেশন সহ)
       const dataQuery = `
-        SELECT 
-          id, name, entityType, division, district, thana,
-          lat, lng,
-          email, phone, whatsapp, social,
-          confidenceScore, verificationStatus
+        SELECT id, name, entityType, division, district, thana, lat, lng,
+               email, phone, whatsapp, social, confidenceScore, verificationStatus
         FROM profiles
         ${whereClause}
         LIMIT ? OFFSET ?
       `;
       const dataParams = [...params, limit, offset];
       const dataResult = await env.DB.prepare(dataQuery).bind(...dataParams).all();
-      results = dataResult.results || [];
+      let results = dataResult.results || [];
 
-      // রেডিয়াস ফিল্টার (JS-এ, কারণ D1-এ Haversine নেই)
+      // Radius ফিল্টার (JS-এ)
       if (radius > 0 && thana) {
         const center = ENTERPRISE_GEO_REGISTRY.thanas[thana.toLowerCase()];
         if (center) {
           results = results.filter(p => {
-            const dist = GeoIntelligenceEngine.calculateDistance(
-              center.lat, center.lng,
-              p.lat, p.lng
-            );
+            const dist = GeoIntelligenceEngine.calculateDistance(center.lat, center.lng, p.lat, p.lng);
             return dist <= radius;
           });
           totalRecords = results.length;
         }
       }
 
-      // পেজিনেশন ঠিক করা (যেহেতু রেডিয়াস ফিল্টার JS-এ)
       const paginated = results.slice(0, limit);
-
       return jsonResponse({
         success: true,
-        meta: {
-          totalRecords: totalRecords,
-          page,
-          limit,
-          totalPages: Math.ceil(totalRecords / limit)
-        },
+        meta: { totalRecords, page, limit, totalPages: Math.ceil(totalRecords / limit) },
         contacts: paginated
       }, 200, corsHeaders);
     }
 
-    // invalid action
     return jsonResponse({ success: false, error: 'Invalid action' }, 400, corsHeaders);
-
   } catch (error) {
     console.error('Unhandled error:', error);
-    return jsonResponse({ 
-      success: false, 
-      error: 'Internal server error: ' + error.message 
-    }, 500, corsHeaders);
+    return jsonResponse({ success: false, error: 'Internal server error: ' + error.message }, 500, corsHeaders);
   }
 }
 
 function jsonResponse(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json'
-    }
+    headers: { ...headers, 'Content-Type': 'application/json' }
   });
 }
