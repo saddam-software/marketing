@@ -6,6 +6,7 @@
  * Updated: Verify Node feature (Option A) implemented.
  * Updated: Export Directory CSV functionality added.
  * Updated: AI Query parser with badge feedback.
+ * Updated: D1 database compatibility – direct profile properties (email, phone, etc.)
  */
 
 (function() {
@@ -42,7 +43,7 @@
                 },
                 data: []
             };
-            this.currentModalProfileId = null; // stores profile id for verification
+            this.currentModalProfileId = null;
             this.retryCount = 0;
             this.maxRetries = 5;
             this.init();
@@ -104,11 +105,8 @@
             this.masterProfileDetailsModal = document.getElementById('masterProfileDetailsModal');
             this.closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
             this.closeProfileModalBottomBtn = document.getElementById('closeProfileModalBottomBtn');
-            // Verify Node button
             this.verifyProfileInstanceBtn = document.getElementById('verifyProfileInstanceBtn');
-            // Export button
             this.exportLocationCsvBtn = document.getElementById('exportLocationCsv');
-            // AI badge
             this.aiIntentBadge = document.getElementById('aiIntentBadge');
         }
 
@@ -129,7 +127,6 @@
             this.clearSmartSearchBtn?.addEventListener('click', () => {
                 this.smartNlpSearchInput.value = '';
                 this.state.searchQuery = '';
-                // Hide AI badge when cleared
                 if (this.aiIntentBadge) {
                     this.aiIntentBadge.classList.add('hidden');
                 }
@@ -154,9 +151,7 @@
             });
             this.closeProfileModalBtn?.addEventListener('click', () => this.toggleModal(false));
             this.closeProfileModalBottomBtn?.addEventListener('click', () => this.toggleModal(false));
-            // Verify Node click handler
             this.verifyProfileInstanceBtn?.addEventListener('click', () => this.verifyCurrentProfile());
-            // Export CSV click handler
             this.exportLocationCsvBtn?.addEventListener('click', () => this.exportToCSV());
         }
 
@@ -270,7 +265,6 @@
             this.confidenceValueDisplay.textContent = '0%';
             this.smartNlpSearchInput.value = '';
             
-            // Hide AI badge on reset
             if (this.aiIntentBadge) {
                 this.aiIntentBadge.classList.add('hidden');
             }
@@ -298,7 +292,6 @@
                 </tr>`;
             this.locationResultCount.textContent = '0 Records';
             this.tablePaginationWrapper.classList.add('hidden');
-            // Disable export button when data is empty
             if (this.exportLocationCsvBtn) {
                 this.exportLocationCsvBtn.disabled = true;
             }
@@ -307,7 +300,6 @@
         // ================= AI PARSER =================
         parseSmartQuery(query) {
             if (!query || query.trim() === '') {
-                // Hide badge if query is empty
                 if (this.aiIntentBadge) {
                     this.aiIntentBadge.classList.add('hidden');
                 }
@@ -317,7 +309,6 @@
             const lower = query.toLowerCase();
             let intentDetected = false;
 
-            // 1. Check for email
             if (lower.includes('email')) {
                 if (this.hasEmailCheck) {
                     this.hasEmailCheck.checked = true;
@@ -325,7 +316,6 @@
                 }
             }
 
-            // 2. Check for phone or call
             if (lower.includes('phone') || lower.includes('call')) {
                 if (this.hasPhoneCheck) {
                     this.hasPhoneCheck.checked = true;
@@ -333,7 +323,6 @@
                 }
             }
 
-            // 3. Entity type: business / company
             if (lower.includes('business') || lower.includes('company')) {
                 if (this.entityTypeSelect) {
                     this.entityTypeSelect.value = 'BUSINESS';
@@ -341,7 +330,6 @@
                 }
             }
 
-            // 4. Entity type: creator / influencer
             if (lower.includes('creator') || lower.includes('influencer')) {
                 if (this.entityTypeSelect) {
                     this.entityTypeSelect.value = 'CREATOR';
@@ -349,36 +337,30 @@
                 }
             }
 
-            // 5. Division detection: dhaka, sylhet, chattogram
             const divisionMap = {
                 'dhaka': 'Dhaka',
                 'sylhet': 'Sylhet',
                 'chattogram': 'Chattogram'
             };
-            let foundDivision = false;
             for (const [key, name] of Object.entries(divisionMap)) {
                 if (lower.includes(key)) {
-                    // Find the option with matching text (case-insensitive)
                     const options = this.divisionSelect?.options;
                     if (options) {
                         for (let i = 0; i < options.length; i++) {
                             const opt = options[i];
                             if (opt.text.toLowerCase() === name.toLowerCase()) {
                                 this.divisionSelect.value = opt.value;
-                                foundDivision = true;
                                 intentDetected = true;
-                                // Trigger change event to load districts
                                 const event = new Event('change', { bubbles: true });
                                 this.divisionSelect.dispatchEvent(event);
                                 break;
                             }
                         }
                     }
-                    break; // only match first found
+                    break;
                 }
             }
 
-            // 6. Verification status
             if (lower.includes('verified')) {
                 if (this.verificationStatusSelect) {
                     this.verificationStatusSelect.value = 'VERIFIED';
@@ -386,7 +368,6 @@
                 }
             }
 
-            // Show or hide badge based on intent
             if (this.aiIntentBadge) {
                 if (intentDetected) {
                     this.aiIntentBadge.classList.remove('hidden');
@@ -397,7 +378,6 @@
         }
 
         async executeSearch() {
-            // Run AI parser on current search input before reading filters
             this.parseSmartQuery(this.smartNlpSearchInput.value);
 
             this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center py-10"><div class="animate-pulse flex flex-col items-center"><div class="h-8 w-8 bg-blue-200 rounded-full mb-3"></div><div class="text-sm text-slate-500">Searching...</div></div></td></tr>`;
@@ -457,12 +437,12 @@
             }
         }
 
+        // ================= RENDER TABLE (D1 COMPATIBLE) =================
         renderTable() {
             this.locationResultBody.innerHTML = '';
             this.locationResultCount.textContent = `${this.state.pagination.totalRecords} Records Found (Page ${this.state.pagination.currentPage})`;
             this.locationResultMeta.textContent = 'Showing real-time results directly from Master Engine.';
 
-            // Enable/disable export button based on data presence
             if (this.exportLocationCsvBtn) {
                 this.exportLocationCsvBtn.disabled = (this.state.data.length === 0);
             }
@@ -478,6 +458,12 @@
                 
                 const locationText = [profile.thana, profile.district].filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
 
+                // D1 direct properties (fallback to channels for backward compatibility)
+                const hasEmail = !!(profile.email || (profile.channels && profile.channels.email));
+                const hasPhone = !!(profile.phone || (profile.channels && profile.channels.phone));
+                const hasWhatsapp = !!(profile.whatsapp || (profile.channels && profile.channels.whatsapp));
+                const hasSocial = !!(profile.social || (profile.channels && profile.channels.social));
+
                 tr.innerHTML = `
                     <td class="p-3 text-center">
                         <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" value="${profile.id}">
@@ -488,10 +474,10 @@
                     </td>
                     <td class="p-3">
                         <div class="flex items-center gap-2">
-                            ${profile.channels && profile.channels.email ? `<span title="Email" class="w-2 h-2 rounded-full bg-emerald-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
-                            ${profile.channels && profile.channels.phone ? `<span title="Phone" class="w-2 h-2 rounded-full bg-blue-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
-                            ${profile.channels && profile.channels.whatsapp ? `<span title="WhatsApp" class="w-2 h-2 rounded-full bg-green-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
-                            ${profile.channels && profile.channels.social ? `<span title="Social" class="w-2 h-2 rounded-full bg-purple-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
+                            ${hasEmail ? `<span title="Email" class="w-2 h-2 rounded-full bg-emerald-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
+                            ${hasPhone ? `<span title="Phone" class="w-2 h-2 rounded-full bg-blue-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
+                            ${hasWhatsapp ? `<span title="WhatsApp" class="w-2 h-2 rounded-full bg-green-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
+                            ${hasSocial ? `<span title="Social" class="w-2 h-2 rounded-full bg-purple-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
                         </div>
                     </td>
                     <td class="p-3 text-xs text-slate-600 capitalize">
@@ -531,15 +517,21 @@
             this.nextPageBtn.disabled = this.state.pagination.currentPage >= this.state.pagination.totalPages;
         }
 
+        // ================= OPEN PROFILE MODAL (D1 COMPATIBLE) =================
         openProfileModal(profileId) {
             const profile = this.state.data.find(p => p.id === profileId);
             if(!profile) return;
 
-            // Store current profile id for verify action
             this.currentModalProfileId = profileId;
 
             document.getElementById('modalProfileTitle').innerHTML = `<span>🛡️</span> Entity Reference: #${profile.id}`;
-            
+
+            // D1 direct properties (fallback to channels)
+            const email = profile.email || (profile.channels && profile.channels.email) || '';
+            const phone = profile.phone || (profile.channels && profile.channels.phone) || '';
+            const whatsapp = profile.whatsapp || (profile.channels && profile.channels.whatsapp) || '';
+            const social = profile.social || (profile.channels && profile.channels.social) || '';
+
             document.getElementById('modalProfileBody').innerHTML = `
                 <div class="p-4 bg-blue-50 rounded-lg border border-blue-100 text-blue-800 text-sm">
                     <strong>System Note:</strong> Live Data Matrix established securely. 
@@ -554,11 +546,11 @@
                     <div class="bg-slate-50 p-3 rounded border border-slate-200">
                         <p class="text-xs text-slate-500 uppercase">Contact Channels</p>
                         <div class="mt-1 space-y-1 text-sm font-medium">
-                            ${profile.channels.email ? `<p class="text-slate-800">✉️ ${profile.channels.email}</p>` : ''}
-                            ${profile.channels.phone ? `<p class="text-slate-800">📞 ${profile.channels.phone}</p>` : ''}
-                            ${profile.channels.whatsapp ? `<p class="text-slate-800">💬 ${profile.channels.whatsapp}</p>` : ''}
-                            ${profile.channels.social ? `<p class="text-slate-800">🔗 ${profile.channels.social}</p>` : ''}
-                            ${!profile.channels.email && !profile.channels.phone && !profile.channels.whatsapp && !profile.channels.social ? '<p class="text-slate-400">No contact info</p>' : ''}
+                            ${email ? `<p class="text-slate-800">✉️ ${email}</p>` : ''}
+                            ${phone ? `<p class="text-slate-800">📞 ${phone}</p>` : ''}
+                            ${whatsapp ? `<p class="text-slate-800">💬 ${whatsapp}</p>` : ''}
+                            ${social ? `<p class="text-slate-800">🔗 ${social}</p>` : ''}
+                            ${!email && !phone && !whatsapp && !social ? '<p class="text-slate-400">No contact info</p>' : ''}
                         </div>
                     </div>
                     <div class="bg-slate-50 p-3 rounded border border-slate-200">
@@ -616,25 +608,20 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Update local state data
                     const profileIndex = this.state.data.findIndex(p => p.id === this.currentModalProfileId);
                     if (profileIndex !== -1) {
                         this.state.data[profileIndex].verificationStatus = data.profile.verificationStatus;
                         this.state.data[profileIndex].confidenceScore = data.profile.confidenceScore;
                     }
 
-                    // Re-render table
                     this.renderTable();
 
-                    // Re-open modal to reflect updated data
                     const updatedProfile = this.state.data.find(p => p.id === this.currentModalProfileId);
                     if (updatedProfile) {
                         this.openProfileModal(this.currentModalProfileId);
                     }
 
                     this.locationResultMeta.textContent = '✅ Profile successfully verified!';
-                    // Optionally update stats bar (if you want to show real counts)
-                    // this.updateStatsBar(); 
                 } else {
                     alert('Verification failed: ' + (data.error || 'Unknown error'));
                 }
@@ -654,7 +641,6 @@
                 return;
             }
 
-            // Define CSV headers
             const headers = [
                 'ID',
                 'Name',
@@ -667,29 +653,30 @@
                 'Social'
             ];
 
-            // Build CSV rows
             const rows = data.map(profile => {
-                const channels = profile.channels || {};
+                // D1 direct properties (fallback to channels)
+                const email = profile.email || (profile.channels && profile.channels.email) || '';
+                const phone = profile.phone || (profile.channels && profile.channels.phone) || '';
+                const whatsapp = profile.whatsapp || (profile.channels && profile.channels.whatsapp) || '';
+                const social = profile.social || (profile.channels && profile.channels.social) || '';
                 return [
                     profile.id || '',
                     profile.name || '',
                     profile.entityType || '',
                     profile.verificationStatus || '',
                     profile.confidenceScore || '',
-                    channels.email || '',
-                    channels.phone || '',
-                    channels.whatsapp || '',
-                    channels.social || ''
+                    email,
+                    phone,
+                    whatsapp,
+                    social
                 ];
             });
 
-            // Combine headers and rows
             const csvContent = [
                 headers.join(','),
                 ...rows.map(row => row.join(','))
             ].join('\n');
 
-            // Create a Blob and trigger download
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
