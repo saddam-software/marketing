@@ -2,7 +2,7 @@ name = "email-extractor-pro"
 type = "javascript"
 compatibility_date = "2024-11-01"
 
-# KV Namespace (আপনার থাকলে রাখুন, না থাকলে কমেন্ট করুন)
+# KV Namespace
 kv_namespaces = [
   { binding = "SECRETS_KV", id = "YOUR_KV_NAMESPACE_ID", preview_id = "YOUR_KV_PREVIEW_ID" }
 ]
@@ -10,19 +10,19 @@ kv_namespaces = [
 # ===== D1 ডেটাবেস বাইন্ডিং =====
 [[d1_databases]]
 binding = "DB"
-database_name = "profiles-db"           # আপনার D1 ডেটাবেসের নাম দিন
-database_id = "9d11ebc2-47db-45d7-9ec1-e36ed8f644d8"     # Cloudflare ড্যাশবোর্ড থেকে D1 আইডি দিন
+database_name = "profiles-db"
+database_id = "9d11ebc2-47db-45d7-9ec1-e36ed8f644d8"
 
-# ===== Pages Routes (যদি থাকে) =====
+# ===== Pages Routes (যদি Pages-এ API রাউটিং করেন) =====
 routes = [
   { pattern = "example.com/api/*", zone_name = "example.com" }
 ]
 
-# লোকাল ডেভেলপমেন্ট
+# ===== লোকাল ডেভেলপমেন্ট ভেরিয়েবল =====
 [vars]
 JWT_SECRET = "LocalDevelopmentSecretKey123!@#"
 
-# প্রোডাকশন
+# ===== প্রোডাকশন এনভায়রনমেন্ট =====
 [env.production]
 vars = {
   ADMIN_USERNAME = "saddam",
