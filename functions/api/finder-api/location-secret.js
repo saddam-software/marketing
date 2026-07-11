@@ -399,6 +399,48 @@ export async function onRequest(context) {
     return jsonResponse({ success: true, thanas: filtered }, 200, corsHeaders);
   }
 
+
+
+if (action === 'verifyProfile') {
+    if (request.method !== 'POST') {
+        return jsonResponse({ success: false, error: 'Method not allowed' }, 405, corsHeaders);
+    }
+
+    let body;
+    try {
+        body = await request.json();
+    } catch (_) {
+        return jsonResponse({ success: false, error: 'Invalid JSON body' }, 400, corsHeaders);
+    }
+
+    const { profileId } = body;
+    if (!profileId) {
+        return jsonResponse({ success: false, error: 'Missing profileId' }, 400, corsHeaders);
+    }
+
+    // Find profile in repository
+    const profile = MASTER_PROFILES_REPOSITORY.find(p => p.id === profileId);
+    if (!profile) {
+        return jsonResponse({ success: false, error: 'Profile not found' }, 404, corsHeaders);
+    }
+
+    // Update status and score (if not already VERIFIED, you can still update)
+    profile.verificationStatus = 'VERIFIED';
+    profile.confidenceScore = Math.max(profile.confidenceScore, 92); // set to at least 92
+
+    return jsonResponse({
+        success: true,
+        profile: {
+            id: profile.id,
+            verificationStatus: profile.verificationStatus,
+            confidenceScore: profile.confidenceScore
+        }
+    }, 200, corsHeaders);
+}
+
+
+
+  
   if (action === 'search') {
     const queryTerm = searchParams.get('query') || '';
     const entityType = searchParams.get('entityType') || 'all';
