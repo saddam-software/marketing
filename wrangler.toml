@@ -2,34 +2,44 @@ name = "email-extractor-pro"
 type = "javascript"
 compatibility_date = "2024-11-01"
 
-# KV Namespace for secrets and persistent data
+# KV Namespace (আপনার পুরানো KV থাকতে পারে, রাখলাম)
 kv_namespaces = [
   { binding = "SECRETS_KV", id = "YOUR_KV_NAMESPACE_ID", preview_id = "YOUR_KV_PREVIEW_ID" }
 ]
 
-# ===== Cloudflare Pages Functions Routes =====
-# এই সেকশনটি যোগ করেছি যাতে /api/ পাথগুলো সঠিকভাবে রুট হয়
+# ===== D1 ডেটাবেস বাইন্ডিং =====
+# আপনার D1 ডেটাবেস তৈরি করে এর id ও name এখানে বসান
+[[d1_databases]]
+binding = "DB"                         # Worker-এ env.DB হিসেবে পাওয়া যাবে
+database_name = "profiles-db"          # আপনার D1 ডেটাবেসের নাম
+database_id = "your-d1-database-id"    # Cloudflare ড্যাশবোর্ড থেকে কপি করুন
+
+# ===== Pages Functions Routes (যদি থাকে) =====
 routes = [
   { pattern = "example.com/api/*", zone_name = "example.com" }
 ]
 
-# Environment variables (Local / Preview Development)
-# আপনি যখন লোকাল কম্পিউটারে টেস্ট করবেন, তখন এই চাবিটি কাজ করবে
+# লোকাল ডেভেলপমেন্ট ভেরিয়েবল
 [vars]
 JWT_SECRET = "LocalDevelopmentSecretKey123!@#"
 
-# Environment variables (Production)
-# আপনার আসল লাইভ ওয়েবসাইটের জন্য ভেরিয়েবল
+# প্রোডাকশন এনভায়রনমেন্ট
 [env.production]
 vars = {
   ADMIN_USERNAME = "saddam",
   ADMIN_PASSWORD = "SecurePass@2024",
-  BREVO_API_KEY = "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",
-  JWT_SECRET = "MySuperSecretProductionKeyThatNoOneCanGuess2026!@#"
+  BREVO_API_KEY = "xkeysib-...",
+  JWT_SECRET = "MySuperSecretProductionKey..."
 }
 
-# Bindings for production (same as top-level)
+# প্রোডাকশনের জন্য KV বাইন্ডিং
 [[env.production.kv_namespaces]]
 binding = "SECRETS_KV"
 id = "YOUR_KV_NAMESPACE_ID"
 preview_id = "YOUR_KV_PREVIEW_ID"
+
+# প্রোডাকশনের জন্য D1 বাইন্ডিং (আলাদা করে দিতে হবে)
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "profiles-db"
+database_id = "your-production-d1-database-id"
