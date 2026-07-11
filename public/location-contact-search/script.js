@@ -5,6 +5,7 @@
  * 
  * Updated: Verify Node feature (Option A) implemented.
  * Updated: Export Directory CSV functionality added.
+ * Updated: AI Query parser with badge feedback.
  */
 
 (function() {
@@ -107,6 +108,8 @@
             this.verifyProfileInstanceBtn = document.getElementById('verifyProfileInstanceBtn');
             // Export button
             this.exportLocationCsvBtn = document.getElementById('exportLocationCsv');
+            // AI badge
+            this.aiIntentBadge = document.getElementById('aiIntentBadge');
         }
 
         bindEvents() {
@@ -126,6 +129,10 @@
             this.clearSmartSearchBtn?.addEventListener('click', () => {
                 this.smartNlpSearchInput.value = '';
                 this.state.searchQuery = '';
+                // Hide AI badge when cleared
+                if (this.aiIntentBadge) {
+                    this.aiIntentBadge.classList.add('hidden');
+                }
             });
             this.resetAllFiltersBtn?.addEventListener('click', () => this.resetFilters());
             this.paginationLimitSelect?.addEventListener('change', (e) => {
@@ -263,6 +270,11 @@
             this.confidenceValueDisplay.textContent = '0%';
             this.smartNlpSearchInput.value = '';
             
+            // Hide AI badge on reset
+            if (this.aiIntentBadge) {
+                this.aiIntentBadge.classList.add('hidden');
+            }
+
             this.state.filters.entityType = 'all';
             this.state.filters.division = '';
             this.state.filters.district = '';
@@ -292,7 +304,102 @@
             }
         }
 
+        // ================= AI PARSER =================
+        parseSmartQuery(query) {
+            if (!query || query.trim() === '') {
+                // Hide badge if query is empty
+                if (this.aiIntentBadge) {
+                    this.aiIntentBadge.classList.add('hidden');
+                }
+                return;
+            }
+
+            const lower = query.toLowerCase();
+            let intentDetected = false;
+
+            // 1. Check for email
+            if (lower.includes('email')) {
+                if (this.hasEmailCheck) {
+                    this.hasEmailCheck.checked = true;
+                    intentDetected = true;
+                }
+            }
+
+            // 2. Check for phone or call
+            if (lower.includes('phone') || lower.includes('call')) {
+                if (this.hasPhoneCheck) {
+                    this.hasPhoneCheck.checked = true;
+                    intentDetected = true;
+                }
+            }
+
+            // 3. Entity type: business / company
+            if (lower.includes('business') || lower.includes('company')) {
+                if (this.entityTypeSelect) {
+                    this.entityTypeSelect.value = 'BUSINESS';
+                    intentDetected = true;
+                }
+            }
+
+            // 4. Entity type: creator / influencer
+            if (lower.includes('creator') || lower.includes('influencer')) {
+                if (this.entityTypeSelect) {
+                    this.entityTypeSelect.value = 'CREATOR';
+                    intentDetected = true;
+                }
+            }
+
+            // 5. Division detection: dhaka, sylhet, chattogram
+            const divisionMap = {
+                'dhaka': 'Dhaka',
+                'sylhet': 'Sylhet',
+                'chattogram': 'Chattogram'
+            };
+            let foundDivision = false;
+            for (const [key, name] of Object.entries(divisionMap)) {
+                if (lower.includes(key)) {
+                    // Find the option with matching text (case-insensitive)
+                    const options = this.divisionSelect?.options;
+                    if (options) {
+                        for (let i = 0; i < options.length; i++) {
+                            const opt = options[i];
+                            if (opt.text.toLowerCase() === name.toLowerCase()) {
+                                this.divisionSelect.value = opt.value;
+                                foundDivision = true;
+                                intentDetected = true;
+                                // Trigger change event to load districts
+                                const event = new Event('change', { bubbles: true });
+                                this.divisionSelect.dispatchEvent(event);
+                                break;
+                            }
+                        }
+                    }
+                    break; // only match first found
+                }
+            }
+
+            // 6. Verification status
+            if (lower.includes('verified')) {
+                if (this.verificationStatusSelect) {
+                    this.verificationStatusSelect.value = 'VERIFIED';
+                    intentDetected = true;
+                }
+            }
+
+            // Show or hide badge based on intent
+            if (this.aiIntentBadge) {
+                if (intentDetected) {
+                    this.aiIntentBadge.classList.remove('hidden');
+                } else {
+                    this.aiIntentBadge.classList.add('hidden');
+                }
+            }
+        }
+
         async executeSearch() {
+            // Run AI parser on current search input before reading filters
+            this.parseSmartQuery(this.smartNlpSearchInput.value);
+
             this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center py-10"><div class="animate-pulse flex flex-col items-center"><div class="h-8 w-8 bg-blue-200 rounded-full mb-3"></div><div class="text-sm text-slate-500">Searching...</div></div></td></tr>`;
             
             this.state.searchQuery = this.smartNlpSearchInput.value;
