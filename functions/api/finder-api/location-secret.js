@@ -1,6 +1,6 @@
 /**
  * AI-Powered Smart People & Business Finder Platform - Core Spatial API
- * D1 Database integration with error logging.
+ * D1 Database integration with Auto-Fetch from Google Places API.
  */
 
 function base64UrlToBuffer(str) {
@@ -134,7 +134,111 @@ class GeoIntelligenceEngine {
 }
 
 // =========================================================================
-// CLOUDFLARE WORKER HANDLER – D1 VERSION with error handling
+// GOOGLE PLACES API INTEGRATION
+// =========================================================================
+
+// গুগল থেকে ম্যাপিং (Entity Type)
+function mapGoogleTypesToEntityType(types) {
+  if (!types) return 'BUSINESS';
+  if (types.some(t => ['lodging', 'hotel', 'spa'].includes(t))) return 'SERVICE';
+  if (types.some(t => ['restaurant', 'food', 'cafe'].includes(t))) return 'BUSINESS';
+  if (types.some(t => ['doctor', 'health', 'hospital'].includes(t))) return 'PROFESSIONAL';
+  if (types.some(t => ['school', 'university'].includes(t))) return 'SERVICE';
+  return 'BUSINESS';
+}
+
+// ঠিকানা থেকে বিভাগ ও জেলা বের করা (বাংলাদেশের জন্য)
+function extractDivisionAndDistrict(components) {
+  let division = '';
+  let district = '';
+  if (!components) return { division, district };
+
+  // লং নেম দিয়ে খোঁজ
+  const divMap = {
+    'dhaka': 'dhaka', 'ঢাকা': 'dhaka',
+    'chittagong': 'chattogram', 'চট্টগ্রাম': 'chattogram',
+    'sylhet': 'sylhet', 'সিলেট': 'sylhet',
+    'rajshahi': 'rajshahi', 'রাজশাহী': 'rajshahi',
+    'khulna': 'khulna', 'খুলনা': 'khulna',
+    'barisal': 'barishal', 'বরিশাল': 'barishal',
+    'rangpur': 'rangpur', 'রংপুর': 'rangpur',
+    'mymensingh': 'mymensingh', 'ময়মনসিংহ': 'mymensingh'
+  };
+
+  // বাংলাদেশের জেলাগুলোর ম্যাপ (সাধারণ কিছু)
+  const distMap = {
+    'dhaka': 'dhaka', 'gazipur': 'gazipur', 'narayanganj': 'narayanganj',
+    'tangail': 'tangail', 'faridpur': 'faridpur', 'chattogram': 'chattogram',
+    'cox\'s bazar': 'cox_bazar', 'rangamati': 'rangamati', 'comilla': 'comilla',
+    'noakhali': 'noakhali', 'sylhet': 'sylhet', 'moulvibazar': 'moulvibazar',
+    'habiganj': 'habiganj', 'rajshahi': 'rajshahi', 'naogaon': 'naogaon',
+    'natore': 'natore', 'khulna': 'khulna', 'kushtia': 'kushtia',
+    'jessore': 'jessore', 'barishal': 'barishal', 'barguna': 'barguna',
+    'rangpur': 'rangpur', 'dinajpur': 'dinajpur', 'mymensingh': 'mymensingh',
+    'jamalpur': 'jamalpur'
+  };
+
+  for (const comp of components) {
+    const lname = comp.long_name.toLowerCase();
+    const sname = comp.short_name.toLowerCase();
+    if (comp.types.includes('administrative_area_level_1')) {
+      const found = divMap[lname] || divMap[sname];
+      if (found) division = found;
+    }
+    if (comp.types.includes('administrative_area_level_2') || comp.types.includes('locality')) {
+      const found = distMap[lname] || distMap[sname];
+      if (found) district = found;
+    }
+  }
+
+  return { division, district };
+}
+
+// গুগল প্লেস API-তে কল করা
+async function fetchFromGoogle(query, apiKey) {
+  if (!apiKey) {
+    console.warn('Google API Key missing');
+    return [];
+  }
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+      console.warn('Google API error:', data.status);
+      return [];
+    }
+    return data.results || [];
+  } catch (e) {
+    console.error('Google fetch error:', e);
+    return [];
+  }
+}
+
+// গুগলের ডেটা আমাদের ডেটাবেজ ফরম্যাটে রূপান্তর
+function mapGooglePlaceToProfile(place) {
+  const { division, district } = extractDivisionAndDistrict(place.address_components);
+  
+  return {
+    id: place.place_id,
+    name: place.name || 'Unknown',
+    entityType: mapGoogleTypesToEntityType(place.types),
+    division: division || '',
+    district: district || '',
+    thana: '', // থানা সাধারণত পাই না
+    lat: place.geometry?.location?.lat || 0,
+    lng: place.geometry?.location?.lng || 0,
+    email: '', // গুগল ইমেইল দেয় না
+    phone: place.formatted_phone_number || '',
+    whatsapp: '',
+    social: place.website || '',
+    confidenceScore: 60, // নতুন ডেটা, মিডিয়াম কনফিডেন্স
+    verificationStatus: 'PARTIAL' // যেহেতু অটো আনা, তাই আংশিক
+  };
+}
+
+// =========================================================================
+// CLOUDFLARE WORKER HANDLER – D1 + AUTO FETCH
 // =========================================================================
 export async function onRequest(context) {
   const { request, env } = context;
@@ -206,8 +310,6 @@ export async function onRequest(context) {
       if (!profileId) {
         return jsonResponse({ success: false, error: 'Missing profileId' }, 400, corsHeaders);
       }
-
-      // Check if DB binding exists
       if (!env.DB) {
         return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
       }
@@ -238,9 +340,8 @@ export async function onRequest(context) {
       }
     }
 
-    // ----- search (D1) -----
+    // ----- search (D1 + Auto Fetch) -----
     if (action === 'search') {
-      // Check if DB binding exists
       if (!env.DB) {
         return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
       }
@@ -261,6 +362,7 @@ export async function onRequest(context) {
       const limit = parseInt(searchParams.get('limit') || '25', 10);
       const offset = (page - 1) * limit;
 
+      // --- ১. D1-এ সার্চ করুন ---
       const conditions = [];
       const params = [];
 
@@ -303,12 +405,66 @@ export async function onRequest(context) {
 
       let whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
-      // Count total
+      // D1 থেকে ডেটা কাউন্ট
       const countQuery = `SELECT COUNT(*) as total FROM profiles ${whereClause}`;
       const countResult = await env.DB.prepare(countQuery).bind(...params).first();
       let totalRecords = countResult ? countResult.total : 0;
 
-      // Data query
+      let results = [];
+      // যদি রেজাল্ট কম হয় এবং query টার্মটি ২ অক্ষরের বেশি হয়, তাহলে গুগল থেকে আনব
+      if (totalRecords < 5 && queryTerm.length > 2) {
+        const apiKey = env.GOOGLE_PLACES_API_KEY || '';
+        if (apiKey) {
+          console.log('🔄 Fetching from Google for:', queryTerm);
+          const googlePlaces = await fetchFromGoogle(queryTerm, apiKey);
+          
+          if (googlePlaces.length > 0) {
+            // প্রতিটি প্লেস ডেটাবেজে সেভ করি
+            let insertedCount = 0;
+            for (const place of googlePlaces) {
+              const profile = mapGooglePlaceToProfile(place);
+              try {
+                const insertQuery = `
+                  INSERT OR IGNORE INTO profiles (
+                    id, name, entityType, division, district, thana, 
+                    lat, lng, email, phone, whatsapp, social, 
+                    confidenceScore, verificationStatus
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `;
+                await env.DB.prepare(insertQuery).bind(
+                  profile.id,
+                  profile.name,
+                  profile.entityType,
+                  profile.division,
+                  profile.district,
+                  profile.thana,
+                  profile.lat,
+                  profile.lng,
+                  profile.email,
+                  profile.phone,
+                  profile.whatsapp,
+                  profile.social,
+                  profile.confidenceScore,
+                  profile.verificationStatus
+                ).run();
+                insertedCount++;
+              } catch (e) {
+                console.error('Insert error for', profile.id, e.message);
+              }
+            }
+            console.log(`✅ Inserted ${insertedCount} new profiles from Google.`);
+
+            // D1 থেকে নতুন করে রিলোড করি (সদ্য সেভ করা ডেটাসহ)
+            const newCountQuery = `SELECT COUNT(*) as total FROM profiles ${whereClause}`;
+            const newCountResult = await env.DB.prepare(newCountQuery).bind(...params).first();
+            totalRecords = newCountResult ? newCountResult.total : 0;
+          }
+        } else {
+          console.warn('⚠️ Google API Key not configured.');
+        }
+      }
+
+      // D1 থেকে চূড়ান্ত ডেটা কোয়েরি
       const dataQuery = `
         SELECT 
           id, name, entityType, division, district, thana,
@@ -321,9 +477,9 @@ export async function onRequest(context) {
       `;
       const dataParams = [...params, limit, offset];
       const dataResult = await env.DB.prepare(dataQuery).bind(...dataParams).all();
-      let results = dataResult.results || [];
+      results = dataResult.results || [];
 
-      // Apply radius filter in JS (since D1 SQLite lacks trig functions)
+      // রেডিয়াস ফিল্টার (JS-এ, কারণ D1-এ Haversine নেই)
       if (radius > 0 && thana) {
         const center = ENTERPRISE_GEO_REGISTRY.thanas[thana.toLowerCase()];
         if (center) {
@@ -338,7 +494,7 @@ export async function onRequest(context) {
         }
       }
 
-      // Ensure pagination matches filtered results
+      // পেজিনেশন ঠিক করা (যেহেতু রেডিয়াস ফিল্টার JS-এ)
       const paginated = results.slice(0, limit);
 
       return jsonResponse({
@@ -357,7 +513,6 @@ export async function onRequest(context) {
     return jsonResponse({ success: false, error: 'Invalid action' }, 400, corsHeaders);
 
   } catch (error) {
-    // Global error handler for any uncaught exception
     console.error('Unhandled error:', error);
     return jsonResponse({ 
       success: false, 
