@@ -18,6 +18,10 @@ routes = [
   { pattern = "example.com/api/*", zone_name = "example.com" }
 ]
 
+# ===== CRON Triggers (Background Fetch) =====
+[triggers]
+crons = ["0 */6 * * *"]   # প্রতি ৬ ঘন্টায় একবার
+
 # ===============================================
 # ===== LOCAL DEVELOPMENT VARIABLES =====
 # ===============================================
@@ -25,7 +29,7 @@ routes = [
 # ----- Authentication -----
 JWT_SECRET = "LocalDevelopmentSecretKey123!@#"
 
-# ----- Location & Places APIs (Active in code) -----
+# ----- Location & Places APIs -----
 GOOGLE_PLACES_API_KEY = "YOUR_GOOGLE_API_KEY"
 FOURSQUARE_API_KEY = "YOUR_FOURSQUARE_API_KEY"
 YELP_API_KEY = "YOUR_YELP_API_KEY"
@@ -41,11 +45,11 @@ GRAPHHOPPER_API_KEY = "YOUR_GRAPHHOPPER_API_KEY"
 OPENROUTESERVICE_API_KEY = "YOUR_OPENROUTESERVICE_API_KEY"
 AZURE_MAPS_API_KEY = "YOUR_AZURE_MAPS_API_KEY"
 
-# ----- IP Geolocation APIs -----
+# ----- IP Geolocation -----
 IPINFO_API_KEY = "YOUR_IPINFO_API_KEY"
 IPWHOIS_API_KEY = "YOUR_IPWHOIS_API_KEY"
 
-# ----- Email & Company Enrichment APIs -----
+# ----- Email & Company Enrichment -----
 HUNTER_API_KEY = "YOUR_HUNTER_API_KEY"
 CLEARBIT_API_KEY = "YOUR_CLEARBIT_API_KEY"
 APOLLO_API_KEY = "YOUR_APOLLO_API_KEY"
@@ -59,7 +63,7 @@ LUSHA_API_KEY = "YOUR_LUSHA_API_KEY"
 KASPR_API_KEY = "YOUR_KASPR_API_KEY"
 SERPAPI_API_KEY = "YOUR_SERPAPI_API_KEY"
 
-# ----- Email/SMS Marketing (Optional, kept for backward compatibility) -----
+# ----- Email/SMS Marketing (Optional) -----
 BREVO_API_KEY = "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"
 
 # ===============================================
@@ -69,12 +73,9 @@ BREVO_API_KEY = "xkeysib-c9ee3d6d5abd67632df2dd0ee1def04e08eab4b2756bf0836fef823
 
 # Production Variables
 [env.production.vars]
-# ----- Authentication -----
 ADMIN_USERNAME = "saddam"
 ADMIN_PASSWORD = "SecurePass@2024"
 JWT_SECRET = "MySuperSecretProductionKeyThatNoOneCanGuess2026!@#"
-
-# ----- Location & Places APIs (Active in code) -----
 GOOGLE_PLACES_API_KEY = "YOUR_GOOGLE_API_KEY"
 FOURSQUARE_API_KEY = "YOUR_FOURSQUARE_API_KEY"
 YELP_API_KEY = "YOUR_YELP_API_KEY"
@@ -89,12 +90,8 @@ RADAR_API_KEY = "YOUR_RADAR_API_KEY"
 GRAPHHOPPER_API_KEY = "YOUR_GRAPHHOPPER_API_KEY"
 OPENROUTESERVICE_API_KEY = "YOUR_OPENROUTESERVICE_API_KEY"
 AZURE_MAPS_API_KEY = "YOUR_AZURE_MAPS_API_KEY"
-
-# ----- IP Geolocation APIs -----
 IPINFO_API_KEY = "YOUR_IPINFO_API_KEY"
 IPWHOIS_API_KEY = "YOUR_IPWHOIS_API_KEY"
-
-# ----- Email & Company Enrichment APIs -----
 HUNTER_API_KEY = "YOUR_HUNTER_API_KEY"
 CLEARBIT_API_KEY = "YOUR_CLEARBIT_API_KEY"
 APOLLO_API_KEY = "YOUR_APOLLO_API_KEY"
@@ -107,8 +104,6 @@ ROCKETREACH_API_KEY = "YOUR_ROCKETREACH_API_KEY"
 LUSHA_API_KEY = "YOUR_LUSHA_API_KEY"
 KASPR_API_KEY = "YOUR_KASPR_API_KEY"
 SERPAPI_API_KEY = "YOUR_SERPAPI_API_KEY"
-
-# ----- Email/SMS Marketing -----
 BREVO_API_KEY = "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"
 
 # Production KV Binding
