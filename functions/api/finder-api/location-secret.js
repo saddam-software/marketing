@@ -1977,9 +1977,9 @@ function getActiveAPIs() {
 }
 
 // =========================================================================
-// NORMALIZE & INSERT
+// NORMALIZE & INSERT (Updated)
 // =========================================================================
-async function normalizeAndInsertProfiles(rawItems, env, country) {
+async function normalizeAndInsertProfiles(rawItems, env, country, fallbackThana = '') {
   let inserted = 0;
   for (const item of rawItems) {
     if (!item.name || !item.lat) continue;
@@ -1999,7 +1999,7 @@ async function normalizeAndInsertProfiles(rawItems, env, country) {
       country,
       division || '',
       district || '',
-      '',
+      fallbackThana || '', // <--- ফিক্স: এখন ইউজারের সিলেক্ট করা থানা এখানে সেভ হবে
       item.lat,
       item.lng,
       '',
@@ -2188,7 +2188,7 @@ export async function onRequest(context) {
           }
           const uniqueItems = Array.from(uniqueMap.values()).slice(0, 50); // একসাথে সর্বোচ্চ ৫০টি ইনসার্ট লিমিট করে দেওয়া ভালো
           
-          const inserted = await normalizeAndInsertProfiles(uniqueItems, env, country);
+         const inserted = await normalizeAndInsertProfiles(uniqueItems, env, country, thana);
           console.log(`✅ Inserted ${inserted} new profiles from external sources.`);
 
           // নতুন ডেটাবেস কাউন্ট আপডেট
