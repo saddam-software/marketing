@@ -1621,6 +1621,38 @@ const API_CONFIG = {
       } catch (e) { return []; }
     }
   },
+
+
+  // ===== TomTom Places API =====
+  tomtom: {
+    name: 'TomTom Places API',
+    active: true,
+    fetch: async (query, env) => {
+      const key = env.TOMTOM_API_KEY;
+      if (!key || key === 'YOUR_TOMTOM_API_KEY') return [];
+      try {
+        const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${key}&limit=10`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        if (!data.results) return [];
+        return data.results.map(item => ({
+          source: 'tomtom',
+          id: `tomtom_${item.id}`,
+          name: item.poi?.name || item.address?.streetName || 'Unknown',
+          address: item.address?.freeformAddress || '',
+          lat: item.position?.lat || 0,
+          lng: item.position?.lon || 0,
+          phone: '',
+          website: '',
+          types: item.poi?.categorySet?.map(c => c.name) || [],
+          confidence: 60
+        }));
+      } catch (e) { return []; }
+    }
+  },
+
+
+  
   // ===== 100. Twilio Lookup v2 =====
   twilio: {
     name: 'Twilio Lookup v2', active: true,
