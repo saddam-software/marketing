@@ -2153,12 +2153,25 @@ export async function onRequest(context) {
       const countResult = await env.DB.prepare(countQuery).bind(...params).first();
       let totalRecords = countResult ? countResult.total : 0;
 
-      // ---- AUTO-FETCH LOGIC: যদি D1-এ কম ডেটা থাকে এবং সার্চ টার্ম দেওয়া থাকে ----
-      if (totalRecords < 3 && queryTerm && queryTerm.length > 2) {
-        console.log(`🔄 Low results (${totalRecords}) for "${queryTerm}" in ${country}. Fetching from external APIs...`);
+    // ---- AUTO-FETCH LOGIC: সংশোধিত ভার্সন ----
+      
+      // যদি কিউয়ার্ড ফাঁকা থাকে, তবে লোকেশনের নামটিকে সার্চ টার্ম হিসেবে ব্যবহার করবো
+      let apiSearchTerm = queryTerm;
+      if (!apiSearchTerm) {
+          if (thana) apiSearchTerm = thana;
+          else if (district) apiSearchTerm = district;
+          else if (division) apiSearchTerm = division;
+          else apiSearchTerm = country; // যেমন: "india" বা "uae"
+      }
+
+      // এখন শর্ত হলো: ডেটাবেসে ৩ এর কম ডেটা থাকলে এবং সার্চ করার মতো কোনো শব্দ (কিউয়ার্ড বা লোকেশন) থাকলে API কল হবে
+      if (totalRecords < 3 && apiSearchTerm && apiSearchTerm.length > 2) {
+        console.log(`🔄 Low results (${totalRecords}) for "${apiSearchTerm}" in ${country}. Fetching from external APIs...`);
         
         const activeAPIs = getActiveAPIs();
-        const fetchPromises = activeAPIs.map(api => api.fetch(queryTerm, env));
+        
+        // apiSearchTerm ব্যবহার করে API গুলোতে রিকোয়েস্ট পাঠানো হচ্ছে
+        const fetchPromises = activeAPIs.map(api => api.fetch(apiSearchTerm, env));
         const results = await Promise.allSettled(fetchPromises);
         
         let allItems = [];
@@ -2173,11 +2186,12 @@ export async function onRequest(context) {
           for (const item of allItems) {
             if (!uniqueMap.has(item.id)) uniqueMap.set(item.id, item);
           }
-          const uniqueItems = Array.from(uniqueMap.values()).slice(0, 20);
+          const uniqueItems = Array.from(uniqueMap.values()).slice(0, 50); // একসাথে সর্বোচ্চ ৫০টি ইনসার্ট লিমিট করে দেওয়া ভালো
           
           const inserted = await normalizeAndInsertProfiles(uniqueItems, env, country);
           console.log(`✅ Inserted ${inserted} new profiles from external sources.`);
 
+          // নতুন ডেটাবেস কাউন্ট আপডেট
           const newCount = await env.DB.prepare(countQuery).bind(...params).first();
           totalRecords = newCount ? newCount.total : 0;
         }
