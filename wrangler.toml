@@ -2,12 +2,12 @@ name = "email-extractor-pro"
 type = "javascript"
 compatibility_date = "2024-11-01"
 
-# KV Namespace (ঐচ্ছিক)
+# ===== KV Namespace (ঐচ্ছিক) =====
 kv_namespaces = [
   { binding = "SECRETS_KV", id = "YOUR_KV_NAMESPACE_ID", preview_id = "YOUR_KV_PREVIEW_ID" }
 ]
 
-# ===== D1 ডেটাবেস বাইন্ডিং =====
+# ===== D1 Database Binding =====
 [[d1_databases]]
 binding = "DB"
 database_name = "profiles-db"
@@ -18,38 +18,40 @@ routes = [
   { pattern = "example.com/api/*", zone_name = "example.com" }
 ]
 
-# ===== মাল্টি-সোর্স API কী (এখানে বসান) =====
+# ===============================================
+# ===== LOCAL DEVELOPMENT VARIABLES =====
+# ===============================================
 [vars]
 JWT_SECRET = "LocalDevelopmentSecretKey123!@#"
-
-# গুগল প্লেসেস API (https://console.cloud.google.com/)
-GOOGLE_PLACES_API_KEY = "YOUR_GOOGLE_API_KEY"  
-
-# ফোরস্কয়ার API (https://foursquare.com/developers/)
+GOOGLE_PLACES_API_KEY = "YOUR_GOOGLE_API_KEY"
 FOURSQUARE_API_KEY = "YOUR_FOURSQUARE_API_KEY"
-
-# ইয়েলপ ফিউশন API (https://www.yelp.com/developers)
 YELP_API_KEY = "YOUR_YELP_API_KEY"
+TOMTOM_API_KEY = "YOUR_TOMTOM_API_KEY"
+BREVO_API_KEY = "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"
 
-# ===== প্রোডাকশন এনভায়রনমেন্ট =====
+# ===============================================
+# ===== PRODUCTION ENVIRONMENT =====
+# ===============================================
 [env.production]
-vars = {
-  ADMIN_USERNAME = "saddam",
-  ADMIN_PASSWORD = "SecurePass@2024",
-  BREVO_API_KEY = "xkeysib-....",
-  JWT_SECRET = "MySuperSecretProductionKey...",
-  GOOGLE_PLACES_API_KEY = "YOUR_GOOGLE_API_KEY",
-  FOURSQUARE_API_KEY = "YOUR_FOURSQUARE_API_KEY",
-  YELP_API_KEY = "YOUR_YELP_API_KEY"
-}
 
-# প্রোডাকশন KV
+# Production Variables
+[env.production.vars]
+ADMIN_USERNAME = "saddam"
+ADMIN_PASSWORD = "SecurePass@2024"
+BREVO_API_KEY = "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"
+JWT_SECRET = "MySuperSecretProductionKeyThatNoOneCanGuess2026!@#"
+GOOGLE_PLACES_API_KEY = "YOUR_GOOGLE_API_KEY"
+FOURSQUARE_API_KEY = "YOUR_FOURSQUARE_API_KEY"
+YELP_API_KEY = "YOUR_YELP_API_KEY"
+TOMTOM_API_KEY = "YOUR_TOMTOM_API_KEY"
+
+# Production KV Binding
 [[env.production.kv_namespaces]]
 binding = "SECRETS_KV"
 id = "YOUR_KV_NAMESPACE_ID"
 preview_id = "YOUR_KV_PREVIEW_ID"
 
-# প্রোডাকশন D1
+# Production D1 Binding
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "profiles-db"
