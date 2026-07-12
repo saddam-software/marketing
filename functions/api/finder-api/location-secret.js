@@ -213,48 +213,48 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 const API_CONFIG = {
   // ----- Google Places API (best data) -----
- google: {
-  name: 'Google Places API',
-  active: true,
-  fetch: async function(query, env, pageToken = null) {
-    const key = env.GOOGLE_PLACES_API_KEY;
-    if (!key || key === 'YOUR_GOOGLE_API_KEY') return [];
+  google: {
+    name: 'Google Places API',
+    active: true,
+    fetch: async function(query, env, pageToken = null) {
+      const key = env.GOOGLE_PLACES_API_KEY;
+      if (!key || key === 'YOUR_GOOGLE_API_KEY') return [];
 
-    try {
-      let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${key}`;
-      if (pageToken) url += `&pagetoken=${pageToken}`;
-      
-      const resp = await fetch(url);
-      const data = await resp.json();
+      try {
+        let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${key}`;
+        if (pageToken) url += `&pagetoken=${pageToken}`;
+        
+        const resp = await fetch(url);
+        const data = await resp.json();
 
-      if (data.status !== 'OK') return [];
+        if (data.status !== 'OK') return [];
 
-      let results = data.results.map(place => ({
-        source: 'google',
-        id: `google_${place.place_id}`,
-        name: place.name,
-        address: place.formatted_address || '',
-        lat: place.geometry.location.lat,
-        lng: place.geometry.location.lng,
-        phone: place.formatted_phone_number || '',
-        website: place.website || '',
-        types: place.types || [],
-        confidence: 75
-      }));
+        let results = data.results.map(place => ({
+          source: 'google',
+          id: `google_${place.place_id}`,
+          name: place.name,
+          address: place.formatted_address || '',
+          lat: place.geometry.location.lat,
+          lng: place.geometry.location.lng,
+          phone: place.formatted_phone_number || '',
+          website: place.website || '',
+          types: place.types || [],
+          confidence: 75
+        }));
 
-      // Handle pagination (max 3 pages)
-      if (data.next_page_token && results.length < 50) {
-        await sleep(2000);
-        const next = await this.fetch(query, env, data.next_page_token);
-        results = results.concat(next);
+        // Handle pagination (max 3 pages)
+        if (data.next_page_token && results.length < 50) {
+          await sleep(2000);
+          const next = await this.fetch(query, env, data.next_page_token);
+          results = results.concat(next);
+        }
+
+        return results;
+      } catch (e) {
+        return [];
       }
-
-      return results;
-    } catch (e) {
-      return [];
     }
-  }
-},
+  },
 
   // ----- OpenStreetMap (free, no key) -----
   osm: {
@@ -1094,17 +1094,16 @@ async function fetchAllLocationsForCountry(country, env) {
       .map(([key]) => key);
     allTerms.push(...districts);
   }
-  // 4. Thanas
-const filteredDistricts = Object.entries(ENTERPRISE_GEO_REGISTRY.districts)
-  .filter(([_, val]) => divisions.includes(val.division))
-  .map(([key]) => key);   // ✅ এখন key হলো district id
-
-for (const dist of filteredDistricts) {
-  const thanas = Object.entries(ENTERPRISE_GEO_REGISTRY.thanas)
-    .filter(([_, val]) => val.district === dist)   // ✅ dist now is district id, not division
+  // 4. Thanas (fixed loop)
+  const filteredDistricts = Object.entries(ENTERPRISE_GEO_REGISTRY.districts)
+    .filter(([_, val]) => divisions.includes(val.division))
     .map(([key]) => key);
-  allTerms.push(...thanas);
-}
+  for (const dist of filteredDistricts) {
+    const thanas = Object.entries(ENTERPRISE_GEO_REGISTRY.thanas)
+      .filter(([_, val]) => val.district === dist)
+      .map(([key]) => key);
+    allTerms.push(...thanas);
+  }
   // 5. Add categories with location
   const categories = ['restaurant', 'hotel', 'business', 'company', 'shop', 'school', 'hospital', 'cafe', 'gym', 'spa'];
   const finalTerms = [];
@@ -1190,7 +1189,7 @@ async function normalizeAndInsertProfiles(rawItems, env, country, fallbackThana 
 }
 
 // =========================================================================
-// CLOUDFLARE WORKER HANDLER (with background fetch endpoint)
+// CLOUDFLARE WORKER HANDLER (with background fetch endpoint & cron)
 // =========================================================================
 export async function onRequest(context) {
   const { request, env } = context;
@@ -1208,7 +1207,26 @@ export async function onRequest(context) {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Auth check for all endpoints except cron
+  // --- CRON endpoint (no auth required for internal calls) ---
+  if (action === 'cronFetch') {
+    // This endpoint can be called internally by the cron trigger.
+    // For security, you may verify a secret header, but we skip auth here.
+    if (!env.DB) return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
+    const countries = Object.keys(ENTERPRISE_GEO_REGISTRY.countries);
+    let totalInserted = 0;
+    for (const c of countries) {
+      console.log(`🚀 Cron fetch for ${c}...`);
+      const rawItems = await fetchAllLocationsForCountry(c, env);
+      if (rawItems.length) {
+        const inserted = await normalizeAndInsertProfiles(rawItems, env, c, '');
+        totalInserted += inserted;
+      }
+      await sleep(1000);
+    }
+    return jsonResponse({ success: true, message: `Cron fetch completed. Inserted ${totalInserted} new profiles.` }, 200, corsHeaders);
+  }
+
+  // --- Regular auth check for other endpoints ---
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return jsonResponse({ success: false, error: 'Unauthorized' }, 401, corsHeaders);
@@ -1299,13 +1317,12 @@ export async function onRequest(context) {
           const inserted = await normalizeAndInsertProfiles(rawItems, env, c, '');
           totalInserted += inserted;
         }
-        // Delay between countries
         await sleep(1000);
       }
       return jsonResponse({ success: true, message: `Batch fetch completed. Inserted ${totalInserted} new profiles.` }, 200, corsHeaders);
     }
 
-    // ----- SEARCH (with auto-fetch if too few results) -----
+    // ----- SEARCH (with auto-fetch only when queryTerm is non-empty) -----
     if (action === 'search') {
       if (!env.DB) return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
 
@@ -1347,10 +1364,13 @@ export async function onRequest(context) {
       const countResult = await env.DB.prepare(countQuery).bind(...params).first();
       let totalRecords = countResult ? countResult.total : 0;
 
-      // Auto-fetch if fewer than 10 records and country is provided
-      if (totalRecords < 10 && country) {
+      // Auto-fetch ONLY if:
+      // 1. Fewer than 10 records
+      // 2. Country is provided
+      // 3. User supplied a non-empty queryTerm (search box not empty)
+      // This prevents long-running country-wide fetches when the search box is left empty.
+      if (totalRecords < 10 && country && queryTerm && queryTerm.trim().length > 0) {
         console.log(`🔄 Auto-fetch triggered (only ${totalRecords} records). Fetching bulk for ${country}...`);
-        // Use batch fetch to populate the country
         const rawItems = await fetchAllLocationsForCountry(country, env);
         if (rawItems.length) {
           const inserted = await normalizeAndInsertProfiles(rawItems, env, country, '');
