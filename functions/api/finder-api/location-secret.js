@@ -213,40 +213,48 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 const API_CONFIG = {
   // ----- Google Places API (best data) -----
-  google: {
-    name: 'Google Places API',
-    active: true,
-    fetch: async (query, env, pageToken = null) => {
-      const key = env.GOOGLE_PLACES_API_KEY;
-      if (!key || key === 'YOUR_GOOGLE_API_KEY') return [];
-      try {
-        let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${key}`;
-        if (pageToken) url += `&pagetoken=${pageToken}`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (data.status !== 'OK') return [];
-        let results = data.results.map(place => ({
-          source: 'google',
-          id: `google_${place.place_id}`,
-          name: place.name,
-          address: place.formatted_address || '',
-          lat: place.geometry.location.lat,
-          lng: place.geometry.location.lng,
-          phone: place.formatted_phone_number || '',
-          website: place.website || '',
-          types: place.types || [],
-          confidence: 75
-        }));
-        // Handle pagination (max 3 pages)
-        if (data.next_page_token && results.length < 50) {
-          await sleep(2000);
-          const next = await this.fetch(query, env, data.next_page_token);
-          results = results.concat(next);
-        }
-        return results;
-      } catch (e) { return []; }
+ google: {
+  name: 'Google Places API',
+  active: true,
+  fetch: async function(query, env, pageToken = null) {
+    const key = env.GOOGLE_PLACES_API_KEY;
+    if (!key || key === 'YOUR_GOOGLE_API_KEY') return [];
+
+    try {
+      let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${key}`;
+      if (pageToken) url += `&pagetoken=${pageToken}`;
+      
+      const resp = await fetch(url);
+      const data = await resp.json();
+
+      if (data.status !== 'OK') return [];
+
+      let results = data.results.map(place => ({
+        source: 'google',
+        id: `google_${place.place_id}`,
+        name: place.name,
+        address: place.formatted_address || '',
+        lat: place.geometry.location.lat,
+        lng: place.geometry.location.lng,
+        phone: place.formatted_phone_number || '',
+        website: place.website || '',
+        types: place.types || [],
+        confidence: 75
+      }));
+
+      // Handle pagination (max 3 pages)
+      if (data.next_page_token && results.length < 50) {
+        await sleep(2000);
+        const next = await this.fetch(query, env, data.next_page_token);
+        results = results.concat(next);
+      }
+
+      return results;
+    } catch (e) {
+      return [];
     }
-  },
+  }
+},
 
   // ----- OpenStreetMap (free, no key) -----
   osm: {
@@ -1087,12 +1095,16 @@ async function fetchAllLocationsForCountry(country, env) {
     allTerms.push(...districts);
   }
   // 4. Thanas
-  for (const dist of Object.values(ENTERPRISE_GEO_REGISTRY.districts).filter(d => divisions.includes(d.division)).map(d => d.division)) {
-    const thanas = Object.entries(ENTERPRISE_GEO_REGISTRY.thanas)
-      .filter(([_, val]) => val.district === dist)
-      .map(([key]) => key);
-    allTerms.push(...thanas);
-  }
+const filteredDistricts = Object.entries(ENTERPRISE_GEO_REGISTRY.districts)
+  .filter(([_, val]) => divisions.includes(val.division))
+  .map(([key]) => key);   // ✅ এখন key হলো district id
+
+for (const dist of filteredDistricts) {
+  const thanas = Object.entries(ENTERPRISE_GEO_REGISTRY.thanas)
+    .filter(([_, val]) => val.district === dist)   // ✅ dist now is district id, not division
+    .map(([key]) => key);
+  allTerms.push(...thanas);
+}
   // 5. Add categories with location
   const categories = ['restaurant', 'hotel', 'business', 'company', 'shop', 'school', 'hospital', 'cafe', 'gym', 'spa'];
   const finalTerms = [];
