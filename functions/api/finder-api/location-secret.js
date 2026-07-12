@@ -48,6 +48,9 @@ async function verifyJWT(token, secret) {
 // ENTERPRISE GEO REGISTRY (9 Countries × 3 Divisions × 3 Districts × 3 Thanas)
 // =========================================================================
 const ENTERPRISE_GEO_REGISTRY = {
+  // =====================================================================
+  // COUNTRIES (Top-level)
+  // =====================================================================
   countries: {
     'bangladesh': { name: 'Bangladesh', code: 'BD' },
     'india': { name: 'India', code: 'IN' },
@@ -59,95 +62,158 @@ const ENTERPRISE_GEO_REGISTRY = {
     'malta': { name: 'Malta', code: 'MT' },
     'brazil': { name: 'Brazil', code: 'BR' }
   },
+
+  // =====================================================================
+  // DIVISIONS (State/Province/Region level)
+  // =====================================================================
   divisions: {
+    // ===== BANGLADESH (3 Divisions) =====
     'dhaka': { country: 'bangladesh', name: 'Dhaka', aliases: ['dhaka', 'ঢাকা'] },
     'chattogram': { country: 'bangladesh', name: 'Chattogram', aliases: ['chattogram', 'chittagong', 'চট্টগ্রাম'] },
     'sylhet': { country: 'bangladesh', name: 'Sylhet', aliases: ['sylhet', 'সিলেট'] },
+
+    // ===== INDIA (3 States) =====
     'maharashtra': { country: 'india', name: 'Maharashtra', aliases: ['maharashtra'] },
     'karnataka': { country: 'india', name: 'Karnataka', aliases: ['karnataka'] },
     'tamil_nadu': { country: 'india', name: 'Tamil Nadu', aliases: ['tamil nadu'] },
+
+    // ===== UAE (3 Emirates) =====
     'dubai': { country: 'uae', name: 'Dubai', aliases: ['dubai'] },
     'abu_dhabi': { country: 'uae', name: 'Abu Dhabi', aliases: ['abu dhabi'] },
     'sharjah': { country: 'uae', name: 'Sharjah', aliases: ['sharjah'] },
+
+    // ===== THAILAND (3 Regions) =====
     'bangkok_metropolitan': { country: 'thailand', name: 'Bangkok Metropolitan', aliases: ['bangkok'] },
     'chonburi': { country: 'thailand', name: 'Chonburi', aliases: ['chonburi'] },
     'chiang_mai': { country: 'thailand', name: 'Chiang Mai', aliases: ['chiang mai'] },
+
+    // ===== NIGER (3 Departments) =====
     'niamey': { country: 'niger', name: 'Niamey', aliases: ['niamey'] },
     'tillaberi': { country: 'niger', name: 'Tillaberi', aliases: ['tillaberi'] },
     'dosso': { country: 'niger', name: 'Dosso', aliases: ['dosso'] },
+
+    // ===== ARGENTINA (3 Provinces) =====
     'buenos_aires': { country: 'argentina', name: 'Buenos Aires', aliases: ['buenos aires'] },
     'cordoba': { country: 'argentina', name: 'Cordoba', aliases: ['cordoba'] },
     'mendoza': { country: 'argentina', name: 'Mendoza', aliases: ['mendoza'] },
+
+    // ===== IRELAND (3 Provinces) =====
     'leinster': { country: 'ireland', name: 'Leinster', aliases: ['leinster'] },
     'munster': { country: 'ireland', name: 'Munster', aliases: ['munster'] },
     'connacht': { country: 'ireland', name: 'Connacht', aliases: ['connacht'] },
+
+    // ===== MALTA (3 Regions) =====
     'south_eastern': { country: 'malta', name: 'South Eastern', aliases: ['south eastern'] },
     'northern': { country: 'malta', name: 'Northern', aliases: ['northern'] },
     'port': { country: 'malta', name: 'Port', aliases: ['port'] },
+
+    // ===== BRAZIL (3 States) =====
     'sao_paulo': { country: 'brazil', name: 'São Paulo', aliases: ['sao paulo'] },
     'rio_de_janeiro': { country: 'brazil', name: 'Rio de Janeiro', aliases: ['rio de janeiro'] },
     'minas_gerais': { country: 'brazil', name: 'Minas Gerais', aliases: ['minas gerais'] }
   },
+
+  // =====================================================================
+  // DISTRICTS (City/County level) - Each linked to a Division
+  // =====================================================================
   districts: {
+    // ===== BANGLADESH (6 Districts) =====
     'dhaka': { division: 'dhaka', name: 'Dhaka' },
     'gazipur': { division: 'dhaka', name: 'Gazipur' },
     'narayanganj': { division: 'dhaka', name: 'Narayanganj' },
     'chattogram': { division: 'chattogram', name: 'Chattogram' },
     'cox_bazar': { division: 'chattogram', name: "Cox's Bazar" },
     'sylhet': { division: 'sylhet', name: 'Sylhet' },
+
+    // ===== INDIA (4 Districts) =====
     'mumbai': { division: 'maharashtra', name: 'Mumbai' },
     'pune': { division: 'maharashtra', name: 'Pune' },
     'bangalore': { division: 'karnataka', name: 'Bangalore' },
     'chennai': { division: 'tamil_nadu', name: 'Chennai' },
+
+    // ===== UAE (3 Districts) =====
     'dubai_city': { division: 'dubai', name: 'Dubai City' },
     'abu_dhabi_city': { division: 'abu_dhabi', name: 'Abu Dhabi City' },
     'sharjah_city': { division: 'sharjah', name: 'Sharjah City' },
+
+    // ===== THAILAND (3 Districts) =====
     'bangkok_city': { division: 'bangkok_metropolitan', name: 'Bangkok City' },
     'pattaya': { division: 'chonburi', name: 'Pattaya' },
     'chiang_mai_city': { division: 'chiang_mai', name: 'Chiang Mai City' },
+
+    // ===== NIGER (3 Districts) =====
     'niamey_city': { division: 'niamey', name: 'Niamey City' },
     'tillaberi_city': { division: 'tillaberi', name: 'Tillaberi City' },
     'dosso_city': { division: 'dosso', name: 'Dosso City' },
+
+    // ===== ARGENTINA (3 Districts) =====
     'buenos_aires_city': { division: 'buenos_aires', name: 'Buenos Aires City' },
     'cordoba_city': { division: 'cordoba', name: 'Cordoba City' },
     'mendoza_city': { division: 'mendoza', name: 'Mendoza City' },
+
+    // ===== IRELAND (3 Districts) =====
     'dublin': { division: 'leinster', name: 'Dublin' },
     'cork': { division: 'munster', name: 'Cork' },
     'galway': { division: 'connacht', name: 'Galway' },
+
+    // ===== MALTA (3 Districts) =====
     'valletta': { division: 'south_eastern', name: 'Valletta' },
     'mosta': { division: 'northern', name: 'Mosta' },
     'birgu': { division: 'port', name: 'Birgu' },
+
+    // ===== BRAZIL (3 Districts) =====
     'sao_paulo_city': { division: 'sao_paulo', name: 'São Paulo City' },
     'rio_city': { division: 'rio_de_janeiro', name: 'Rio City' },
     'belo_horizonte': { division: 'minas_gerais', name: 'Belo Horizonte' }
   },
+
+  // =====================================================================
+  // THANAS (Neighborhood/Zone level) - Each linked to a District with GPS
+  // =====================================================================
   thanas: {
+    // ===== BANGLADESH (5 Thanas) =====
     'gulshan': { district: 'dhaka', name: 'Gulshan', lat: 23.7925, lng: 90.4078 },
     'dhanmondi': { district: 'dhaka', name: 'Dhanmondi', lat: 23.7461, lng: 90.3742 },
     'uttara': { district: 'dhaka', name: 'Uttara', lat: 23.8729, lng: 90.3987 },
     'cox_bazar_sadar': { district: 'cox_bazar', name: "Cox's Bazar Sadar", lat: 21.4272, lng: 92.0058 },
     'sylhet_sadar': { district: 'sylhet', name: 'Sylhet Sadar', lat: 24.8996, lng: 91.8710 },
+
+    // ===== INDIA (3 Thanas) =====
     'andheri': { district: 'mumbai', name: 'Andheri', lat: 19.1197, lng: 72.8468 },
     'bandra': { district: 'mumbai', name: 'Bandra', lat: 19.0596, lng: 72.8295 },
     'indiranagar': { district: 'bangalore', name: 'Indiranagar', lat: 12.9784, lng: 77.6408 },
+
+    // ===== UAE (3 Thanas) =====
     'downtown_dubai': { district: 'dubai_city', name: 'Downtown Dubai', lat: 25.1961, lng: 55.2741 },
     'marina': { district: 'dubai_city', name: 'Dubai Marina', lat: 25.0801, lng: 55.1431 },
     'corniche': { district: 'abu_dhabi_city', name: 'Corniche', lat: 24.4667, lng: 54.3667 },
+
+    // ===== THAILAND (3 Thanas) =====
     'sukhumvit': { district: 'bangkok_city', name: 'Sukhumvit', lat: 13.7367, lng: 100.5623 },
     'silom': { district: 'bangkok_city', name: 'Silom', lat: 13.7249, lng: 100.5234 },
     'old_city': { district: 'chiang_mai_city', name: 'Old City', lat: 18.7893, lng: 98.9852 },
+
+    // ===== NIGER (3 Thanas) =====
     'plateau': { district: 'niamey_city', name: 'Plateau', lat: 13.5127, lng: 2.1126 },
     'goudel': { district: 'niamey_city', name: 'Goudel', lat: 13.5064, lng: 2.0982 },
     'kollo': { district: 'tillaberi_city', name: 'Kollo', lat: 13.3056, lng: 1.9833 },
+
+    // ===== ARGENTINA (3 Thanas) =====
     'palermo': { district: 'buenos_aires_city', name: 'Palermo', lat: -34.5889, lng: -58.4306 },
     'recoleta': { district: 'buenos_aires_city', name: 'Recoleta', lat: -34.5889, lng: -58.3924 },
     'nueva_cordoba': { district: 'cordoba_city', name: 'Nueva Cordoba', lat: -31.4201, lng: -64.1888 },
+
+    // ===== IRELAND (3 Thanas) =====
     'temple_bar': { district: 'dublin', name: 'Temple Bar', lat: 53.3454, lng: -6.2622 },
     'docklands': { district: 'dublin', name: 'Docklands', lat: 53.3471, lng: -6.2411 },
     'cork_city_center': { district: 'cork', name: 'Cork City Center', lat: 51.8985, lng: -8.4756 },
+
+    // ===== MALTA (3 Thanas) =====
     'valletta_waterfront': { district: 'valletta', name: 'Valletta Waterfront', lat: 35.8989, lng: 14.5146 },
     'mosta_dome': { district: 'mosta', name: 'Mosta Dome', lat: 35.9092, lng: 14.4266 },
     'birgu_waterfront': { district: 'birgu', name: 'Birgu Waterfront', lat: 35.8875, lng: 14.5226 },
+
+    // ===== BRAZIL (3 Thanas) =====
     'paulista': { district: 'sao_paulo_city', name: 'Paulista', lat: -23.5617, lng: -46.6561 },
     'vila_olimpia': { district: 'sao_paulo_city', name: 'Vila Olimpia', lat: -23.5939, lng: -46.6875 },
     'copacabana': { district: 'rio_city', name: 'Copacabana', lat: -22.9711, lng: -43.1803 }
