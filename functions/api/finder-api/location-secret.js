@@ -276,7 +276,153 @@ class GeoIntelligenceEngine {
 // API CONFIGURATIONS (Full 114 APIs - Mapped to existing D1 schema)
 // =========================================================================
 const API_CONFIG = {
-  // ===== 1. 6sense API =====
+  
+  
+  
+  // ----- 1.1 Google Places API (বিশ্বের সবচেয়ে বড় লোকেশন ডেটাবেস) -----
+  google: {
+    name: 'Google Places API',
+    active: true, // true = সক্রিয়, false = নিষ্ক্রিয়
+    fetch: async (query, env) => {
+      // API Key চেক করুন
+      const key = env.GOOGLE_PLACES_API_KEY;
+      if (!key || key === 'YOUR_GOOGLE_API_KEY') return [];
+
+      try {
+        // Google Places API-তে কল করুন
+        const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${key}`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        // যদি ডেটা না আসে, খালি অ্যারে রিটার্ন করুন
+        if (data.status !== 'OK') return [];
+
+        // ডেটাকে আপনার প্রোফাইল ফরম্যাটে কনভার্ট করুন
+        return data.results.map(place => ({
+          source: 'google',                // উৎসের নাম
+          id: `google_${place.place_id}`,  // ইউনিক আইডি
+          name: place.name,                // প্রতিষ্ঠানের নাম
+          address: place.formatted_address || '', // ঠিকানা
+          lat: place.geometry.location.lat,       // অক্ষাংশ (latitude)
+          lng: place.geometry.location.lng,       // দ্রাঘিমাংশ (longitude)
+          phone: place.formatted_phone_number || '', // ফোন নম্বর
+          website: place.website || '',           // ওয়েবসাইট
+          types: place.types || [],               // ক্যাটাগরি (যেমন: restaurant, hotel)
+          confidence: 75                          // বিশ্বাসযোগ্যতা স্কোর (০-১০০)
+        }));
+      } catch (e) {
+        return []; // Error হলে খালি অ্যারে রিটার্ন করুন
+      }
+    }
+  },
+
+  // ----- 1.2 OpenStreetMap (Nominatim) - সম্পূর্ণ ফ্রি ও ওপেন সোর্স -----
+  osm: {
+    name: 'OpenStreetMap (Nominatim)',
+    active: true,
+    fetch: async (query) => {
+      try {
+        // OSM Nominatim API-তে কল করুন (কোনো API Key লাগে না!)
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10`;
+        const resp = await fetch(url, {
+          headers: { 'User-Agent': 'BusinessFinder/1.0' } // OSM নীতিমালা অনুযায়ী
+        });
+        const data = await resp.json();
+
+        if (!Array.isArray(data)) return [];
+
+        return data.map(item => ({
+          source: 'osm',
+          id: `osm_${item.osm_type}_${item.osm_id}`,
+          name: item.display_name.split(',')[0], // নামের প্রথম অংশ
+          address: item.display_name,
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+          phone: '',
+          website: '',
+          types: [item.class],
+          confidence: 50 // OSM ডেটা মাঝারি মানের
+        }));
+      } catch (e) {
+        return [];
+      }
+    }
+  },
+
+  // ----- 1.3 Foursquare Places API (বিকল্প লোকেশন ডেটা) -----
+  foursquare: {
+    name: 'Foursquare Places API',
+    active: true,
+    fetch: async (query, env) => {
+      const key = env.FOURSQUARE_API_KEY;
+      if (!key || key === 'YOUR_FOURSQUARE_API_KEY') return [];
+
+      try {
+        const url = `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(query)}&limit=10`;
+        const resp = await fetch(url, {
+          headers: { 'Authorization': key } // Foursquare API Key হেডারে পাঠান
+        });
+        const data = await resp.json();
+
+        if (!data.results) return [];
+
+        return data.results.map(place => ({
+          source: 'foursquare',
+          id: `fsq_${place.fsq_id}`,
+          name: place.name,
+          address: place.location?.formatted_address || '',
+          lat: place.geocodes?.main?.latitude || 0,
+          lng: place.geocodes?.main?.longitude || 0,
+          phone: place.tel || '',
+          website: place.website || '',
+          types: place.categories?.map(c => c.name) || [],
+          confidence: 65
+        }));
+      } catch (e) {
+        return [];
+      }
+    }
+  },
+
+  // ----- 1.4 Yelp Fusion API (বিজনেস রিভিউ ও কন্টাক্ট) -----
+  yelp: {
+    name: 'Yelp Fusion API',
+    active: true,
+    fetch: async (query, env) => {
+      const key = env.YELP_API_KEY;
+      if (!key || key === 'YOUR_YELP_API_KEY') return [];
+
+      try {
+        const url = `https://api.yelp.com/v3/businesses/search?term=${encodeURIComponent(query)}&limit=10`;
+        const resp = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${key}` } // Yelp Bearer Token
+        });
+        const data = await resp.json();
+
+        if (!data.businesses) return [];
+
+        return data.businesses.map(biz => ({
+          source: 'yelp',
+          id: `yelp_${biz.id}`,
+          name: biz.name,
+          address: biz.location?.address1 || '',
+          lat: biz.coordinates?.latitude || 0,
+          lng: biz.coordinates?.longitude || 0,
+          phone: biz.phone || '',
+          website: biz.url || '',
+          types: biz.categories?.map(c => c.title) || [],
+          confidence: 70
+        }));
+      } catch (e) {
+        return [];
+      }
+    }
+  },
+
+
+
+  
+  // ===== 1.5 6sense API =====
   sixsense: {
     name: '6sense API', active: true,
     fetch: async (q, env) => {
