@@ -1,16 +1,10 @@
 // functions/api/finder-api/website-secret.js
 // ============================================================
-//  Website URL Extractor API
-//  Scrapes a given URL for emails and phone numbers,
-//  with cache support using KV, anti-bot headers, and depth.
+//  Website URL Extractor API (Updated for Google Search)
 // ============================================================
 
 import { KVMANAGER } from '../../helpers/kv-manager.js';
 
-/**
- * POST handler for website scraping.
- * Expects JSON: { url, limit, depth, force, includeSubdomains }
- */
 export async function onRequestPost(context) {
   const { request, env } = context;
   const corsHeaders = {
@@ -42,6 +36,7 @@ export async function onRequestPost(context) {
   if (!token) {
     return jsonResponse({ success: false, error: 'Missing authentication token' }, 401, corsHeaders);
   }
+  
   const payload = verifyToken(token);
   if (!payload) {
     return jsonResponse({ success: false, error: 'Invalid or expired token' }, 401, corsHeaders);
@@ -55,17 +50,14 @@ export async function onRequestPost(context) {
     return jsonResponse({ success: false, error: 'URL required' }, 400, corsHeaders);
   }
 
-  // Validate and sanitize URL
   url = validateUrl(url);
   if (!url) {
     return jsonResponse({ success: false, error: 'Invalid URL' }, 400, corsHeaders);
   }
 
-  // Initialize KV
   const kv = new KVMANAGER(env.SECRETS_KV || null);
   const cacheKey = `cache:website:${url}:depth${depth}:limit${limit}`;
 
-  // Check cache
   if (!force) {
     const cached = await kv.getJSON(cacheKey);
     if (cached && cached.emails && cached.phones) {
@@ -74,7 +66,6 @@ export async function onRequestPost(context) {
         emails: cached.emails.slice(0, limit),
         phones: cached.phones.slice(0, limit),
         cached: true,
-        scrapedAt: cached.scrapedAt || new Date().toISOString(),
       }, 200, corsHeaders);
     }
   }
@@ -83,48 +74,80 @@ export async function onRequestPost(context) {
   let allEmails = [];
   let allPhones = [];
   const visited = new Set();
+  
+  // চেক করা হচ্ছে ইনপুট লিংকটি গুগলের সার্চ লিংক কি না
+  const isGoogleSearch = url.includes('google.com/search');
+  // গুগল লিংক হলে ডিপথ অটোমেটিকভাবে একটু বাড়িয়ে দেওয়া হচ্ছে, যাতে সে ভেতরের সাইটগুলোতে ঢুকতে পারে
+  const targetDepth = isGoogleSearch ? 2 : depth;
 
   async function scrapePage(pageUrl, currentDepth) {
-    if (currentDepth > depth) return;
+    if (currentDepth > targetDepth) return;
     if (visited.has(pageUrl)) return;
     visited.add(pageUrl);
 
+    // লিমিট ক্রস করলে আর স্ক্র্যাপ করার দরকার নেই
+    if (allEmails.length >= limit && allPhones.length >= limit) return;
+
     try {
       const html = await fetchWithRetry(pageUrl);
-      // Extract emails
-      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-      const emails = (html.match(emailRegex) || []).map(e => e.toLowerCase());
-      // Extract phones (international format)
-      const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g;
-      const rawPhones = html.match(phoneRegex) || [];
-      const phones = rawPhones.map(p => p.trim().replace(/[^\d+]/g, '')).filter(p => p.length >= 10);
+      const isCurrentPageGoogle = pageUrl.includes('google.com');
 
-      allEmails.push(...emails);
-      allPhones.push(...phones);
-
-      // If depth > 1, extract links and follow them
-      if (depth > 1 && currentDepth < depth) {
-        const linkRegex = /<a\s+(?:[^>]*?\s+)?href="([^"]*)"/gi;
+      if (isCurrentPageGoogle) {
+        // যদি পেজটি গুগলের হয়, তবে ইমেইল/ফোন না খুঁজে এক্সটার্নাল লিংক খুঁজবে
+        const linkRegex = /href="(https?:\/\/[^"]+)"/gi;
         let match;
-        const baseUrl = new URL(pageUrl);
+        let extractedLinks = [];
+
         while ((match = linkRegex.exec(html)) !== null) {
-          let href = match[1];
           try {
-            const absolute = new URL(href, baseUrl).href;
-            // Only follow if same domain (or subdomain if allowed)
-            if (includeSubdomains) {
-              // Allow any subdomain of the main domain
-              const mainHost = baseUrl.hostname.replace(/^www\./, '');
-              if (new URL(absolute).hostname.endsWith(mainHost)) {
-                await scrapePage(absolute, currentDepth + 1);
-              }
-            } else {
-              if (new URL(absolute).hostname === baseUrl.hostname) {
-                await scrapePage(absolute, currentDepth + 1);
-              }
+            const absoluteLink = new URL(match[1]).href;
+            // গুগলের নিজস্ব লিংকগুলো বাদ দিয়ে অন্যান্য ওয়েবসাইটের লিংকগুলো কালেক্ট করা হচ্ছে
+            if (!absoluteLink.includes('google.com')) {
+              extractedLinks.push(absoluteLink);
             }
-          } catch {
-            // Invalid URL, skip
+          } catch (e) {}
+        }
+
+        // ডুপ্লিকেট লিংক রিমুভ করা
+        extractedLinks = [...new Set(extractedLinks)];
+
+        // এক্সট্রাক্ট করা লিংকগুলোতে ভিজিট করা (Depth + 1)
+        for (const link of extractedLinks) {
+          if (allEmails.length >= limit && allPhones.length >= limit) break;
+          await scrapePage(link, currentDepth + 1);
+        }
+      } else {
+        // পেজটি থার্ড-পার্টি ওয়েবসাইট হলে ইমেইল ও ফোন নাম্বার এক্সট্রাক্ট করবে
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        const emails = (html.match(emailRegex) || []).map(e => e.toLowerCase());
+        
+        const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g;
+        const rawPhones = html.match(phoneRegex) || [];
+        const phones = rawPhones.map(p => p.trim().replace(/[^\d+]/g, '')).filter(p => p.length >= 10);
+
+        allEmails.push(...emails);
+        allPhones.push(...phones);
+
+        // সাধারণ ওয়েবসাইটের ক্ষেত্রে ডিপথ স্ক্র্যাপিং (যদি ইউজার ডিপথ > ১ সিলেক্ট করে)
+        if (!isGoogleSearch && currentDepth < targetDepth) {
+          const linkRegex = /<a\s+(?:[^>]*?\s+)?href="([^"]*)"/gi;
+          let match;
+          const baseUrl = new URL(pageUrl);
+          while ((match = linkRegex.exec(html)) !== null) {
+             let href = match[1];
+             try {
+                const absolute = new URL(href, baseUrl).href;
+                if (includeSubdomains) {
+                  const mainHost = baseUrl.hostname.replace(/^www\./, '');
+                  if (new URL(absolute).hostname.endsWith(mainHost)) {
+                    await scrapePage(absolute, currentDepth + 1);
+                  }
+                } else {
+                  if (new URL(absolute).hostname === baseUrl.hostname) {
+                    await scrapePage(absolute, currentDepth + 1);
+                  }
+                }
+             } catch {}
           }
         }
       }
@@ -133,30 +156,25 @@ export async function onRequestPost(context) {
     }
   }
 
-  // Start scraping from the initial URL
+  // স্ক্র্যাপিং শুরু
   await scrapePage(url, 1);
 
-  // Remove duplicates and limit
+  // ডুপ্লিকেট ডেটা মুছে ফেলা এবং লিমিট অনুযায়ী ডেটা রাখা
   allEmails = [...new Set(allEmails)].slice(0, limit);
   allPhones = [...new Set(allPhones)].slice(0, limit);
 
-  // Store in cache (expire after 24 hours)
+  // ক্যাশে সেভ করা
   await kv.putJSON(cacheKey, {
     emails: allEmails,
     phones: allPhones,
     scrapedAt: new Date().toISOString(),
   }, { expirationTtl: 86400 });
 
-  // Log audit
-  // const auditLogger = new AuditLogger(kv);
-  // await auditLogger.log('SCRAPE_WEBSITE', { username: payload.username, url, emailCount: allEmails.length, phoneCount: allPhones.length });
-
   return jsonResponse({
     success: true,
     emails: allEmails,
     phones: allPhones,
     cached: false,
-    scrapedAt: new Date().toISOString(),
   }, 200, corsHeaders);
 }
 
@@ -182,20 +200,21 @@ async function fetchWithRetry(url, retries = 2) {
     try {
       const response = await fetch(url, {
         headers: {
+          // Google কে বোঝানোর চেষ্টা যে এটি একটি সাধারণ ব্রাউজার
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
           'Connection': 'keep-alive',
           'Upgrade-Insecure-Requests': '1',
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(15000), // টাইমআউট একটু বাড়ানো হয়েছে
       });
-      if (response.status === 403) throw new Error('Access Denied (403) – site may be blocking scrapers.');
+      if (response.status === 403) throw new Error('Access Denied (403)');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return await response.text();
     } catch (err) {
       if (i === retries) throw err;
-      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+      await new Promise(r => setTimeout(r, 1000 * (i + 1))); // ফেইল করলে ১ সেকেন্ড পর আবার ট্রাই করবে
     }
   }
 }
@@ -203,9 +222,6 @@ async function fetchWithRetry(url, retries = 2) {
 function jsonResponse(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      ...headers,
-      'Content-Type': 'application/json',
-    },
+    headers: { ...headers, 'Content-Type': 'application/json' },
   });
 }
