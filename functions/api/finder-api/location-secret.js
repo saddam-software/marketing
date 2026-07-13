@@ -3,6 +3,7 @@
  * Now respects 'mode' parameter: 'db' = database only, else = live API with auto-fetch.
  * All metadata fields are still returned but frontend uses only what's needed.
  * FIXES: Added email to Hunter API, fixed email storage, and targeted search by keyword.
+ * REMOVED: Thana (locality) references entirely.
  */
 
 function base64UrlToBuffer(str) {
@@ -45,7 +46,7 @@ async function verifyJWT(token, secret) {
 }
 
 // =========================================================================
-// ENTERPRISE GEO REGISTRY (same as before - kept for hierarchy)
+// ENTERPRISE GEO REGISTRY (without thanas)
 // =========================================================================
 const ENTERPRISE_GEO_REGISTRY = {
   countries: {
@@ -120,37 +121,6 @@ const ENTERPRISE_GEO_REGISTRY = {
     'sao_paulo_city': { division: 'sao_paulo', name: 'São Paulo City' },
     'rio_city': { division: 'rio_de_janeiro', name: 'Rio City' },
     'belo_horizonte': { division: 'minas_gerais', name: 'Belo Horizonte' }
-  },
-  thanas: {
-    'gulshan': { district: 'dhaka', name: 'Gulshan', lat: 23.7925, lng: 90.4078 },
-    'dhanmondi': { district: 'dhaka', name: 'Dhanmondi', lat: 23.7461, lng: 90.3742 },
-    'uttara': { district: 'dhaka', name: 'Uttara', lat: 23.8729, lng: 90.3987 },
-    'cox_bazar_sadar': { district: 'cox_bazar', name: "Cox's Bazar Sadar", lat: 21.4272, lng: 92.0058 },
-    'sylhet_sadar': { district: 'sylhet', name: 'Sylhet Sadar', lat: 24.8996, lng: 91.8710 },
-    'andheri': { district: 'mumbai', name: 'Andheri', lat: 19.1197, lng: 72.8468 },
-    'bandra': { district: 'mumbai', name: 'Bandra', lat: 19.0596, lng: 72.8295 },
-    'indiranagar': { district: 'bangalore', name: 'Indiranagar', lat: 12.9784, lng: 77.6408 },
-    'downtown_dubai': { district: 'dubai_city', name: 'Downtown Dubai', lat: 25.1961, lng: 55.2741 },
-    'marina': { district: 'dubai_city', name: 'Dubai Marina', lat: 25.0801, lng: 55.1431 },
-    'corniche': { district: 'abu_dhabi_city', name: 'Corniche', lat: 24.4667, lng: 54.3667 },
-    'sukhumvit': { district: 'bangkok_city', name: 'Sukhumvit', lat: 13.7367, lng: 100.5623 },
-    'silom': { district: 'bangkok_city', name: 'Silom', lat: 13.7249, lng: 100.5234 },
-    'old_city': { district: 'chiang_mai_city', name: 'Old City', lat: 18.7893, lng: 98.9852 },
-    'plateau': { district: 'niamey_city', name: 'Plateau', lat: 13.5127, lng: 2.1126 },
-    'goudel': { district: 'niamey_city', name: 'Goudel', lat: 13.5064, lng: 2.0982 },
-    'kollo': { district: 'tillaberi_city', name: 'Kollo', lat: 13.3056, lng: 1.9833 },
-    'palermo': { district: 'buenos_aires_city', name: 'Palermo', lat: -34.5889, lng: -58.4306 },
-    'recoleta': { district: 'buenos_aires_city', name: 'Recoleta', lat: -34.5889, lng: -58.3924 },
-    'nueva_cordoba': { district: 'cordoba_city', name: 'Nueva Cordoba', lat: -31.4201, lng: -64.1888 },
-    'temple_bar': { district: 'dublin', name: 'Temple Bar', lat: 53.3454, lng: -6.2622 },
-    'docklands': { district: 'dublin', name: 'Docklands', lat: 53.3471, lng: -6.2411 },
-    'cork_city_center': { district: 'cork', name: 'Cork City Center', lat: 51.8985, lng: -8.4756 },
-    'valletta_waterfront': { district: 'valletta', name: 'Valletta Waterfront', lat: 35.8989, lng: 14.5146 },
-    'mosta_dome': { district: 'mosta', name: 'Mosta Dome', lat: 35.9092, lng: 14.4266 },
-    'birgu_waterfront': { district: 'birgu', name: 'Birgu Waterfront', lat: 35.8875, lng: 14.5226 },
-    'paulista': { district: 'sao_paulo_city', name: 'Paulista', lat: -23.5617, lng: -46.6561 },
-    'vila_olimpia': { district: 'sao_paulo_city', name: 'Vila Olimpia', lat: -23.5939, lng: -46.6875 },
-    'copacabana': { district: 'rio_city', name: 'Copacabana', lat: -22.9711, lng: -43.1803 }
   }
 };
 
@@ -170,9 +140,7 @@ class GeoIntelligenceEngine {
   static normalizeQueryLocation(term, type) {
     if (!term) return '';
     const clean = term.trim().toLowerCase();
-    const target = type === 'division' ? ENTERPRISE_GEO_REGISTRY.divisions : 
-                  type === 'district' ? ENTERPRISE_GEO_REGISTRY.districts : 
-                  ENTERPRISE_GEO_REGISTRY.thanas;
+    const target = type === 'division' ? ENTERPRISE_GEO_REGISTRY.divisions : ENTERPRISE_GEO_REGISTRY.districts;
     for (const [key, node] of Object.entries(target)) {
       if (node.aliases && node.aliases.includes(clean)) return key;
       if (node.name && node.name.toLowerCase() === clean) return key;
@@ -708,7 +676,7 @@ const API_CONFIG = {
           address: e.domain || '',
           lat: 0,
           lng: 0,
-          email: e.value, // <-- FIX: added email field
+          email: e.value,
           phone: '',
           website: e.domain || '',
           types: ['email'],
@@ -1034,15 +1002,7 @@ async function fetchAllLocationsForCountry(country, env) {
       .map(([key]) => key);
     allTerms.push(...districts);
   }
-  const filteredDistricts = Object.entries(ENTERPRISE_GEO_REGISTRY.districts)
-    .filter(([_, val]) => divisions.includes(val.division))
-    .map(([key]) => key);
-  for (const dist of filteredDistricts) {
-    const thanas = Object.entries(ENTERPRISE_GEO_REGISTRY.thanas)
-      .filter(([_, val]) => val.district === dist)
-      .map(([key]) => key);
-    allTerms.push(...thanas);
-  }
+  // Removed thana loop entirely
   const categories = ['restaurant', 'hotel', 'business', 'company', 'shop', 'school', 'hospital', 'cafe', 'gym', 'spa'];
   const finalTerms = [];
   for (const term of allTerms) {
@@ -1063,9 +1023,9 @@ async function fetchAllLocationsForCountry(country, env) {
 }
 
 // =========================================================================
-// NORMALIZE & INSERT (FIXED: email is now stored)
+// NORMALIZE & INSERT (without thana)
 // =========================================================================
-async function normalizeAndInsertProfiles(rawItems, env, country, fallbackThana = '') {
+async function normalizeAndInsertProfiles(rawItems, env, country) {
   let inserted = 0;
   let skipped = 0;
   for (const item of rawItems) {
@@ -1093,10 +1053,10 @@ async function normalizeAndInsertProfiles(rawItems, env, country, fallbackThana 
       country,
       division || '',
       district || '',
-      fallbackThana || '',
+      '', // thana left empty
       item.lat || 0,
       item.lng || 0,
-      item.email || '', // <-- FIX: now storing email
+      item.email || '',
       item.phone || '',
       '',
       item.website || '',
@@ -1141,7 +1101,7 @@ export async function onRequest(context) {
     for (const c of countries) {
       const rawItems = await fetchAllLocationsForCountry(c, env);
       if (rawItems.length) {
-        const inserted = await normalizeAndInsertProfiles(rawItems, env, c, '');
+        const inserted = await normalizeAndInsertProfiles(rawItems, env, c);
         totalInserted += inserted;
       }
       await sleep(1000);
@@ -1187,15 +1147,7 @@ export async function onRequest(context) {
       return jsonResponse({ success: true, districts: filtered }, 200, corsHeaders);
     }
 
-    // ----- getThanas (kept for completeness) -----
-    if (action === 'getThanas') {
-      const district = searchParams.get('district');
-      if (!district) return jsonResponse({ success: false, error: 'Missing district' }, 400, corsHeaders);
-      const filtered = Object.entries(ENTERPRISE_GEO_REGISTRY.thanas)
-        .filter(([_, val]) => val.district === district)
-        .map(([key, val]) => ({ id: key, name: val.name, lat: val.lat, lng: val.lng }));
-      return jsonResponse({ success: true, thanas: filtered }, 200, corsHeaders);
-    }
+    // ----- getThanas removed -----
 
     // ----- verifyProfile (kept but not used in simplified UI) -----
     if (action === 'verifyProfile') {
@@ -1211,7 +1163,7 @@ export async function onRequest(context) {
       for (const c of countries) {
         const rawItems = await fetchAllLocationsForCountry(c, env);
         if (rawItems.length) {
-          const inserted = await normalizeAndInsertProfiles(rawItems, env, c, '');
+          const inserted = await normalizeAndInsertProfiles(rawItems, env, c);
           totalInserted += inserted;
         }
         await sleep(1000);
@@ -1223,7 +1175,7 @@ export async function onRequest(context) {
     if (action === 'search') {
       if (!env.DB) return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
 
-      const queryTerm = searchParams.get('query') || ''; // keyword/industry
+      const queryTerm = searchParams.get('query') || '';
       const country = searchParams.get('country') || 'bangladesh';
       const division = searchParams.get('division') || '';
       const district = searchParams.get('district') || '';
@@ -1252,10 +1204,9 @@ export async function onRequest(context) {
         // Build a targeted query: e.g., "Software Company in Dhaka, Bangladesh"
         const locationParts = [district, division, country].filter(Boolean);
         const targetedQuery = `${queryTerm} in ${locationParts.join(', ')}`;
-        // Use fetchFromAllAPIs with the targeted query (not the entire country)
         const rawItems = await fetchFromAllAPIs(targetedQuery, env);
         if (rawItems.length) {
-          await normalizeAndInsertProfiles(rawItems, env, country, district || division);
+          await normalizeAndInsertProfiles(rawItems, env, country);
           // Re-count after insertion
           const newCount = await env.DB.prepare(countQuery).bind(...params).first();
           totalRecords = newCount ? newCount.total : 0;
@@ -1281,7 +1232,7 @@ export async function onRequest(context) {
         country: p.country,
         division: p.division,
         district: p.district,
-        thana: p.thana,
+        thana: p.thana, // will be empty in most cases
         lat: p.lat,
         lng: p.lng,
         email: p.email || '',
