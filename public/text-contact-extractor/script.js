@@ -39,9 +39,6 @@
   let currentPage = 1;
   const pageSize = 50;
 
-  // ✅ টোকেন একবার নেওয়া
-  const token = localStorage.getItem('emailExtractorToken');
-
   // ========== Helpers ==========
   function updateCharWordCount() {
     const text = textInput.value;
@@ -144,8 +141,15 @@
     updateAnalytics(emailArray, phoneArray, combined.length);
   }
 
-  // ========== API call to backend (টোকেন সহ) ==========
+  // ========== API call to backend (টোকেন ডায়নামিকভাবে নেওয়া) ==========
   async function extractFromText(text) {
+    // ✅ টোকেন ডায়নামিকভাবে নেওয়া
+    const token = localStorage.getItem('emailExtractorToken');
+    if (!token) {
+      alert('Authentication token is missing. Please log in first.');
+      return;
+    }
+
     showProcessing(true);
     setProcessingProgress(0, 'Sending data to server...');
     try {
@@ -153,7 +157,7 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`   // ✅ টোকেন যোগ করা হলো
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ text })
       });
