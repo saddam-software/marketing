@@ -1,5 +1,5 @@
 // functions/api/finder-api/website-secret.js
-// ============================================================
+// ============================================================ 
 //  Website URL Extractor API (Updated with Proxy Bypass Logic)
 // ============================================================
 
@@ -69,7 +69,7 @@ export async function onRequestPost(context) {
 
   // 🔴 গুরুত্বপূর্ণ: গুগলের ব্লক বাইপাস করতে এখানে আপনার ScraperAPI এর ফ্রি API Key দিন
   // আপনি scraperapi.com এ ফ্রিতে একাউন্ট খুলে এপিআই কি (API Key) পেতে পারেন
-  const SCRAPER_API_KEY = ""; // উদাহরণ: "1a2b3c4d5e6f7g8h9i0j"
+  const SCRAPER_API_KEY = "6b62554e526e983093013e8c48ea8ce9"; // উদাহরণ: "1a2b3c4d5e6f7g8h9i0j"
 
   async function scrapePage(pageUrl, currentDepth) {
     if (currentDepth > targetDepth) return;
