@@ -32,10 +32,25 @@ export async function onRequestPost(context) {
 
   function verifyToken(token) {
     try {
-      const payload = JSON.parse(atob(token));
-      if (payload.exp < Date.now()) return null;
+      // Standard JWT is composed of three parts: header.payload.signature
+      // We need to decode the payload (second part)
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        // If not standard JWT, treat the whole token as payload (fallback)
+        const payload = JSON.parse(atob(token));
+        if (payload.exp && payload.exp * 1000 < Date.now()) return null;
+        return payload;
+      }
+      const payloadString = parts[1];
+      const payload = JSON.parse(atob(payloadString));
+      // exp is in seconds, compare with current time in milliseconds
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        return null; // expired
+      }
       return payload;
-    } catch { return null; }
+    } catch (err) {
+      return null;
+    }
   }
 
   const token = getAuthToken(request);
