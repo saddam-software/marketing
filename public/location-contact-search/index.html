@@ -6,7 +6,8 @@
     <title>Smart Contact Finder · Simplified</title>
 
     <!-- Tailwind CSS (lightweight, kept minimal) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
 
     <style>
         /* --- Minimal custom styles, no complex CSS --- */
@@ -139,6 +140,24 @@
             cursor: not-allowed;
             transform: none;
         }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #1e293b;
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
         .checkbox-custom {
             width: 18px;
             height: 18px;
@@ -181,6 +200,11 @@
             .result-card .value {
                 font-size: 13px;
             }
+            .btn-primary,
+            .btn-secondary {
+                padding: 8px 14px;
+                font-size: 13px;
+            }
         }
     </style>
 </head>
@@ -211,6 +235,7 @@
 
         <!-- ===== FILTERS ===== -->
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <!-- Row 1: Location filters + Has Email -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
 
                 <!-- Country -->
@@ -245,19 +270,35 @@
                     </select>
                 </div>
 
-                <!-- Has Email + Action -->
-                <div class="flex flex-col sm:flex-row sm:items-end gap-2">
-                    <div class="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 flex-1">
-                        <input type="checkbox" id="filterHasEmail" class="checkbox-custom" />
-                        <label for="filterHasEmail" class="text-sm font-medium text-slate-700 cursor-pointer select-none">Has Email</label>
-                    </div>
+                <!-- Has Email -->
+                <div class="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 h-[42px]">
+                    <input type="checkbox" id="filterHasEmail" class="checkbox-custom" />
+                    <label for="filterHasEmail" class="text-sm font-medium text-slate-700 cursor-pointer select-none">Has Email</label>
+                </div>
+
+            </div>
+
+            <!-- Row 2: Keyword input + Search button (full width) -->
+            <div class="mt-3 flex flex-col sm:flex-row gap-3">
+                <div class="flex-1">
+                    <label for="searchKeyword" class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                        Keyword / Industry / Business Type
+                    </label>
+                    <input
+                    type="text"
+                    id="searchKeyword"
+                    placeholder="e.g. Hotels, Software Company, Restaurants, Clinic, IT Firm..."
+                    class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                    />
+                </div>
+                <div class="flex items-end gap-2">
                     <button id="executeSearchBtn" class="btn-primary px-5 py-2.5 text-sm whitespace-nowrap">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         Execute Smart Find
                     </button>
                 </div>
-
             </div>
+
             <!-- small hint -->
             <div class="mt-3 text-[11px] text-slate-400 border-t border-slate-100 pt-2 flex justify-between">
                 <span id="filterHint">💡 Toggle <strong>Database</strong> to use local cache, or <strong>API</strong> for fresh data.</span>
@@ -298,7 +339,7 @@
     </div>
 
     <!-- ============================================================ -->
-    <!-- JAVASCRIPT — Clean, minimal, no console noise                 -->
+    <!-- JAVASCRIPT — Clean, minimal, with Keyword support             -->
     <!-- ============================================================ -->
     <script>
         (function() {
@@ -309,6 +350,7 @@
             const divisionSelect = document.getElementById('filterDivision');
             const districtSelect = document.getElementById('filterDistrict');
             const hasEmailCheck = document.getElementById('filterHasEmail');
+            const searchKeywordInput = document.getElementById('searchKeyword');
             const executeBtn = document.getElementById('executeSearchBtn');
             const toggle = document.getElementById('dataSourceToggle');
             const modeIndicator = document.getElementById('modeIndicator');
@@ -418,7 +460,8 @@
                 divisionSelect.innerHTML = '<option value="">Loading...</option>';
                 divisionSelect.disabled = true;
                 try {
-                    const data = await apiFetch(`/api/finder-api/location-secret?action=getDivisions&country=${country}`);
+                    const data = await apiFetch(
+                        `/api/finder-api/location-secret?action=getDivisions&country=${country}`);
                     if (data.success && data.divisions) {
                         divisionSelect.innerHTML = '<option value="">— All —</option>';
                         data.divisions.forEach(d => {
@@ -451,7 +494,8 @@
                 districtSelect.innerHTML = '<option value="">Loading...</option>';
                 districtSelect.disabled = true;
                 try {
-                    const data = await apiFetch(`/api/finder-api/location-secret?action=getDistricts&division=${division}`);
+                    const data = await apiFetch(
+                        `/api/finder-api/location-secret?action=getDistricts&division=${division}`);
                     if (data.success && data.districts) {
                         districtSelect.innerHTML = '<option value="">— All —</option>';
                         data.districts.forEach(d => {
@@ -516,12 +560,13 @@
                 }
             });
 
-            // ---- Perform search ----
+            // ---- Perform search (with Keyword) ----
             async function performSearch() {
                 const country = countrySelect.value || 'bangladesh';
                 const division = divisionSelect.value || '';
                 const district = districtSelect.value || '';
                 const hasEmail = hasEmailCheck.checked;
+                const keyword = searchKeywordInput ? searchKeywordInput.value.trim() : '';
 
                 // Build query
                 const params = new URLSearchParams({
@@ -534,13 +579,13 @@
                     limit: PAGE_LIMIT
                 });
 
-                // If in database mode, add mode=db hint (backend may use it)
+                // Pass the keyword as the 'query' parameter (backend expects 'query')
+                params.set('query', keyword || '');
+
+                // If in database mode, add mode=db hint
                 if (isDatabaseMode) {
                     params.set('mode', 'db');
                 }
-
-                // Also pass a query term (empty string means broad search)
-                params.set('query', '');
 
                 const url = `/api/finder-api/location-secret?${params.toString()}`;
 
@@ -562,7 +607,7 @@
                         resultsMeta.textContent = `Found ${totalResults} result${totalResults !== 1 ? 's' : ''}`;
                         resultCountBadge.textContent = `${totalResults} results`;
                     } else {
-                        showEmpty('No results found. Try adjusting filters.', data.error);
+                        showEmpty('No results found. Try adjusting filters or keyword.', data.error);
                     }
                 } catch (_) {
                     showEmpty('Something went wrong. Please try again.');
@@ -593,12 +638,10 @@
                     const card = document.createElement('div');
                     card.className = 'result-card fade-in';
 
-                    // Determine what to show: phone or email
                     const primaryContact = hasEmail ? (item.email || '') : (item.phone || '');
                     const contactLabel = hasEmail ? 'Email' : 'Phone';
                     const contactValue = primaryContact || '—';
 
-                    // Build description from available fields
                     let descParts = [];
                     if (item.address) descParts.push(item.address);
                     if (item.website) descParts.push(item.website);
@@ -626,7 +669,6 @@
                     resultList.appendChild(card);
                 });
 
-                // Update pagination
                 const totalDisplay = Math.min(totalResults, currentData.length);
                 paginationInfo.textContent = `Showing ${start + 1}–${Math.min(end, totalResults)} of ${totalResults}`;
                 pageIndicator.textContent = `${currentPage} / ${totalPages || 1}`;
@@ -688,7 +730,6 @@
                 // Show empty
                 clearResults();
 
-                // Also load divisions on country change (already bound)
                 // Also handle Enter key on search
                 document.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter' && e.target.closest('#locationContactFinder')) {
