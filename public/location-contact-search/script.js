@@ -1,7 +1,7 @@
 /**
  * Smart Contact Finder – Simplified Module (with retry safety)
  * File: public/location-contact-search/script.js
- * Updated: Added keyword/industry input and passing it to the backend.
+ * Updated: Added mode=api/db parameter based on toggle state.
  */
 
 (function() {
@@ -11,10 +11,10 @@
     let countrySelect, divisionSelect, districtSelect, hasEmailCheck, executeBtn,
         toggle, modeIndicator, resultList, emptyState, resultsMeta, resultCountBadge,
         filterHint, paginationInfo, pageIndicator, prevPageBtn, nextPageBtn,
-        searchKeywordInput; // New input for keyword/industry
+        searchKeywordInput; // Input for keyword/industry
 
     // ==================== STATE ====================
-    let isDatabaseMode = false;
+    let isDatabaseMode = false; // false = API mode, true = Database mode
     let currentPage = 1;
     let totalPages = 1;
     let totalResults = 0;
@@ -202,7 +202,7 @@
         }
     }
 
-    // ==================== MAIN SEARCH (with keyword) ====================
+    // ==================== MAIN SEARCH (with keyword & mode) ====================
     async function performSearch() {
         if (!countrySelect || !divisionSelect || !districtSelect || !hasEmailCheck || !executeBtn) return;
         const country = countrySelect.value || 'bangladesh';
@@ -218,15 +218,10 @@
             district: district,
             hasEmail: hasEmail ? 'true' : 'false',
             page: currentPage,
-            limit: PAGE_LIMIT
+            limit: PAGE_LIMIT,
+            query: keyword || '',
+            mode: isDatabaseMode ? 'db' : 'api'   // <-- CRITICAL CHANGE
         });
-
-        // Pass keyword as 'query' parameter (backend expects 'query')
-        params.set('query', keyword || '');
-
-        if (isDatabaseMode) {
-            params.set('mode', 'db');
-        }
 
         const url = `/api/finder-api/location-secret?${params.toString()}`;
 
@@ -276,7 +271,7 @@
         pageIndicator = document.getElementById('pageIndicator');
         prevPageBtn = document.getElementById('prevPageBtn');
         nextPageBtn = document.getElementById('nextPageBtn');
-        searchKeywordInput = document.getElementById('searchKeyword'); // new
+        searchKeywordInput = document.getElementById('searchKeyword');
     }
 
     function bindEvents() {
