@@ -1,6 +1,6 @@
 // functions/api/finder-api/website-secret.js
 // ============================================================
-//  Website URL Extractor API (Updated for Google Search)
+//  Website URL Extractor API (Updated for Google URL formats)
 // ============================================================
 
 import { KVMANAGER } from '../../helpers/kv-manager.js';
@@ -42,18 +42,12 @@ export async function onRequestPost(context) {
     return jsonResponse({ success: false, error: 'Invalid or expired token' }, 401, corsHeaders);
   }
 
-  // Parse request body
   const body = await request.json().catch(() => ({}));
   let { url, limit = 100, depth = 1, force = false, includeSubdomains = false } = body;
 
-  if (!url) {
-    return jsonResponse({ success: false, error: 'URL required' }, 400, corsHeaders);
-  }
-
+  if (!url) return jsonResponse({ success: false, error: 'URL required' }, 400, corsHeaders);
   url = validateUrl(url);
-  if (!url) {
-    return jsonResponse({ success: false, error: 'Invalid URL' }, 400, corsHeaders);
-  }
+  if (!url) return jsonResponse({ success: false, error: 'Invalid URL' }, 400, corsHeaders);
 
   const kv = new KVMANAGER(env.SECRETS_KV || null);
   const cacheKey = `cache:website:${url}:depth${depth}:limit${limit}`;
@@ -70,22 +64,19 @@ export async function onRequestPost(context) {
     }
   }
 
-  // ========== Scraping Logic ==========
   let allEmails = [];
   let allPhones = [];
+  let errorMsg = null;
   const visited = new Set();
   
-  // চেক করা হচ্ছে ইনপুট লিংকটি গুগলের সার্চ লিংক কি না
   const isGoogleSearch = url.includes('google.com/search');
-  // গুগল লিংক হলে ডিপথ অটোমেটিকভাবে একটু বাড়িয়ে দেওয়া হচ্ছে, যাতে সে ভেতরের সাইটগুলোতে ঢুকতে পারে
-  const targetDepth = isGoogleSearch ? 2 : depth;
+  const targetDepth = isGoogleSearch ? 2 : depth; // Force depth 2 for Google
 
   async function scrapePage(pageUrl, currentDepth) {
     if (currentDepth > targetDepth) return;
     if (visited.has(pageUrl)) return;
     visited.add(pageUrl);
 
-    // লিমিট ক্রস করলে আর স্ক্র্যাপ করার দরকার নেই
     if (allEmails.length >= limit && allPhones.length >= limit) return;
 
     try {
@@ -93,31 +84,40 @@ export async function onRequestPost(context) {
       const isCurrentPageGoogle = pageUrl.includes('google.com');
 
       if (isCurrentPageGoogle) {
-        // যদি পেজটি গুগলের হয়, তবে ইমেইল/ফোন না খুঁজে এক্সটার্নাল লিংক খুঁজবে
-        const linkRegex = /href="(https?:\/\/[^"]+)"/gi;
-        let match;
+        // গুগলের পেজ থেকে ওয়েবসাইট লিংকগুলো বের করা
         let extractedLinks = [];
-
-        while ((match = linkRegex.exec(html)) !== null) {
+        
+        // ১. গুগলের /url?q= ফরম্যাট খোঁজা
+        const googleLinkRegex = /href="\/url\?q=([^"&]+)/gi;
+        let match;
+        while ((match = googleLinkRegex.exec(html)) !== null) {
           try {
-            const absoluteLink = new URL(match[1]).href;
-            // গুগলের নিজস্ব লিংকগুলো বাদ দিয়ে অন্যান্য ওয়েবসাইটের লিংকগুলো কালেক্ট করা হচ্ছে
-            if (!absoluteLink.includes('google.com')) {
-              extractedLinks.push(absoluteLink);
+            const decodedUrl = decodeURIComponent(match[1]);
+            if (!decodedUrl.includes('google.com') && !decodedUrl.includes('youtube.com')) {
+              extractedLinks.push(decodedUrl);
             }
           } catch (e) {}
         }
 
-        // ডুপ্লিকেট লিংক রিমুভ করা
-        extractedLinks = [...new Set(extractedLinks)];
+        // ২. সরাসরি লিংক খোঁজা (যদি থাকে)
+        const directLinkRegex = /href="(https?:\/\/[^"]+)"/gi;
+        while ((match = directLinkRegex.exec(html)) !== null) {
+          try {
+            if (!match[1].includes('google.com') && !match[1].includes('youtube.com')) {
+              extractedLinks.push(match[1]);
+            }
+          } catch (e) {}
+        }
 
-        // এক্সট্রাক্ট করা লিংকগুলোতে ভিজিট করা (Depth + 1)
+        extractedLinks = [...new Set(extractedLinks)]; // ডুপ্লিকেট লিংক রিমুভ
+
+        // পাওয়া লিংকগুলোতে প্রবেশ করে ইমেইল/ফোন স্ক্র্যাপ করা
         for (const link of extractedLinks) {
           if (allEmails.length >= limit && allPhones.length >= limit) break;
           await scrapePage(link, currentDepth + 1);
         }
       } else {
-        // পেজটি থার্ড-পার্টি ওয়েবসাইট হলে ইমেইল ও ফোন নাম্বার এক্সট্রাক্ট করবে
+        // থার্ড-পার্টি ওয়েবসাইট থেকে ডেটা এক্সট্রাক্ট করা
         const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
         const emails = (html.match(emailRegex) || []).map(e => e.toLowerCase());
         
@@ -127,43 +127,25 @@ export async function onRequestPost(context) {
 
         allEmails.push(...emails);
         allPhones.push(...phones);
-
-        // সাধারণ ওয়েবসাইটের ক্ষেত্রে ডিপথ স্ক্র্যাপিং (যদি ইউজার ডিপথ > ১ সিলেক্ট করে)
-        if (!isGoogleSearch && currentDepth < targetDepth) {
-          const linkRegex = /<a\s+(?:[^>]*?\s+)?href="([^"]*)"/gi;
-          let match;
-          const baseUrl = new URL(pageUrl);
-          while ((match = linkRegex.exec(html)) !== null) {
-             let href = match[1];
-             try {
-                const absolute = new URL(href, baseUrl).href;
-                if (includeSubdomains) {
-                  const mainHost = baseUrl.hostname.replace(/^www\./, '');
-                  if (new URL(absolute).hostname.endsWith(mainHost)) {
-                    await scrapePage(absolute, currentDepth + 1);
-                  }
-                } else {
-                  if (new URL(absolute).hostname === baseUrl.hostname) {
-                    await scrapePage(absolute, currentDepth + 1);
-                  }
-                }
-             } catch {}
-          }
-        }
       }
     } catch (err) {
       console.error(`Failed to scrape ${pageUrl}:`, err.message);
+      if (isGoogleSearch && currentDepth === 1) {
+        errorMsg = "Google blocked the request. Try a direct website link instead.";
+      }
     }
   }
 
-  // স্ক্র্যাপিং শুরু
   await scrapePage(url, 1);
 
-  // ডুপ্লিকেট ডেটা মুছে ফেলা এবং লিমিট অনুযায়ী ডেটা রাখা
   allEmails = [...new Set(allEmails)].slice(0, limit);
   allPhones = [...new Set(allPhones)].slice(0, limit);
 
-  // ক্যাশে সেভ করা
+  // যদি গুগলের ব্লকের কারণে কোনো ডেটা না পাওয়া যায়
+  if (isGoogleSearch && allEmails.length === 0 && allPhones.length === 0 && errorMsg) {
+     return jsonResponse({ success: false, error: errorMsg }, 403, corsHeaders);
+  }
+
   await kv.putJSON(cacheKey, {
     emails: allEmails,
     phones: allPhones,
@@ -183,16 +165,12 @@ export async function onRequestPost(context) {
 function validateUrl(url) {
   if (typeof url !== 'string') return null;
   url = url.trim();
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'https://' + url;
-  }
+  if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
   try {
     const parsed = new URL(url);
     if (!['http:', 'https:'].includes(parsed.protocol)) return null;
     return parsed.toString();
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 async function fetchWithRetry(url, retries = 2) {
@@ -200,21 +178,18 @@ async function fetchWithRetry(url, retries = 2) {
     try {
       const response = await fetch(url, {
         headers: {
-          // Google কে বোঝানোর চেষ্টা যে এটি একটি সাধারণ ব্রাউজার
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
-          'Connection': 'keep-alive',
-          'Upgrade-Insecure-Requests': '1',
         },
-        signal: AbortSignal.timeout(15000), // টাইমআউট একটু বাড়ানো হয়েছে
+        signal: AbortSignal.timeout(15000),
       });
-      if (response.status === 403) throw new Error('Access Denied (403)');
+      if (response.status === 403 || response.status === 429) throw new Error('Blocked by anti-bot');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return await response.text();
     } catch (err) {
       if (i === retries) throw err;
-      await new Promise(r => setTimeout(r, 1000 * (i + 1))); // ফেইল করলে ১ সেকেন্ড পর আবার ট্রাই করবে
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
     }
   }
 }
