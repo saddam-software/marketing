@@ -1,15 +1,17 @@
 /**
  * Smart Contact Finder – Simplified Module (with retry safety)
  * File: public/location-contact-search/script.js
+ * Updated: Added keyword/industry input and passing it to the backend.
  */
 
 (function() {
     'use strict';
 
-    // ==================== DOM REFS (will be re-checked) ====================
+    // ==================== DOM REFS ====================
     let countrySelect, divisionSelect, districtSelect, hasEmailCheck, executeBtn,
         toggle, modeIndicator, resultList, emptyState, resultsMeta, resultCountBadge,
-        filterHint, paginationInfo, pageIndicator, prevPageBtn, nextPageBtn;
+        filterHint, paginationInfo, pageIndicator, prevPageBtn, nextPageBtn,
+        searchKeywordInput; // New input for keyword/industry
 
     // ==================== STATE ====================
     let isDatabaseMode = false;
@@ -200,13 +202,14 @@
         }
     }
 
-    // ==================== MAIN SEARCH ====================
+    // ==================== MAIN SEARCH (with keyword) ====================
     async function performSearch() {
         if (!countrySelect || !divisionSelect || !districtSelect || !hasEmailCheck || !executeBtn) return;
         const country = countrySelect.value || 'bangladesh';
         const division = divisionSelect.value || '';
         const district = districtSelect.value || '';
         const hasEmail = hasEmailCheck.checked;
+        const keyword = searchKeywordInput ? searchKeywordInput.value.trim() : '';
 
         const params = new URLSearchParams({
             action: 'search',
@@ -215,9 +218,11 @@
             district: district,
             hasEmail: hasEmail ? 'true' : 'false',
             page: currentPage,
-            limit: PAGE_LIMIT,
-            query: ''
+            limit: PAGE_LIMIT
         });
+
+        // Pass keyword as 'query' parameter (backend expects 'query')
+        params.set('query', keyword || '');
 
         if (isDatabaseMode) {
             params.set('mode', 'db');
@@ -242,7 +247,7 @@
                 if (resultsMeta) resultsMeta.textContent = `Found ${totalResults} result${totalResults !== 1 ? 's' : ''}`;
                 if (resultCountBadge) resultCountBadge.textContent = `${totalResults} results`;
             } else {
-                showEmpty('No results found. Try adjusting filters.', data.error);
+                showEmpty('No results found. Try adjusting filters or keyword.', data.error);
             }
         } catch (_) {
             showEmpty('Something went wrong. Please try again.');
@@ -271,10 +276,11 @@
         pageIndicator = document.getElementById('pageIndicator');
         prevPageBtn = document.getElementById('prevPageBtn');
         nextPageBtn = document.getElementById('nextPageBtn');
+        searchKeywordInput = document.getElementById('searchKeyword'); // new
     }
 
     function bindEvents() {
-        if (!countrySelect || !divisionSelect || !districtSelect || !hasEmailCheck || !executeBtn || !toggle) {
+        if (!countrySelect || !divisionSelect || !districtSelect || !hasEmailCheck || !executeBtn || !toggle || !searchKeywordInput) {
             return false; // not ready
         }
 
@@ -328,7 +334,7 @@
             });
         }
 
-        // Keyboard shortcut
+        // Keyboard shortcut: Enter key on inputs triggers search
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && e.target.closest('#locationContactFinder')) {
                 const active = document.activeElement;
@@ -348,7 +354,7 @@
     function init() {
         cacheElements();
         // Check if critical elements exist
-        if (!countrySelect || !divisionSelect || !districtSelect || !hasEmailCheck || !executeBtn || !toggle) {
+        if (!countrySelect || !divisionSelect || !districtSelect || !hasEmailCheck || !executeBtn || !toggle || !searchKeywordInput) {
             if (retryCount < MAX_RETRIES) {
                 retryCount++;
                 setTimeout(init, 200);
