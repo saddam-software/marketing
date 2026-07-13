@@ -2,6 +2,7 @@
  * AI-Powered Smart People & Business Finder Platform - Core Spatial API (SIMPLIFIED)
  * Now respects 'mode' parameter: 'db' = database only, else = live API with auto-fetch.
  * All metadata fields are still returned but frontend uses only what's needed.
+ * FIXES: Added email to Hunter API, fixed email storage, and targeted search by keyword.
  */
 
 function base64UrlToBuffer(str) {
@@ -707,6 +708,7 @@ const API_CONFIG = {
           address: e.domain || '',
           lat: 0,
           lng: 0,
+          email: e.value, // <-- FIX: added email field
           phone: '',
           website: e.domain || '',
           types: ['email'],
@@ -1061,13 +1063,13 @@ async function fetchAllLocationsForCountry(country, env) {
 }
 
 // =========================================================================
-// NORMALIZE & INSERT
+// NORMALIZE & INSERT (FIXED: email is now stored)
 // =========================================================================
 async function normalizeAndInsertProfiles(rawItems, env, country, fallbackThana = '') {
   let inserted = 0;
   let skipped = 0;
   for (const item of rawItems) {
-    if (!item.name || !item.lat) {
+    if (!item.name || (!item.lat && item.source !== 'hunter' && item.source !== 'clearbit' && item.source !== 'apollo' && item.source !== 'zoominfo' && item.source !== 'uplead' && item.source !== 'salesintel' && item.source !== 'pdl' && item.source !== 'proxycurl' && item.source !== 'rocketreach' && item.source !== 'lusha' && item.source !== 'kaspr' && item.source !== 'serpapi')) {
       skipped++;
       continue;
     }
@@ -1092,17 +1094,17 @@ async function normalizeAndInsertProfiles(rawItems, env, country, fallbackThana 
       division || '',
       district || '',
       fallbackThana || '',
-      item.lat,
-      item.lng,
-      '',
+      item.lat || 0,
+      item.lng || 0,
+      item.email || '', // <-- FIX: now storing email
       item.phone || '',
       '',
       item.website || '',
       item.confidence || 60,
       'UNVERIFIED',
       item.name.substring(0, 100),
-      item.lat,
-      item.lng
+      item.lat || 0,
+      item.lng || 0
     ];
     try {
       const result = await env.DB.prepare(query).bind(...params).run();
@@ -1197,7 +1199,6 @@ export async function onRequest(context) {
 
     // ----- verifyProfile (kept but not used in simplified UI) -----
     if (action === 'verifyProfile') {
-      // ... (unchanged, can keep)
       return jsonResponse({ success: false, error: 'Not implemented in simplified version' }, 400, corsHeaders);
     }
 
@@ -1218,11 +1219,11 @@ export async function onRequest(context) {
       return jsonResponse({ success: true, message: `Batch fetch completed. Inserted ${totalInserted} new profiles.` }, 200, corsHeaders);
     }
 
-    // ----- SEARCH (with mode parameter) -----
+    // ----- SEARCH (with mode parameter and targeted keyword) -----
     if (action === 'search') {
       if (!env.DB) return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
 
-      const queryTerm = searchParams.get('query') || '';
+      const queryTerm = searchParams.get('query') || ''; // keyword/industry
       const country = searchParams.get('country') || 'bangladesh';
       const division = searchParams.get('division') || '';
       const district = searchParams.get('district') || '';
@@ -1231,10 +1232,8 @@ export async function onRequest(context) {
       const limit = parseInt(searchParams.get('limit') || '25', 10);
       const offset = (page - 1) * limit;
 
-      // Read mode parameter: 'db' = database only, else live (with auto-fetch)
       const mode = searchParams.get('mode') || 'live';
 
-      // Build WHERE conditions
       const conditions = [];
       const params = [];
       if (country) { conditions.push(`country = ?`); params.push(country); }
@@ -1248,27 +1247,25 @@ export async function onRequest(context) {
       const countResult = await env.DB.prepare(countQuery).bind(...params).first();
       let totalRecords = countResult ? countResult.total : 0;
 
-      // Auto-fetch ONLY if:
-      // - mode is NOT 'db' (i.e., live mode)
-      // - totalRecords < 10
-      // - country is provided
-      // - queryTerm is non-empty (to avoid massive fetches)
+      // Auto-fetch ONLY if mode is live and we have a specific query and few records
       if (mode !== 'db' && totalRecords < 10 && country && queryTerm && queryTerm.trim().length > 0) {
-        // Fetch from APIs and insert
-        const rawItems = await fetchAllLocationsForCountry(country, env);
+        // Build a targeted query: e.g., "Software Company in Dhaka, Bangladesh"
+        const locationParts = [district, division, country].filter(Boolean);
+        const targetedQuery = `${queryTerm} in ${locationParts.join(', ')}`;
+        // Use fetchFromAllAPIs with the targeted query (not the entire country)
+        const rawItems = await fetchFromAllAPIs(targetedQuery, env);
         if (rawItems.length) {
-          await normalizeAndInsertProfiles(rawItems, env, country, '');
+          await normalizeAndInsertProfiles(rawItems, env, country, district || division);
           // Re-count after insertion
           const newCount = await env.DB.prepare(countQuery).bind(...params).first();
           totalRecords = newCount ? newCount.total : 0;
         }
       }
 
-      // Final data query with pagination
       const dataQuery = `
         SELECT id, name, entityType, country, division, district, thana, lat, lng,
                email, phone, whatsapp, social, confidenceScore, verificationStatus,
-               '' as source, '' as address, '' as website  -- dummy fields to match frontend expectations
+               '' as source, '' as address, '' as website
         FROM profiles
         ${whereClause}
         LIMIT ? OFFSET ?
@@ -1277,7 +1274,6 @@ export async function onRequest(context) {
       const dataResult = await env.DB.prepare(dataQuery).bind(...dataParams).all();
       let results = dataResult.results || [];
 
-      // Map to expected fields (source, address, website can be empty or derived)
       const contacts = results.map(p => ({
         id: p.id,
         name: p.name,
