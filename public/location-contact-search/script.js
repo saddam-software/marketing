@@ -1,33 +1,18 @@
 /**
- * Smart Contact Finder – Simplified Module
+ * Smart Contact Finder – Simplified Module (with retry safety)
  * File: public/location-contact-search/script.js
- * Purpose: Clean, minimal logic for searching contacts with API/Database toggle.
- * No extra logs, no metadata, no verify/export/bulk actions.
  */
 
 (function() {
     'use strict';
 
-    // ==================== DOM REFS ====================
-    const countrySelect = document.getElementById('filterCountry');
-    const divisionSelect = document.getElementById('filterDivision');
-    const districtSelect = document.getElementById('filterDistrict');
-    const hasEmailCheck = document.getElementById('filterHasEmail');
-    const executeBtn = document.getElementById('executeSearchBtn');
-    const toggle = document.getElementById('dataSourceToggle');
-    const modeIndicator = document.getElementById('modeIndicator');
-    const resultList = document.getElementById('resultList');
-    const emptyState = document.getElementById('emptyState');
-    const resultsMeta = document.getElementById('resultsMeta');
-    const resultCountBadge = document.getElementById('resultCountBadge');
-    const filterHint = document.getElementById('filterHint');
-    const paginationInfo = document.getElementById('paginationInfo');
-    const pageIndicator = document.getElementById('pageIndicator');
-    const prevPageBtn = document.getElementById('prevPageBtn');
-    const nextPageBtn = document.getElementById('nextPageBtn');
+    // ==================== DOM REFS (will be re-checked) ====================
+    let countrySelect, divisionSelect, districtSelect, hasEmailCheck, executeBtn,
+        toggle, modeIndicator, resultList, emptyState, resultsMeta, resultCountBadge,
+        filterHint, paginationInfo, pageIndicator, prevPageBtn, nextPageBtn;
 
     // ==================== STATE ====================
-    let isDatabaseMode = false;       // false = Live API, true = Database only
+    let isDatabaseMode = false;
     let currentPage = 1;
     let totalPages = 1;
     let totalResults = 0;
@@ -58,18 +43,19 @@
 
     // ==================== UI HELPERS ====================
     function showEmpty(message, detail) {
+        if (!resultList || !emptyState) return;
         resultList.innerHTML = '';
         emptyState.classList.remove('hidden');
         const p1 = emptyState.querySelector('p:first-of-type');
         const p2 = emptyState.querySelector('p:last-of-type');
         if (p1) p1.textContent = message || 'No results';
         if (p2) p2.textContent = detail || 'Try adjusting filters and search again.';
-        resultsMeta.textContent = message || 'No results';
-        paginationInfo.textContent = 'Showing 0';
-        pageIndicator.textContent = '0 / 0';
-        prevPageBtn.disabled = true;
-        nextPageBtn.disabled = true;
-        resultCountBadge.textContent = '0 results';
+        if (resultsMeta) resultsMeta.textContent = message || 'No results';
+        if (paginationInfo) paginationInfo.textContent = 'Showing 0';
+        if (pageIndicator) pageIndicator.textContent = '0 / 0';
+        if (prevPageBtn) prevPageBtn.disabled = true;
+        if (nextPageBtn) nextPageBtn.disabled = true;
+        if (resultCountBadge) resultCountBadge.textContent = '0 results';
     }
 
     function clearResults() {
@@ -77,21 +63,24 @@
         totalResults = 0;
         totalPages = 1;
         currentPage = 1;
-        resultList.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        const p1 = emptyState.querySelector('p:first-of-type');
-        const p2 = emptyState.querySelector('p:last-of-type');
-        if (p1) p1.textContent = 'Ready to search';
-        if (p2) p2.textContent = 'Adjust filters and click Execute Smart Find';
-        resultsMeta.textContent = 'Ready';
-        paginationInfo.textContent = 'Showing 0';
-        pageIndicator.textContent = '1 / 1';
-        prevPageBtn.disabled = true;
-        nextPageBtn.disabled = true;
-        resultCountBadge.textContent = '0 results';
+        if (resultList) resultList.innerHTML = '';
+        if (emptyState) {
+            emptyState.classList.remove('hidden');
+            const p1 = emptyState.querySelector('p:first-of-type');
+            const p2 = emptyState.querySelector('p:last-of-type');
+            if (p1) p1.textContent = 'Ready to search';
+            if (p2) p2.textContent = 'Adjust filters and click Execute Smart Find';
+        }
+        if (resultsMeta) resultsMeta.textContent = 'Ready';
+        if (paginationInfo) paginationInfo.textContent = 'Showing 0';
+        if (pageIndicator) pageIndicator.textContent = '1 / 1';
+        if (prevPageBtn) prevPageBtn.disabled = true;
+        if (nextPageBtn) nextPageBtn.disabled = true;
+        if (resultCountBadge) resultCountBadge.textContent = '0 results';
     }
 
     function renderPage() {
+        if (!resultList || !paginationInfo || !pageIndicator || !prevPageBtn || !nextPageBtn || !resultCountBadge) return;
         const start = (currentPage - 1) * PAGE_LIMIT;
         const end = Math.min(start + PAGE_LIMIT, currentData.length);
         const pageData = currentData.slice(start, end);
@@ -104,25 +93,22 @@
             return;
         }
 
-        const hasEmail = hasEmailCheck.checked;
+        const hasEmail = hasEmailCheck ? hasEmailCheck.checked : false;
 
         pageData.forEach(item => {
             const card = document.createElement('div');
             card.className = 'result-card fade-in';
 
-            // Primary contact: email if filter is on, else phone
             const primaryContact = hasEmail ? (item.email || '') : (item.phone || '');
             const contactLabel = hasEmail ? 'Email' : 'Phone';
             const contactValue = primaryContact || '—';
 
-            // Build description from available fields (1-2 lines)
             let descParts = [];
             if (item.address) descParts.push(item.address);
             if (item.website) descParts.push(item.website);
             if (item.entityType) descParts.push(item.entityType);
             if (item.division) descParts.push(item.division);
             if (item.district) descParts.push(item.district);
-            // Also include any extra context like "Chamber time..." if present
             if (item.description) descParts.push(item.description);
             const description = descParts.join(' · ') || 'No additional details';
 
@@ -145,7 +131,6 @@
             resultList.appendChild(card);
         });
 
-        // Update pagination
         const totalDisplay = Math.min(totalResults, currentData.length);
         paginationInfo.textContent = `Showing ${start + 1}–${Math.min(end, totalResults)} of ${totalResults}`;
         pageIndicator.textContent = `${currentPage} / ${totalPages || 1}`;
@@ -156,6 +141,7 @@
 
     // ==================== API CALLS FOR GEO HIERARCHY ====================
     async function loadDivisions(country) {
+        if (!divisionSelect) return;
         divisionSelect.innerHTML = '<option value="">Loading...</option>';
         divisionSelect.disabled = true;
         try {
@@ -178,11 +164,14 @@
             divisionSelect.disabled = true;
         }
         // Reset district
-        districtSelect.innerHTML = '<option value="">— All —</option>';
-        districtSelect.disabled = true;
+        if (districtSelect) {
+            districtSelect.innerHTML = '<option value="">— All —</option>';
+            districtSelect.disabled = true;
+        }
     }
 
     async function loadDistricts(division) {
+        if (!districtSelect) return;
         if (!division) {
             districtSelect.innerHTML = '<option value="">— All —</option>';
             districtSelect.disabled = true;
@@ -213,6 +202,7 @@
 
     // ==================== MAIN SEARCH ====================
     async function performSearch() {
+        if (!countrySelect || !divisionSelect || !districtSelect || !hasEmailCheck || !executeBtn) return;
         const country = countrySelect.value || 'bangladesh';
         const division = divisionSelect.value || '';
         const district = districtSelect.value || '';
@@ -226,22 +216,20 @@
             hasEmail: hasEmail ? 'true' : 'false',
             page: currentPage,
             limit: PAGE_LIMIT,
-            query: ''   // empty for broad search
+            query: ''
         });
 
-        // Add mode hint for backend (optional)
         if (isDatabaseMode) {
             params.set('mode', 'db');
         }
 
         const url = `/api/finder-api/location-secret?${params.toString()}`;
 
-        // UI feedback
         executeBtn.disabled = true;
         executeBtn.innerHTML = '<span class="inline-block animate-spin mr-1">⟳</span> Searching...';
-        resultList.innerHTML = '';
-        emptyState.classList.add('hidden');
-        resultsMeta.textContent = 'Searching...';
+        if (resultList) resultList.innerHTML = '';
+        if (emptyState) emptyState.classList.add('hidden');
+        if (resultsMeta) resultsMeta.textContent = 'Searching...';
 
         try {
             const data = await apiFetch(url);
@@ -251,8 +239,8 @@
                 totalPages = Math.ceil(totalResults / PAGE_LIMIT) || 1;
                 if (currentPage > totalPages) currentPage = totalPages;
                 renderPage();
-                resultsMeta.textContent = `Found ${totalResults} result${totalResults !== 1 ? 's' : ''}`;
-                resultCountBadge.textContent = `${totalResults} results`;
+                if (resultsMeta) resultsMeta.textContent = `Found ${totalResults} result${totalResults !== 1 ? 's' : ''}`;
+                if (resultCountBadge) resultCountBadge.textContent = `${totalResults} results`;
             } else {
                 showEmpty('No results found. Try adjusting filters.', data.error);
             }
@@ -265,53 +253,82 @@
         }
     }
 
-    // ==================== EVENT BINDINGS ====================
-    function init() {
-        // ---- Toggle ----
+    // ==================== CACHE DOM AND BIND EVENTS ====================
+    function cacheElements() {
+        countrySelect = document.getElementById('filterCountry');
+        divisionSelect = document.getElementById('filterDivision');
+        districtSelect = document.getElementById('filterDistrict');
+        hasEmailCheck = document.getElementById('filterHasEmail');
+        executeBtn = document.getElementById('executeSearchBtn');
+        toggle = document.getElementById('dataSourceToggle');
+        modeIndicator = document.getElementById('modeIndicator');
+        resultList = document.getElementById('resultList');
+        emptyState = document.getElementById('emptyState');
+        resultsMeta = document.getElementById('resultsMeta');
+        resultCountBadge = document.getElementById('resultCountBadge');
+        filterHint = document.getElementById('filterHint');
+        paginationInfo = document.getElementById('paginationInfo');
+        pageIndicator = document.getElementById('pageIndicator');
+        prevPageBtn = document.getElementById('prevPageBtn');
+        nextPageBtn = document.getElementById('nextPageBtn');
+    }
+
+    function bindEvents() {
+        if (!countrySelect || !divisionSelect || !districtSelect || !hasEmailCheck || !executeBtn || !toggle) {
+            return false; // not ready
+        }
+
+        // Toggle
         toggle.addEventListener('click', function() {
             isDatabaseMode = !isDatabaseMode;
             this.classList.toggle('active', isDatabaseMode);
             this.setAttribute('aria-checked', isDatabaseMode);
-            modeIndicator.textContent = isDatabaseMode ? 'Database' : 'Live';
-            modeIndicator.className = 'text-[10px] px-2 py-0.5 rounded-full ' +
-                (isDatabaseMode ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700');
-            filterHint.innerHTML = isDatabaseMode ?
-                '💡 Using <strong>Database</strong> cache. Results may be limited to stored data.' :
-                '💡 Using <strong>Live API</strong>. Fetches fresh data from multiple sources.';
+            if (modeIndicator) {
+                modeIndicator.textContent = isDatabaseMode ? 'Database' : 'Live';
+                modeIndicator.className = 'text-[10px] px-2 py-0.5 rounded-full ' +
+                    (isDatabaseMode ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700');
+            }
+            if (filterHint) {
+                filterHint.innerHTML = isDatabaseMode ?
+                    '💡 Using <strong>Database</strong> cache. Results may be limited to stored data.' :
+                    '💡 Using <strong>Live API</strong>. Fetches fresh data from multiple sources.';
+            }
             clearResults();
         });
 
-        // ---- Country change ----
+        // Country change
         countrySelect.addEventListener('change', function() {
             loadDivisions(this.value);
         });
 
-        // ---- Division change ----
+        // Division change
         divisionSelect.addEventListener('change', function() {
             loadDistricts(this.value);
         });
 
-        // ---- Execute search ----
+        // Execute search
         executeBtn.addEventListener('click', function() {
             currentPage = 1;
             performSearch();
         });
 
-        // ---- Pagination ----
-        prevPageBtn.addEventListener('click', function() {
-            if (currentPage > 1) {
-                currentPage--;
-                renderPage();
-            }
-        });
-        nextPageBtn.addEventListener('click', function() {
-            if (currentPage < totalPages) {
-                currentPage++;
-                renderPage();
-            }
-        });
+        // Pagination
+        if (prevPageBtn && nextPageBtn) {
+            prevPageBtn.addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderPage();
+                }
+            });
+            nextPageBtn.addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderPage();
+                }
+            });
+        }
 
-        // ---- Keyboard shortcut: Enter on any input/select triggers search ----
+        // Keyboard shortcut
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && e.target.closest('#locationContactFinder')) {
                 const active = document.activeElement;
@@ -321,16 +338,59 @@
             }
         });
 
-        // ---- Initial load ----
+        return true;
+    }
+
+    // ==================== INIT WITH RETRY ====================
+    let retryCount = 0;
+    const MAX_RETRIES = 20;
+
+    function init() {
+        cacheElements();
+        // Check if critical elements exist
+        if (!countrySelect || !divisionSelect || !districtSelect || !hasEmailCheck || !executeBtn || !toggle) {
+            if (retryCount < MAX_RETRIES) {
+                retryCount++;
+                setTimeout(init, 200);
+            }
+            return;
+        }
+
+        // Elements exist – bind events
+        const bound = bindEvents();
+        if (!bound) {
+            if (retryCount < MAX_RETRIES) {
+                retryCount++;
+                setTimeout(init, 200);
+            }
+            return;
+        }
+
+        // Set initial state
+        if (toggle) {
+            toggle.classList.remove('active');
+            toggle.setAttribute('aria-checked', 'false');
+        }
+        if (modeIndicator) {
+            modeIndicator.textContent = 'Live';
+            modeIndicator.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
+        }
+        if (filterHint) {
+            filterHint.innerHTML = '💡 Using <strong>Live API</strong>. Fetches fresh data from multiple sources.';
+        }
+
+        // Load divisions for default country
         const defaultCountry = countrySelect.value || 'bangladesh';
         loadDivisions(defaultCountry);
         clearResults();
     }
 
-    // ---- Start when DOM ready ----
+    // ==================== START ====================
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
+        // DOM already ready – but our container might be loaded later.
+        // We'll start retry immediately.
         init();
     }
 
