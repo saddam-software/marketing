@@ -19,7 +19,7 @@
     let totalPages = 1;
     let totalResults = 0;
     let currentData = [];
-    const PAGE_LIMIT = 25;
+    const PAGE_LIMIT = 1000;
 
     // ==================== HELPERS ====================
     function getToken() {
