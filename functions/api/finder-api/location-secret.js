@@ -1,7 +1,7 @@
 /**
  * Smart Contact Finder – Core API (Simplified)
  * শুধুমাত্র wrangler.toml-এর কীগুলো ব্যবহার করে।
- * লোকেশন API বাদ, শুধু ইমেইল/ফোন এনরিচমেন্ট API সক্রিয়।
+ * ConfidenceScore বাদ, শুধু email/phone থাকলেই ডেটাবেসে সেভ হয়।
  */
 
 // ==================== JWT ভেরিফিকেশন ====================
@@ -44,7 +44,7 @@ async function verifyJWT(token, secret) {
   }
 }
 
-// ==================== জিও রেজিস্ট্রি (শুধু ম্যাপিংয়ের জন্য) ====================
+// ==================== জিও রেজিস্ট্রি ====================
 const ENTERPRISE_GEO_REGISTRY = {
   countries: {
     'bangladesh': { name: 'Bangladesh', code: 'BD' },
@@ -121,7 +121,7 @@ const ENTERPRISE_GEO_REGISTRY = {
   }
 };
 
-// ==================== জিও ইন্টেলিজেন্স (ঠিকানা থেকে বিভাগ/জেলা বের করতে) ====================
+// ==================== জিও ইন্টেলিজেন্স ====================
 class GeoIntelligenceEngine {
   static extractDivisionFromAddress(address, country) {
     if (!address) return '';
@@ -149,7 +149,7 @@ class GeoIntelligenceEngine {
   }
 }
 
-// ==================== এনরিচমেন্ট API কনফিগারেশন (শুধু wrangler.toml-এর কী) ====================
+// ==================== এনরিচমেন্ট API (confidence বাদ) ====================
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 const API_CONFIG = {
@@ -160,7 +160,6 @@ const API_CONFIG = {
       const key = env.HUNTER_API_KEY;
       if (!key || key === 'YOUR_HUNTER_API_KEY') return [];
       try {
-        // query হতে ডোমেইন বের করার চেষ্টা (যদি ইমেইল বা ডোমেইন দেওয়া থাকে)
         let domain = query.trim().toLowerCase();
         if (domain.includes('@')) domain = domain.split('@')[1];
         if (!domain.includes('.')) return [];
@@ -177,8 +176,7 @@ const API_CONFIG = {
           email: e.value,
           phone: '',
           website: e.domain || '',
-          types: ['email'],
-          confidence: 80
+          types: ['email']
         }));
       } catch (e) { return []; }
     }
@@ -203,8 +201,7 @@ const API_CONFIG = {
           email: '',
           phone: '',
           website: c.domain || '',
-          types: ['business'],
-          confidence: 75
+          types: ['business']
         }));
       } catch (e) { return []; }
     }
@@ -229,8 +226,7 @@ const API_CONFIG = {
           email: p.email || '',
           phone: p.phone || '',
           website: p.website || '',
-          types: ['business'],
-          confidence: 75
+          types: ['business']
         }));
       } catch (e) { return []; }
     }
@@ -255,8 +251,7 @@ const API_CONFIG = {
           email: '',
           phone: c.phone || '',
           website: c.website || '',
-          types: ['b2b'],
-          confidence: 80
+          types: ['b2b']
         }));
       } catch (e) { return []; }
     }
@@ -281,8 +276,7 @@ const API_CONFIG = {
           email: r.email || '',
           phone: r.phone || '',
           website: r.website || '',
-          types: ['b2b'],
-          confidence: 80
+          types: ['b2b']
         }));
       } catch (e) { return []; }
     }
@@ -307,8 +301,7 @@ const API_CONFIG = {
           email: r.email || '',
           phone: r.phone || '',
           website: r.website || '',
-          types: ['b2b'],
-          confidence: 80
+          types: ['b2b']
         }));
       } catch (e) { return []; }
     }
@@ -333,8 +326,7 @@ const API_CONFIG = {
           email: p.email || '',
           phone: p.phone || '',
           website: p.company_website || '',
-          types: ['profile'],
-          confidence: 70
+          types: ['profile']
         }));
       } catch (e) { return []; }
     }
@@ -359,8 +351,7 @@ const API_CONFIG = {
           email: r.email || '',
           phone: r.phone || '',
           website: r.website || '',
-          types: ['linkedin'],
-          confidence: 70
+          types: ['linkedin']
         }));
       } catch (e) { return []; }
     }
@@ -385,8 +376,7 @@ const API_CONFIG = {
           email: p.email || '',
           phone: p.phone || '',
           website: p.website || '',
-          types: ['b2b'],
-          confidence: 70
+          types: ['b2b']
         }));
       } catch (e) { return []; }
     }
@@ -411,8 +401,7 @@ const API_CONFIG = {
           email: r.email || '',
           phone: r.phone || '',
           website: r.company || '',
-          types: ['b2b'],
-          confidence: 75
+          types: ['b2b']
         }));
       } catch (e) { return []; }
     }
@@ -437,8 +426,7 @@ const API_CONFIG = {
           email: r.email || '',
           phone: r.phone || '',
           website: r.company || '',
-          types: ['linkedin'],
-          confidence: 70
+          types: ['linkedin']
         }));
       } catch (e) { return []; }
     }
@@ -459,23 +447,30 @@ async function fetchFromAllAPIs(query, env) {
   return results;
 }
 
-// ==================== ডেটাবেসে ইনসার্ট (থানা বাদ) ====================
+// ==================== ডেটাবেসে ইনসার্ট (শুধু email/phone থাকলেই) ====================
 async function normalizeAndInsertProfiles(rawItems, env, country) {
   let inserted = 0;
   let skipped = 0;
   for (const item of rawItems) {
+    // শুধুমাত্র যাদের email অথবা phone আছে তাদের সেভ করব
+    if (!item.email && !item.phone) {
+      skipped++;
+      continue;
+    }
     if (!item.name) {
       skipped++;
       continue;
     }
+
     const division = GeoIntelligenceEngine.extractDivisionFromAddress(item.address, country) || '';
     const district = GeoIntelligenceEngine.extractDistrictFromAddress(item.address, country) || '';
     const entityType = (item.types && item.types.some(t => ['restaurant', 'hotel', 'spa', 'tourism', 'food', 'cafe', 'gym'].includes(t))) ? 'SERVICE' : 'BUSINESS';
 
+    // ডুপ্লিকেট চেক: নাম, ইমেইল এবং ফোনের সংমিশ্রণে
     const query = `
       INSERT OR IGNORE INTO profiles 
-      (id, name, entityType, country, division, district, thana, lat, lng, email, phone, whatsapp, social, confidenceScore, verificationStatus)
-      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      (id, name, entityType, country, division, district, thana, lat, lng, email, phone, whatsapp, social, verificationStatus)
+      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       WHERE NOT EXISTS (
         SELECT 1 FROM profiles 
         WHERE name = ? AND email = ? AND phone = ?
@@ -493,9 +488,8 @@ async function normalizeAndInsertProfiles(rawItems, env, country) {
       item.lng || 0,
       item.email || '',
       item.phone || '',
-      '',
-      item.website || '',
-      item.confidence || 60,
+      '', // whatsapp
+      item.website || '', // social হিসেবে website সংরক্ষণ
       'UNVERIFIED',
       item.name.substring(0, 100),
       item.email || '',
@@ -504,7 +498,10 @@ async function normalizeAndInsertProfiles(rawItems, env, country) {
     try {
       const result = await env.DB.prepare(query).bind(...params).run();
       if (result.meta?.changes > 0) inserted++;
-    } catch (e) { /* skip duplicates */ }
+    } catch (e) {
+      // duplicate বা অন্য কোনো error এ skip
+      skipped++;
+    }
   }
   return inserted;
 }
@@ -597,6 +594,7 @@ export async function onRequest(context) {
         const targetedQuery = `${queryTerm} in ${locationParts.join(', ')}`;
         const rawItems = await fetchFromAllAPIs(targetedQuery, env);
         if (rawItems.length) {
+          // শুধু email/phone থাকলেই সেভ হবে (ফাংশনের ভেতরেই চেক আছে)
           await normalizeAndInsertProfiles(rawItems, env, country);
           // পুনরায় কাউন্ট করি
           const newCount = await env.DB.prepare(countQuery).bind(...params).first();
@@ -606,7 +604,7 @@ export async function onRequest(context) {
 
       const dataQuery = `
         SELECT id, name, entityType, country, division, district, thana, lat, lng,
-               email, phone, whatsapp, social, confidenceScore, verificationStatus,
+               email, phone, whatsapp, social,
                '' as source, '' as address, '' as website
         FROM profiles
         ${whereClause}
@@ -630,8 +628,6 @@ export async function onRequest(context) {
         phone: p.phone || '',
         whatsapp: p.whatsapp || '',
         social: p.social || '',
-        confidenceScore: p.confidenceScore,
-        verificationStatus: p.verificationStatus,
         source: p.source || 'database',
         address: p.address || '',
         website: p.website || ''
