@@ -1,283 +1,144 @@
-// public/text-contact-extractor/script.js
-(function() {
-  'use strict';
+// functions/api/finder-api/text-secret.js
+// ============================================================
+//  Bulk Text Extractor API
+//  Receives text (or file content) and extracts emails & phones
+//  using advanced regex. Returns JSON with arrays.
+// ============================================================
 
-  // ========== DOM refs ==========
-  const dropZone = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
-  const fileInfo = document.getElementById('fileInfo');
-  const fileName = document.getElementById('fileName');
-  const fileSize = document.getElementById('fileSize');
-  const processFileBtn = document.getElementById('processFileBtn');
-  const textInput = document.getElementById('textInput');
-  const charCount = document.getElementById('charCount');
-  const wordCount = document.getElementById('wordCount');
-  const extractTextBtn = document.getElementById('extractTextBtn');
-  const processingContainer = document.getElementById('processingContainer');
-  const processingLabel = document.getElementById('processingLabel');
-  const processingProgress = document.getElementById('processingProgress');
-  const processingPercent = document.getElementById('processingPercent');
-  const resultBody = document.getElementById('resultBody');
-  const resultCount = document.getElementById('resultCount');
-  const filterType = document.getElementById('filterType');
-  const searchInput = document.getElementById('searchInput');
-  const copyAllBtn = document.getElementById('copyAllBtn');
-  const exportCsvBtn = document.getElementById('exportCsvBtn');
-  const exportJsonBtn = document.getElementById('exportJsonBtn');
-  const prevPageBtn = document.getElementById('prevPageBtn');
-  const nextPageBtn = document.getElementById('nextPageBtn');
-  const pageIndicator = document.getElementById('pageIndicator');
-  const paginationInfo = document.getElementById('paginationInfo');
-  const totalFound = document.getElementById('totalFound');
-  const duplicatesRemoved = document.getElementById('duplicatesRemoved');
-  const validEmails = document.getElementById('validEmails');
-  const validPhones = document.getElementById('validPhones');
+/**
+ * POST handler for text extraction.
+ * Expects JSON: { text: "..." } or multipart/form-data with file field.
+ */
+export async function onRequestPost(context) {
+  const { request, env } = context;
 
-  // ========== State ==========
-  let allData = []; // Array of { value, type }
-  let filteredData = [];
-  let currentPage = 1;
-  const pageSize = 50;
+  // CORS headers
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
 
-  // ========== Helpers ==========
-  function updateCharWordCount() {
-    const text = textInput.value;
-    charCount.textContent = `${text.length} characters`;
-    wordCount.textContent = `${text.trim() ? text.trim().split(/\s+/).length : 0} words`;
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
   }
 
-  function showProcessing(show) {
-    processingContainer.classList.toggle('hidden', !show);
+  // Authentication (reuse from main project)
+  function getAuthToken(req) {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+    return authHeader.slice(7);
   }
 
-  function setProcessingProgress(percent, label) {
-    processingProgress.style.width = Math.min(100, percent) + '%';
-    processingPercent.textContent = Math.min(100, percent) + '%';
-    if (label) processingLabel.textContent = label;
-  }
-
-  function updateAnalytics(emails, phones, total) {
-    const uniqueEmails = new Set(emails);
-    const uniquePhones = new Set(phones);
-    const totalUnique = uniqueEmails.size + uniquePhones.size;
-    const duplicates = total - totalUnique;
-    totalFound.textContent = total;
-    duplicatesRemoved.textContent = duplicates;
-    validEmails.textContent = uniqueEmails.size;
-    validPhones.textContent = uniquePhones.size;
-  }
-
-  function renderTable() {
-    const filter = filterType.value;
-    const search = searchInput.value.toLowerCase().trim();
-
-    filteredData = allData.filter(item => {
-      if (filter === 'email' && item.type !== 'email') return false;
-      if (filter === 'phone' && item.type !== 'phone') return false;
-      if (search) {
-        if (!item.value.toLowerCase().includes(search)) return false;
-      }
-      return true;
-    });
-
-    const totalItems = filteredData.length;
-    const totalPages = Math.ceil(totalItems / pageSize) || 1;
-    if (currentPage > totalPages) currentPage = totalPages;
-    const start = (currentPage - 1) * pageSize;
-    const end = Math.min(start + pageSize, totalItems);
-    const pageData = filteredData.slice(start, end);
-
-    // Update pagination info
-    paginationInfo.textContent = `Showing ${totalItems ? start+1 : 0}-${end} of ${totalItems}`;
-    pageIndicator.textContent = currentPage;
-    prevPageBtn.disabled = currentPage <= 1;
-    nextPageBtn.disabled = currentPage >= totalPages;
-
-    if (pageData.length === 0) {
-      resultBody.innerHTML = `<tr><td colspan="4" class="text-center text-slate-500 py-8">No matching data</td></tr>`;
-      resultCount.textContent = '0 items';
-      return;
-    }
-
-    let html = '';
-    pageData.forEach((item, idx) => {
-      const icon = item.type === 'email' ? '✉️' : '📱';
-      const badge = item.type === 'email' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
-      html += `
-        <tr class="result-row">
-          <td class="text-slate-400 text-xs">${start + idx + 1}</td>
-          <td class="font-mono text-sm break-all">${item.value}</td>
-          <td><span class="status-badge ${badge}">${item.type}</span></td>
-          <td>
-            <button class="copy-btn text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition-all" data-value="${item.value}">Copy</button>
-          </td>
-        </tr>
-      `;
-    });
-    resultBody.innerHTML = html;
-    resultCount.textContent = `${totalItems} items`;
-
-    // Attach copy events
-    resultBody.querySelectorAll('.copy-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        navigator.clipboard.writeText(btn.dataset.value).then(() => {
-          btn.textContent = '✓';
-          setTimeout(() => btn.textContent = 'Copy', 1500);
-        });
-      });
-    });
-  }
-
-  function updateUIWithResults(emails, phones) {
-    const emailArray = [...new Set(emails.map(e => e.toLowerCase().trim()))].filter(e => e);
-    const phoneArray = [...new Set(phones.map(p => p.trim().replace(/[^\d+]/g, '')).filter(p => p.length >= 10))];
-    const combined = [
-      ...emailArray.map(e => ({ value: e, type: 'email' })),
-      ...phoneArray.map(p => ({ value: p, type: 'phone' }))
-    ];
-    allData = combined;
-    currentPage = 1;
-    renderTable();
-    updateAnalytics(emailArray, phoneArray, combined.length);
-  }
-
-  // ========== API call to backend (টোকেন ডায়নামিকভাবে নেওয়া) ==========
-  async function extractFromText(text) {
-    // ✅ টোকেন ডায়নামিকভাবে নেওয়া
-    const token = localStorage.getItem('emailExtractorToken');
-    if (!token) {
-      alert('Authentication token is missing. Please log in first.');
-      return;
-    }
-
-    showProcessing(true);
-    setProcessingProgress(0, 'Sending data to server...');
+  function verifyToken(token) {
     try {
-      const response = await fetch('/api/finder-api/text-secret', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ text })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'API error');
-      setProcessingProgress(100, 'Done!');
-      setTimeout(() => showProcessing(false), 600);
-      // data should have { emails, phones }
-      updateUIWithResults(data.emails || [], data.phones || []);
-    } catch (err) {
-      alert('Error: ' + err.message);
-      showProcessing(false);
-    }
-  }
-
-  async function extractFromFile(file) {
-    showProcessing(true);
-    setProcessingProgress(0, 'Reading file...');
-    const text = await file.text();
-    await extractFromText(text);
-  }
-
-  // ========== Event listeners ==========
-  // Drag & Drop
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('dragover');
-  });
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('dragover');
-  });
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const file = files[0];
-      const validTypes = ['text/plain', 'text/csv', 'application/vnd.ms-excel', 'text/log'];
-      if (!validTypes.includes(file.type) && !file.name.match(/\.(txt|csv|log)$/i)) {
-        alert('Please drop a .txt, .csv, or .log file.');
-        return;
+      // Standard JWT is composed of three parts: header.payload.signature
+      // We need to decode the payload (second part)
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        // If not standard JWT, treat the whole token as payload (fallback)
+        const payload = JSON.parse(atob(token));
+        if (payload.exp && payload.exp * 1000 < Date.now()) return null;
+        return payload;
       }
-      handleFile(file);
+      const payloadString = parts[1];
+      const payload = JSON.parse(atob(payloadString));
+      // exp is in seconds, compare with current time in milliseconds
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        return null; // expired
+      }
+      return payload;
+    } catch (err) {
+      return null;
     }
-  });
-  dropZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) {
-      handleFile(e.target.files[0]);
-    }
-  });
-
-  function handleFile(file) {
-    fileInfo.classList.remove('hidden');
-    fileName.textContent = file.name;
-    fileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
-    processFileBtn.disabled = false;
-    processFileBtn.dataset.file = file;
   }
 
-  processFileBtn.addEventListener('click', () => {
-    const file = processFileBtn.dataset.file;
-    if (file) extractFromFile(file);
-  });
-
-  // Text extraction
-  textInput.addEventListener('input', updateCharWordCount);
-  extractTextBtn.addEventListener('click', () => {
-    const text = textInput.value.trim();
-    if (!text) { alert('Please paste some text.'); return; }
-    extractFromText(text);
-  });
-
-  // Filters & Search
-  filterType.addEventListener('change', renderTable);
-  searchInput.addEventListener('input', renderTable);
-
-  // Pagination
-  prevPageBtn.addEventListener('click', () => {
-    if (currentPage > 1) { currentPage--; renderTable(); }
-  });
-  nextPageBtn.addEventListener('click', () => {
-    const totalPages = Math.ceil(filteredData.length / pageSize);
-    if (currentPage < totalPages) { currentPage++; renderTable(); }
-  });
-
-  // Export
-  copyAllBtn.addEventListener('click', () => {
-    const values = filteredData.map(item => item.value).join('\n');
-    navigator.clipboard.writeText(values).then(() => {
-      alert('Copied ' + filteredData.length + ' items to clipboard.');
-    });
-  });
-
-  exportCsvBtn.addEventListener('click', () => {
-    if (!filteredData.length) return alert('No data to export.');
-    let csv = 'Contact,Type\n';
-    filteredData.forEach(item => {
-      csv += `"${item.value}","${item.type}"\n`;
-    });
-    downloadFile(csv, 'extracted_contacts.csv', 'text/csv');
-  });
-
-  exportJsonBtn.addEventListener('click', () => {
-    if (!filteredData.length) return alert('No data to export.');
-    const json = JSON.stringify(filteredData, null, 2);
-    downloadFile(json, 'extracted_contacts.json', 'application/json');
-  });
-
-  function downloadFile(content, name, mime) {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(url);
+  const token = getAuthToken(request);
+  if (!token) {
+    return jsonResponse({ success: false, error: 'Missing authentication token' }, 401, corsHeaders);
+  }
+  const payload = verifyToken(token);
+  if (!payload) {
+    return jsonResponse({ success: false, error: 'Invalid or expired token' }, 401, corsHeaders);
   }
 
-  // Init
-  updateCharWordCount();
-  renderTable();
-})();
+  // Determine content type
+  const contentType = request.headers.get('Content-Type') || '';
+  let text = '';
+
+  if (contentType.includes('application/json')) {
+    const body = await request.json().catch(() => ({}));
+    text = body.text || '';
+  } else if (contentType.includes('multipart/form-data')) {
+    const formData = await request.formData();
+    const file = formData.get('file');
+    if (file && file instanceof File) {
+      text = await file.text();
+    } else {
+      return jsonResponse({ success: false, error: 'No file uploaded' }, 400, corsHeaders);
+    }
+  } else {
+    return jsonResponse({ success: false, error: 'Unsupported content type' }, 400, corsHeaders);
+  }
+
+  if (!text || text.length === 0) {
+    return jsonResponse({ success: false, error: 'No text content provided' }, 400, corsHeaders);
+  }
+
+  // ========== ADVANCED REGEX ENGINE ==========
+  // Email: standard + obfuscated (name [at] domain [dot] com)
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  const obfuscatedEmailRegex = /([a-zA-Z0-9._%+-]+)\s*\[at\]\s*([a-zA-Z0-9.-]+)\s*\[dot\]\s*([a-zA-Z]{2,})/gi;
+
+  // Phone: international format with country codes, spaces, dashes, parentheses
+  const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g;
+
+  let emails = [];
+  let phones = [];
+
+  // Extract standard emails
+  const standardEmails = text.match(emailRegex) || [];
+  emails = standardEmails.map(e => e.toLowerCase());
+
+  // Extract obfuscated emails and convert
+  let obfuscatedMatches;
+  while ((obfuscatedMatches = obfuscatedEmailRegex.exec(text)) !== null) {
+    const full = obfuscatedMatches[0];
+    const local = obfuscatedMatches[1];
+    const domain = obfuscatedMatches[2];
+    const tld = obfuscatedMatches[3];
+    const clean = `${local}@${domain}.${tld}`.toLowerCase();
+    emails.push(clean);
+  }
+
+  // Extract phones
+  const rawPhones = text.match(phoneRegex) || [];
+  phones = rawPhones.map(p => p.trim().replace(/[^\d+]/g, '')).filter(p => p.length >= 10);
+
+  // Remove duplicates
+  emails = [...new Set(emails)];
+  phones = [...new Set(phones)];
+
+  // ========== LOGGING (optional) ==========
+  // You can log to audit logger if available
+  // const auditLogger = new AuditLogger(new KVMANAGER(env.SECRETS_KV));
+  // await auditLogger.log('TEXT_EXTRACT', { username: payload.username, emailCount: emails.length, phoneCount: phones.length });
+
+  return jsonResponse({
+    success: true,
+    emails,
+    phones,
+    total: emails.length + phones.length,
+  }, 200, corsHeaders);
+}
+
+// Helper to send JSON response
+function jsonResponse(data, status = 200, headers = {}) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json',
+    },
+  });
+}
