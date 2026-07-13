@@ -1,307 +1,714 @@
-<div id="locationContactSearch" class="space-y-6 fade-in" aria-label="Location Based Smart Search Module">
-  
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-      <div>
-        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Indexed Profiles</p>
-        <h4 id="metaTotalProfiles" class="text-2xl font-bold text-slate-800 mt-1">--</h4>
-      </div>
-      <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-      </div>
-    </div>
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-      <div>
-        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Verified Master Profiles</p>
-        <h4 id="metaVerifiedProfiles" class="text-2xl font-bold text-emerald-600 mt-1">--</h4>
-      </div>
-      <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-      </div>
-    </div>
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-      <div>
-        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Avg Confidence Score</p>
-        <h4 id="metaAvgConfidence" class="text-2xl font-bold text-amber-600 mt-1">--</h4>
-      </div>
-      <div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-      </div>
-    </div>
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
-      <div>
-        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Geocoded Entities</p>
-        <h4 id="metaGeocodedCount" class="text-2xl font-bold text-purple-600 mt-1">--</h4>
-      </div>
-      <div class="p-3 bg-purple-50 text-purple-600 rounded-lg">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-      </div>
-    </div>
-  </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Contact Finder · Simplified</title>
 
-  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-    
-    <div class="lg:col-span-1 space-y-4">
-      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
-        <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-          <h3 class="text-md font-bold text-slate-800 flex items-center gap-2">
-            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-            Advanced Engine Filters
-          </h3>
-          <button id="resetAllFiltersBtn" type="button" class="text-xs text-slate-500 hover:text-blue-600 font-medium transition-colors">Reset All</button>
-        </div>
+    <!-- Tailwind CSS (lightweight, kept minimal) -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-        <form id="advancedSearchForm" class="space-y-4" onsubmit="return false;">
+    <style>
+        /* --- Minimal custom styles, no complex CSS --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .fade-in {
+            animation: fadeIn 0.25s ease-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .toggle-track {
+            width: 44px;
+            height: 24px;
+            background: #cbd5e1;
+            border-radius: 999px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.25s;
+            flex-shrink: 0;
+        }
+        .toggle-track.active {
+            background: #3b82f6;
+        }
+        .toggle-thumb {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 999px;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.25s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .toggle-track.active .toggle-thumb {
+            transform: translateX(20px);
+        }
+        .result-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+            transition: border-color 0.15s;
+        }
+        .result-card:hover {
+            border-color: #94a3b8;
+        }
+        .result-card .label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #94a3b8;
+        }
+        .result-card .value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #0f172a;
+            word-break: break-all;
+        }
+        .result-card .desc {
+            font-size: 13px;
+            color: #475569;
+            margin-top: 4px;
+            line-height: 1.5;
+        }
+        .badge-source {
+            font-size: 10px;
+            background: #f1f5f9;
+            color: #64748b;
+            padding: 2px 8px;
+            border-radius: 999px;
+            display: inline-block;
+        }
+        .filter-select {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            width: 100%;
+            color: #1e293b;
+            transition: border-color 0.15s;
+        }
+        .filter-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .checkbox-custom {
+            width: 18px;
+            height: 18px;
+            accent-color: #3b82f6;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: #94a3b8;
+        }
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px;
+            opacity: 0.4;
+        }
+        /* scrollbar minimal */
+        .results-scroll {
+            max-height: 580px;
+            overflow-y: auto;
+        }
+        .results-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .results-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .results-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        /* responsive tweaks */
+        @media (max-width: 640px) {
+            .result-card {
+                padding: 12px;
+            }
+            .result-card .value {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
 
-<!-- ===== COUNTRY SELECT ===== -->
-<div>
-  <label for="countrySelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Country</label>
-  <select id="countrySelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-    <option value="bangladesh">Bangladesh</option>
-    <option value="india">India</option>
-    <option value="uae">United Arab Emirates</option>
-    <option value="thailand">Thailand</option>
-    <option value="niger">Niger (West African)</option>
-    <option value="argentina">Argentina</option>
-    <option value="ireland">Ireland</option>
-    <option value="malta">Malta</option>
-    <option value="brazil">Brazil</option>
-  </select>
-</div>
+    <div id="locationContactFinder" class="max-w-6xl mx-auto px-4 py-6 space-y-5">
 
-
-
-          
-          <div>
-            <label for="entityTypeSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Entity Architecture Type</label>
-            <select id="entityTypeSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-              <option value="all">All Entities (Combined Profile)</option>
-              <option value="BUSINESS">Business (Company, Retail, Startups)</option>
-              <option value="PROFESSIONAL">Professionals (Freelancers, Consultants)</option>
-              <option value="CREATOR">Digital Creators (Influencers, YouTubers)</option>
-              <option value="SERVICE">Services (Hospitals, Institutions)</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="divisionSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Geographic Division</label>
-            <select id="divisionSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-              <option value="">— Select Division —</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="districtSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">District / State</label>
-            <select id="districtSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-              <option value="">— Select District —</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="thanaSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Thana / Upazila / Zone</label>
-            <select id="thanaSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-              <option value="">— Select Thana —</option>
-            </select>
-          </div>
-
-          <div class="pt-2 border-t border-slate-100">
-            <div class="flex justify-between items-center mb-1">
-              <label for="geoRadiusSlider" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Spatial Search Radius</label>
-              <span id="radiusValueDisplay" class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Global</span>
+        <!-- ===== HEADER ===== -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div>
+                <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <span>📍</span> Smart Contact Finder
+                </h1>
+                <p class="text-xs text-slate-500 mt-0.5">Search &amp; discover contact information from public sources</p>
             </div>
-            <input type="range" id="geoRadiusSlider" min="0" max="100" value="0" step="5" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-            <div class="flex justify-between text-[10px] text-slate-400 mt-1">
-              <span>Exact Match</span>
-              <span>50 KM</span>
-              <span>100 KM+</span>
-            </div>
-          </div>
-
-          <div class="pt-2 border-t border-slate-100">
-            <div class="flex justify-between items-center mb-1">
-              <label for="confidenceScoreSlider" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Min Confidence Score</label>
-              <span id="confidenceValueDisplay" class="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">0%</span>
-            </div>
-            <input type="range" id="confidenceScoreSlider" min="0" max="100" value="0" step="10" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
-          </div>
-
-          <div>
-            <label for="verificationStatusSelect" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Verification Framework</label>
-            <select id="verificationStatusSelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-              <option value="all">All Profiles</option>
-              <option value="VERIFIED">Fully Verified (Score 90+)</option>
-              <option value="PARTIAL">Partially Enriched</option>
-              <option value="UNVERIFIED">Unverified / Raw Crawler Data</option>
-            </select>
-          </div>
-
-          <div class="pt-2 border-t border-slate-100 space-y-2">
-            <span class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Data Channel Availability</span>
-            <div class="grid grid-cols-2 gap-2">
-              <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
-                <input type="checkbox" id="hasEmailCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                <span>Has Email</span>
-              </label>
-              <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
-                <input type="checkbox" id="hasPhoneCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                <span>Has Phone</span>
-              </label>
-              <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
-                <input type="checkbox" id="hasWhatsappCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                <span>Has WhatsApp</span>
-              </label>
-              <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
-                <input type="checkbox" id="hasSocialCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4">
-                <span>Has Socials</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="pt-2">
-            <button id="searchLocationBtn" type="button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-              Execute Smart Find
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div class="lg:col-span-3 space-y-4 flex flex-col h-full">
-      
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <div class="relative">
-          <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-          </span>
-          <input type="text" id="smartNlpSearchInput" placeholder="Try AI Query: 'Software agency in Dhaka with verified email' or type keywords..." class="w-full text-sm pl-10 pr-24 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
-          <div class="absolute inset-y-1.5 right-1.5 flex items-center gap-1.5">
-            <span id="aiIntentBadge" class="hidden text-[10px] font-semibold bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-200 tracking-wide">AI Intent Parsed</span>
-            <button id="clearSmartSearchBtn" type="button" class="text-xs text-slate-400 hover:text-slate-600 px-2 transition-colors">Clear</button>
-          </div>
-        </div>
-        <div id="autocompleteSuggestions" class="hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-          </div>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col flex-1 min-h-[550px]">
-        
-        <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div class="flex items-center gap-3">
-            <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm sm:text-base">
-              <span>📍</span> Master Profile Directory
-            </h3>
-            <span id="locationResultCount" class="text-xs font-semibold bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full" aria-live="polite">0 Records</span>
-          </div>
-
-          <div class="flex items-center gap-2 self-end sm:self-auto">
-            <div id="bulkActionsWrapper" class="hidden items-center gap-1.5 transition-all">
-              <select id="bulkActionSelect" class="text-xs bg-white border border-slate-200 rounded px-2 py-1.5 text-slate-700 focus:outline-none focus:border-blue-500">
-                <option value="">— Bulk Actions —</option>
-                <option value="export">Export Selected (CSV)</option>
-                <option value="verify">Verify Selected Framework</option>
-                <option value="merge">Merge Profiles (Deduplicate)</option>
-                <option value="tag">Add Metadata Tag</option>
-              </select>
-              <button id="executeBulkBtn" type="button" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded transition-all">Apply</button>
-            </div>
-            
-            <div class="h-6 w-px bg-slate-200 mx-1 hidden id-bulk-separator"></div>
-
-            <button id="exportLocationCsv" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              Export Directory
-            </button>
-          </div>
-        </div>
-
-        <div id="locationSearchStatus" class="hidden px-4 py-2.5 border-b text-xs font-medium transition-all" role="alert"></div>
-
-        <div class="flex-1 overflow-x-auto relative min-h-[350px]">
-          <table class="data-table w-full text-left border-collapse" id="locationResultTable">
-            <thead class="sticky top-0 bg-slate-100 z-10 shadow-xs border-b border-slate-200">
-              <tr class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th class="w-10 p-3 text-center">
-                  <input type="checkbox" id="selectAllProfilesCheck" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer">
-                </th>
-                <th class="p-3 cursor-pointer select-none group" data-sort="name">
-                  Entity & Master Identity 
-                  <span class="inline-block ml-1 text-slate-400 group-hover:text-slate-600">↕</span>
-                </th>
-                <th class="p-3">Data Channels</th>
-                <th class="p-3">Spatial Hierarchy</th>
-                <th class="p-3 cursor-pointer select-none group text-center" data-sort="confidence">
-                  Trust Matrix
-                  <span class="inline-block ml-1 text-slate-400 group-hover:text-slate-600">↕</span>
-                </th>
-                <th class="p-3 text-right">Engine Matrix</th>
-              </tr>
-            </thead>
-            <tbody id="locationResultBody" class="divide-y divide-slate-100 text-sm text-slate-700">
-              <tr>
-                <td colspan="6" class="text-center text-slate-500 py-16">
-                  <div class="flex flex-col items-center justify-center space-y-3">
-                    <div class="p-4 bg-slate-50 text-slate-400 rounded-full">
-                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <div class="flex items-center gap-4">
+                <span class="text-xs font-medium text-slate-600">Data Source</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-medium text-slate-500" id="toggleLabelOff">API</span>
+                    <div id="dataSourceToggle" class="toggle-track" role="switch" aria-checked="false" tabindex="0">
+                        <div class="toggle-thumb"></div>
                     </div>
-                    <div>
-                      <p class="font-semibold text-slate-700">System Ready for Query Optimization</p>
-                      <p class="text-xs text-slate-400 mt-1 max-w-sm">Select geographical boundaries or input an AI parsing intent expression to load distributed master dataset.</p>
+                    <span class="text-xs font-medium text-slate-500" id="toggleLabelOn">Database</span>
+                </div>
+                <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full" id="modeIndicator">Live</span>
+            </div>
+        </div>
+
+        <!-- ===== FILTERS ===== -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+
+                <!-- Country -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Country</label>
+                    <select id="filterCountry" class="filter-select">
+                        <option value="bangladesh">Bangladesh</option>
+                        <option value="india">India</option>
+                        <option value="uae">United Arab Emirates</option>
+                        <option value="thailand">Thailand</option>
+                        <option value="niger">Niger</option>
+                        <option value="argentina">Argentina</option>
+                        <option value="ireland">Ireland</option>
+                        <option value="malta">Malta</option>
+                        <option value="brazil">Brazil</option>
+                    </select>
+                </div>
+
+                <!-- Division -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Division</label>
+                    <select id="filterDivision" class="filter-select">
+                        <option value="">— All —</option>
+                    </select>
+                </div>
+
+                <!-- District -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">District</label>
+                    <select id="filterDistrict" class="filter-select">
+                        <option value="">— All —</option>
+                    </select>
+                </div>
+
+                <!-- Has Email + Action -->
+                <div class="flex flex-col sm:flex-row sm:items-end gap-2">
+                    <div class="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 flex-1">
+                        <input type="checkbox" id="filterHasEmail" class="checkbox-custom" />
+                        <label for="filterHasEmail" class="text-sm font-medium text-slate-700 cursor-pointer select-none">Has Email</label>
                     </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                    <button id="executeSearchBtn" class="btn-primary px-5 py-2.5 text-sm whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        Execute Smart Find
+                    </button>
+                </div>
 
-        <div class="p-4 border-t border-slate-200 bg-slate-50/80 rounded-b-xl flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
-          <div id="locationResultMeta" class="font-medium tracking-wide">
-            Awaiting parameters execution.
-          </div>
-          
-          <div id="tablePaginationWrapper" class="flex items-center gap-4 hidden">
-            <div class="flex items-center gap-1.5">
-              <span>Rows per page:</span>
-              <select id="paginationLimitSelect" class="bg-white border border-slate-200 rounded p-1 text-xs text-slate-700 focus:outline-none">
-                <option value="10">10</option>
-                <option value="25" selected>25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
             </div>
-            
-            <div class="flex items-center gap-1">
-              <button id="prevPageBtn" type="button" class="p-1.5 bg-white border border-slate-200 rounded hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all" disabled>
-                ‹ Prev
-              </button>
-              <span class="text-slate-600 font-medium px-1"><span id="currentPageNumDisplay">1</span> / <span id="totalPageNumDisplay">1</span></span>
-              <button id="nextPageBtn" type="button" class="p-1.5 bg-white border border-slate-200 rounded hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all" disabled>
-                Next ›
-              </button>
+            <!-- small hint -->
+            <div class="mt-3 text-[11px] text-slate-400 border-t border-slate-100 pt-2 flex justify-between">
+                <span id="filterHint">💡 Toggle <strong>Database</strong> to use local cache, or <strong>API</strong> for fresh data.</span>
+                <span id="resultCountBadge" class="font-medium text-slate-600">0 results</span>
             </div>
-          </div>
         </div>
 
-      </div>
-    </div>
-  </div>
+        <!-- ===== RESULTS ===== -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-4 py-2.5 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
+                <span class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <span>📋</span> Results
+                </span>
+                <span id="resultsMeta" class="text-xs text-slate-500">Ready</span>
+            </div>
 
-  <div id="masterProfileDetailsModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modalProfileTitle">
-    <div class="bg-white w-full max-w-2xl rounded-xl shadow-xl border border-slate-200 overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
-      <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-        <h3 id="modalProfileTitle" class="font-bold text-slate-800 text-base flex items-center gap-2">
-          <span>🛡️</span> Master Identity Ledger Profile
-        </h3>
-        <button id="closeProfileModalBtn" type="button" class="text-slate-400 hover:text-slate-600 text-lg font-bold px-2 transition-colors">&times;</button>
-      </div>
-      <div id="modalProfileBody" class="p-6 overflow-y-auto space-y-6 text-sm text-slate-700">
+            <div id="resultsContainer" class="results-scroll p-3 space-y-2.5 min-h-[200px]">
+                <!-- Empty state -->
+                <div class="empty-state" id="emptyState">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <p class="text-sm font-medium text-slate-500">No results yet</p>
+                    <p class="text-xs text-slate-400 mt-1">Adjust filters and click <strong>Execute Smart Find</strong></p>
+                </div>
+                <!-- dynamic results will be injected here -->
+                <div id="resultList" class="space-y-2.5"></div>
+            </div>
+
+            <!-- pagination (simple) -->
+            <div class="px-4 py-2.5 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between text-xs text-slate-500">
+                <span id="paginationInfo">Showing 0</span>
+                <div class="flex items-center gap-2">
+                    <button id="prevPageBtn" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all" disabled>‹ Prev</button>
+                    <span id="pageIndicator" class="font-medium text-slate-600">1 / 1</span>
+                    <button id="nextPageBtn" class="px-3 py-1 bg-white border border-slate-200 rounded hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all" disabled>Next ›</button>
+                </div>
+            </div>
         </div>
-      <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
-        <button id="verifyProfileInstanceBtn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs py-1.5 px-3 rounded transition-all">Verify Node</button>
-        <button id="closeProfileModalBottomBtn" type="button" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-xs py-1.5 px-3 rounded transition-all">Close Entry</button>
-      </div>
     </div>
-  </div>
 
-</div>
+    <!-- ============================================================ -->
+    <!-- JAVASCRIPT — Clean, minimal, no console noise                 -->
+    <!-- ============================================================ -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ---- DOM refs ----
+            const countrySelect = document.getElementById('filterCountry');
+            const divisionSelect = document.getElementById('filterDivision');
+            const districtSelect = document.getElementById('filterDistrict');
+            const hasEmailCheck = document.getElementById('filterHasEmail');
+            const executeBtn = document.getElementById('executeSearchBtn');
+            const toggle = document.getElementById('dataSourceToggle');
+            const modeIndicator = document.getElementById('modeIndicator');
+            const resultList = document.getElementById('resultList');
+            const emptyState = document.getElementById('emptyState');
+            const resultsMeta = document.getElementById('resultsMeta');
+            const resultCountBadge = document.getElementById('resultCountBadge');
+            const filterHint = document.getElementById('filterHint');
+            const paginationInfo = document.getElementById('paginationInfo');
+            const pageIndicator = document.getElementById('pageIndicator');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+
+            // ---- State ----
+            let isDatabaseMode = false; // false = API, true = Database
+            let currentPage = 1;
+            let totalPages = 1;
+            let totalResults = 0;
+            let currentData = [];
+            const PAGE_LIMIT = 25;
+
+            // ---- Geo registry (for hierarchy) ----
+            const GEO = {
+                divisions: {
+                    'dhaka': { country: 'bangladesh', name: 'Dhaka' },
+                    'chattogram': { country: 'bangladesh', name: 'Chattogram' },
+                    'sylhet': { country: 'bangladesh', name: 'Sylhet' },
+                    'maharashtra': { country: 'india', name: 'Maharashtra' },
+                    'karnataka': { country: 'india', name: 'Karnataka' },
+                    'tamil_nadu': { country: 'india', name: 'Tamil Nadu' },
+                    'dubai': { country: 'uae', name: 'Dubai' },
+                    'abu_dhabi': { country: 'uae', name: 'Abu Dhabi' },
+                    'sharjah': { country: 'uae', name: 'Sharjah' },
+                    'bangkok_metropolitan': { country: 'thailand', name: 'Bangkok Metropolitan' },
+                    'chonburi': { country: 'thailand', name: 'Chonburi' },
+                    'chiang_mai': { country: 'thailand', name: 'Chiang Mai' },
+                    'niamey': { country: 'niger', name: 'Niamey' },
+                    'tillaberi': { country: 'niger', name: 'Tillaberi' },
+                    'dosso': { country: 'niger', name: 'Dosso' },
+                    'buenos_aires': { country: 'argentina', name: 'Buenos Aires' },
+                    'cordoba': { country: 'argentina', name: 'Cordoba' },
+                    'mendoza': { country: 'argentina', name: 'Mendoza' },
+                    'leinster': { country: 'ireland', name: 'Leinster' },
+                    'munster': { country: 'ireland', name: 'Munster' },
+                    'connacht': { country: 'ireland', name: 'Connacht' },
+                    'south_eastern': { country: 'malta', name: 'South Eastern' },
+                    'northern': { country: 'malta', name: 'Northern' },
+                    'port': { country: 'malta', name: 'Port' },
+                    'sao_paulo': { country: 'brazil', name: 'São Paulo' },
+                    'rio_de_janeiro': { country: 'brazil', name: 'Rio de Janeiro' },
+                    'minas_gerais': { country: 'brazil', name: 'Minas Gerais' }
+                },
+                districts: {
+                    'dhaka': { division: 'dhaka', name: 'Dhaka' },
+                    'gazipur': { division: 'dhaka', name: 'Gazipur' },
+                    'narayanganj': { division: 'dhaka', name: 'Narayanganj' },
+                    'chattogram': { division: 'chattogram', name: 'Chattogram' },
+                    'cox_bazar': { division: 'chattogram', name: "Cox's Bazar" },
+                    'sylhet': { division: 'sylhet', name: 'Sylhet' },
+                    'mumbai': { division: 'maharashtra', name: 'Mumbai' },
+                    'pune': { division: 'maharashtra', name: 'Pune' },
+                    'bangalore': { division: 'karnataka', name: 'Bangalore' },
+                    'chennai': { division: 'tamil_nadu', name: 'Chennai' },
+                    'dubai_city': { division: 'dubai', name: 'Dubai City' },
+                    'abu_dhabi_city': { division: 'abu_dhabi', name: 'Abu Dhabi City' },
+                    'sharjah_city': { division: 'sharjah', name: 'Sharjah City' },
+                    'bangkok_city': { division: 'bangkok_metropolitan', name: 'Bangkok City' },
+                    'pattaya': { division: 'chonburi', name: 'Pattaya' },
+                    'chiang_mai_city': { division: 'chiang_mai', name: 'Chiang Mai City' },
+                    'niamey_city': { division: 'niamey', name: 'Niamey City' },
+                    'tillaberi_city': { division: 'tillaberi', name: 'Tillaberi City' },
+                    'dosso_city': { division: 'dosso', name: 'Dosso City' },
+                    'buenos_aires_city': { division: 'buenos_aires', name: 'Buenos Aires City' },
+                    'cordoba_city': { division: 'cordoba', name: 'Cordoba City' },
+                    'mendoza_city': { division: 'mendoza', name: 'Mendoza City' },
+                    'dublin': { division: 'leinster', name: 'Dublin' },
+                    'cork': { division: 'munster', name: 'Cork' },
+                    'galway': { division: 'connacht', name: 'Galway' },
+                    'valletta': { division: 'south_eastern', name: 'Valletta' },
+                    'mosta': { division: 'northern', name: 'Mosta' },
+                    'birgu': { division: 'port', name: 'Birgu' },
+                    'sao_paulo_city': { division: 'sao_paulo', name: 'São Paulo City' },
+                    'rio_city': { division: 'rio_de_janeiro', name: 'Rio City' },
+                    'belo_horizonte': { division: 'minas_gerais', name: 'Belo Horizonte' }
+                }
+            };
+
+            // ---- Helper: get token ----
+            function getToken() {
+                return localStorage.getItem('emailExtractorToken') || '';
+            }
+
+            // ---- Helper: API call ----
+            async function apiFetch(endpoint, options = {}) {
+                const token = getToken();
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    ...(options.headers || {})
+                };
+                const resp = await fetch(endpoint, { ...options, headers });
+                return resp.json();
+            }
+
+            // ---- Load divisions by country ----
+            async function loadDivisions(country) {
+                divisionSelect.innerHTML = '<option value="">Loading...</option>';
+                divisionSelect.disabled = true;
+                try {
+                    const data = await apiFetch(`/api/finder-api/location-secret?action=getDivisions&country=${country}`);
+                    if (data.success && data.divisions) {
+                        divisionSelect.innerHTML = '<option value="">— All —</option>';
+                        data.divisions.forEach(d => {
+                            const opt = document.createElement('option');
+                            opt.value = d.id;
+                            opt.textContent = d.name;
+                            divisionSelect.appendChild(opt);
+                        });
+                        divisionSelect.disabled = false;
+                    } else {
+                        divisionSelect.innerHTML = '<option value="">No divisions</option>';
+                        divisionSelect.disabled = true;
+                    }
+                } catch (_) {
+                    divisionSelect.innerHTML = '<option value="">Error</option>';
+                    divisionSelect.disabled = true;
+                }
+                // reset district
+                districtSelect.innerHTML = '<option value="">— All —</option>';
+                districtSelect.disabled = true;
+            }
+
+            // ---- Load districts by division ----
+            async function loadDistricts(division) {
+                if (!division) {
+                    districtSelect.innerHTML = '<option value="">— All —</option>';
+                    districtSelect.disabled = true;
+                    return;
+                }
+                districtSelect.innerHTML = '<option value="">Loading...</option>';
+                districtSelect.disabled = true;
+                try {
+                    const data = await apiFetch(`/api/finder-api/location-secret?action=getDistricts&division=${division}`);
+                    if (data.success && data.districts) {
+                        districtSelect.innerHTML = '<option value="">— All —</option>';
+                        data.districts.forEach(d => {
+                            const opt = document.createElement('option');
+                            opt.value = d.id;
+                            opt.textContent = d.name;
+                            districtSelect.appendChild(opt);
+                        });
+                        districtSelect.disabled = false;
+                    } else {
+                        districtSelect.innerHTML = '<option value="">No districts</option>';
+                        districtSelect.disabled = true;
+                    }
+                } catch (_) {
+                    districtSelect.innerHTML = '<option value="">Error</option>';
+                    districtSelect.disabled = true;
+                }
+            }
+
+            // ---- Toggle switch ----
+            toggle.addEventListener('click', function() {
+                isDatabaseMode = !isDatabaseMode;
+                this.classList.toggle('active', isDatabaseMode);
+                this.setAttribute('aria-checked', isDatabaseMode);
+                modeIndicator.textContent = isDatabaseMode ? 'Database' : 'Live';
+                modeIndicator.className = 'text-[10px] px-2 py-0.5 rounded-full ' +
+                    (isDatabaseMode ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700');
+                filterHint.innerHTML = isDatabaseMode ?
+                    '💡 Using <strong>Database</strong> cache. Results may be limited to stored data.' :
+                    '💡 Using <strong>Live API</strong>. Fetches fresh data from multiple sources.';
+                // reset results on toggle
+                clearResults();
+            });
+
+            // ---- Country change ----
+            countrySelect.addEventListener('change', function() {
+                loadDivisions(this.value);
+            });
+
+            // ---- Division change ----
+            divisionSelect.addEventListener('change', function() {
+                loadDistricts(this.value);
+            });
+
+            // ---- Execute search ----
+            executeBtn.addEventListener('click', function() {
+                currentPage = 1;
+                performSearch();
+            });
+
+            // ---- Pagination ----
+            prevPageBtn.addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderPage();
+                }
+            });
+            nextPageBtn.addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderPage();
+                }
+            });
+
+            // ---- Perform search ----
+            async function performSearch() {
+                const country = countrySelect.value || 'bangladesh';
+                const division = divisionSelect.value || '';
+                const district = districtSelect.value || '';
+                const hasEmail = hasEmailCheck.checked;
+
+                // Build query
+                const params = new URLSearchParams({
+                    action: 'search',
+                    country: country,
+                    division: division,
+                    district: district,
+                    hasEmail: hasEmail ? 'true' : 'false',
+                    page: currentPage,
+                    limit: PAGE_LIMIT
+                });
+
+                // If in database mode, add mode=db hint (backend may use it)
+                if (isDatabaseMode) {
+                    params.set('mode', 'db');
+                }
+
+                // Also pass a query term (empty string means broad search)
+                params.set('query', '');
+
+                const url = `/api/finder-api/location-secret?${params.toString()}`;
+
+                // Show loading
+                executeBtn.disabled = true;
+                executeBtn.innerHTML = '<span class="inline-block animate-spin mr-1">⟳</span> Searching...';
+                resultList.innerHTML = '';
+                emptyState.classList.add('hidden');
+                resultsMeta.textContent = 'Searching...';
+
+                try {
+                    const data = await apiFetch(url);
+                    if (data.success && data.contacts) {
+                        currentData = data.contacts || [];
+                        totalResults = data.meta?.totalRecords || currentData.length;
+                        totalPages = Math.ceil(totalResults / PAGE_LIMIT) || 1;
+                        if (currentPage > totalPages) currentPage = totalPages;
+                        renderPage();
+                        resultsMeta.textContent = `Found ${totalResults} result${totalResults !== 1 ? 's' : ''}`;
+                        resultCountBadge.textContent = `${totalResults} results`;
+                    } else {
+                        showEmpty('No results found. Try adjusting filters.', data.error);
+                    }
+                } catch (_) {
+                    showEmpty('Something went wrong. Please try again.');
+                } finally {
+                    executeBtn.disabled = false;
+                    executeBtn.innerHTML =
+                        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg> Execute Smart Find';
+                }
+            }
+
+            // ---- Render current page ----
+            function renderPage() {
+                const start = (currentPage - 1) * PAGE_LIMIT;
+                const end = Math.min(start + PAGE_LIMIT, currentData.length);
+                const pageData = currentData.slice(start, end);
+
+                resultList.innerHTML = '';
+                emptyState.classList.add('hidden');
+
+                if (!pageData || pageData.length === 0) {
+                    showEmpty('No results on this page.');
+                    return;
+                }
+
+                const hasEmail = hasEmailCheck.checked;
+
+                pageData.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'result-card fade-in';
+
+                    // Determine what to show: phone or email
+                    const primaryContact = hasEmail ? (item.email || '') : (item.phone || '');
+                    const contactLabel = hasEmail ? 'Email' : 'Phone';
+                    const contactValue = primaryContact || '—';
+
+                    // Build description from available fields
+                    let descParts = [];
+                    if (item.address) descParts.push(item.address);
+                    if (item.website) descParts.push(item.website);
+                    if (item.entityType) descParts.push(item.entityType);
+                    if (item.division) descParts.push(item.division);
+                    if (item.district) descParts.push(item.district);
+                    const description = descParts.join(' · ') || 'No additional details';
+
+                    card.innerHTML = `
+                        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1">
+                            <div class="flex-1 min-w-0">
+                                <div class="font-semibold text-slate-800 text-base">${escapeHtml(item.name || 'Unknown')}</div>
+                                <div class="mt-0.5 flex items-center gap-2 flex-wrap">
+                                    <span class="label">${contactLabel}</span>
+                                    <span class="value">${escapeHtml(contactValue)}</span>
+                                </div>
+                                <div class="desc mt-1">${escapeHtml(description)}</div>
+                            </div>
+                            <div class="flex items-start gap-2 mt-1 sm:mt-0 flex-shrink-0">
+                                <span class="badge-source">${item.source || 'web'}</span>
+                                ${item.country ? `<span class="badge-source">${escapeHtml(item.country)}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    resultList.appendChild(card);
+                });
+
+                // Update pagination
+                const totalDisplay = Math.min(totalResults, currentData.length);
+                paginationInfo.textContent = `Showing ${start + 1}–${Math.min(end, totalResults)} of ${totalResults}`;
+                pageIndicator.textContent = `${currentPage} / ${totalPages || 1}`;
+                prevPageBtn.disabled = currentPage <= 1;
+                nextPageBtn.disabled = currentPage >= totalPages;
+                resultCountBadge.textContent = `${totalResults} results`;
+            }
+
+            // ---- Show empty state ----
+            function showEmpty(message, detail) {
+                resultList.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.querySelector('p:first-of-type').textContent = message || 'No results';
+                emptyState.querySelector('p:last-of-type').textContent = detail || 'Try adjusting filters and search again.';
+                resultsMeta.textContent = message || 'No results';
+                paginationInfo.textContent = 'Showing 0';
+                pageIndicator.textContent = '0 / 0';
+                prevPageBtn.disabled = true;
+                nextPageBtn.disabled = true;
+                resultCountBadge.textContent = '0 results';
+            }
+
+            // ---- Clear results ----
+            function clearResults() {
+                currentData = [];
+                totalResults = 0;
+                totalPages = 1;
+                currentPage = 1;
+                resultList.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.querySelector('p:first-of-type').textContent = 'Ready to search';
+                emptyState.querySelector('p:last-of-type').textContent = 'Adjust filters and click Execute Smart Find';
+                resultsMeta.textContent = 'Ready';
+                paginationInfo.textContent = 'Showing 0';
+                pageIndicator.textContent = '1 / 1';
+                prevPageBtn.disabled = true;
+                nextPageBtn.disabled = true;
+                resultCountBadge.textContent = '0 results';
+            }
+
+            // ---- Simple escape ----
+            function escapeHtml(str) {
+                if (!str) return '';
+                const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+                return str.replace(/[&<>"']/g, function(m) { return map[m]; });
+            }
+
+            // ---- Init ----
+            async function init() {
+                // Set initial toggle state
+                toggle.classList.remove('active');
+                toggle.setAttribute('aria-checked', 'false');
+                modeIndicator.textContent = 'Live';
+                modeIndicator.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700';
+
+                // Load initial divisions
+                await loadDivisions(countrySelect.value);
+
+                // Show empty
+                clearResults();
+
+                // Also load divisions on country change (already bound)
+                // Also handle Enter key on search
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && e.target.closest('#locationContactFinder')) {
+                        const active = document.activeElement;
+                        if (active && (active.tagName === 'INPUT' || active.tagName === 'SELECT')) {
+                            executeBtn.click();
+                        }
+                    }
+                });
+            }
+
+            // Start
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+        })();
+    </script>
+
+</body>
+</html>
