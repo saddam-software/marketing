@@ -1,11 +1,10 @@
 /**
- * AI-Powered Smart People & Business Finder Platform - Core Spatial API (SIMPLIFIED)
- * Now respects 'mode' parameter: 'db' = database only, else = live API with auto-fetch.
- * All metadata fields are still returned but frontend uses only what's needed.
- * FIXES: Added email to Hunter API, fixed email storage, and targeted search by keyword.
- * REMOVED: Thana (locality) references entirely.
+ * Smart Contact Finder – Core API (Simplified)
+ * শুধুমাত্র wrangler.toml-এর কীগুলো ব্যবহার করে।
+ * লোকেশন API বাদ, শুধু ইমেইল/ফোন এনরিচমেন্ট API সক্রিয়।
  */
 
+// ==================== JWT ভেরিফিকেশন ====================
 function base64UrlToBuffer(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
@@ -45,16 +44,14 @@ async function verifyJWT(token, secret) {
   }
 }
 
-// =========================================================================
-// ENTERPRISE GEO REGISTRY (without thanas)
-// =========================================================================
+// ==================== জিও রেজিস্ট্রি (শুধু ম্যাপিংয়ের জন্য) ====================
 const ENTERPRISE_GEO_REGISTRY = {
   countries: {
     'bangladesh': { name: 'Bangladesh', code: 'BD' },
     'india': { name: 'India', code: 'IN' },
     'uae': { name: 'United Arab Emirates', code: 'AE' },
     'thailand': { name: 'Thailand', code: 'TH' },
-    'niger': { name: 'Niger (West African)', code: 'NE' },
+    'niger': { name: 'Niger', code: 'NE' },
     'argentina': { name: 'Argentina', code: 'AR' },
     'ireland': { name: 'Ireland', code: 'IE' },
     'malta': { name: 'Malta', code: 'MT' },
@@ -124,30 +121,8 @@ const ENTERPRISE_GEO_REGISTRY = {
   }
 };
 
-// =========================================================================
-// GEO INTELLIGENCE ENGINE (kept for distance calculation if needed)
-// =========================================================================
+// ==================== জিও ইন্টেলিজেন্স (ঠিকানা থেকে বিভাগ/জেলা বের করতে) ====================
 class GeoIntelligenceEngine {
-  static calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }
-
-  static normalizeQueryLocation(term, type) {
-    if (!term) return '';
-    const clean = term.trim().toLowerCase();
-    const target = type === 'division' ? ENTERPRISE_GEO_REGISTRY.divisions : ENTERPRISE_GEO_REGISTRY.districts;
-    for (const [key, node] of Object.entries(target)) {
-      if (node.aliases && node.aliases.includes(clean)) return key;
-      if (node.name && node.name.toLowerCase() === clean) return key;
-    }
-    return clean;
-  }
-
   static extractDivisionFromAddress(address, country) {
     if (!address) return '';
     const lower = address.toLowerCase();
@@ -174,490 +149,10 @@ class GeoIntelligenceEngine {
   }
 }
 
-// =========================================================================
-// API CONFIGURATIONS (only the best & most popular APIs with pagination)
-// =========================================================================
+// ==================== এনরিচমেন্ট API কনফিগারেশন (শুধু wrangler.toml-এর কী) ====================
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 const API_CONFIG = {
-  google: {
-    name: 'Google Places API',
-    active: true,
-    fetch: async function(query, env, pageToken = null) {
-      const key = env.GOOGLE_PLACES_API_KEY;
-      if (!key || key === 'YOUR_GOOGLE_API_KEY') return [];
-      try {
-        let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${key}`;
-        if (pageToken) url += `&pagetoken=${pageToken}`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (data.status !== 'OK') return [];
-        let results = data.results.map(place => ({
-          source: 'google',
-          id: `google_${place.place_id}`,
-          name: place.name,
-          address: place.formatted_address || '',
-          lat: place.geometry.location.lat,
-          lng: place.geometry.location.lng,
-          phone: place.formatted_phone_number || '',
-          website: place.website || '',
-          types: place.types || [],
-          confidence: 75
-        }));
-        if (data.next_page_token && results.length < 50) {
-          await sleep(2000);
-          const next = await this.fetch(query, env, data.next_page_token);
-          results = results.concat(next);
-        }
-        return results;
-      } catch (e) { return []; }
-    }
-  },
-  osm: {
-    name: 'OpenStreetMap',
-    active: true,
-    fetch: async (query) => {
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=20`;
-        const resp = await fetch(url, { headers: { 'User-Agent': 'BusinessFinder/1.0' } });
-        const data = await resp.json();
-        if (!Array.isArray(data)) return [];
-        return data.map(item => ({
-          source: 'osm',
-          id: `osm_${item.osm_type}_${item.osm_id}`,
-          name: item.display_name.split(',')[0],
-          address: item.display_name,
-          lat: parseFloat(item.lat),
-          lng: parseFloat(item.lon),
-          phone: '',
-          website: '',
-          types: [item.class],
-          confidence: 50
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  foursquare: {
-    name: 'Foursquare',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.FOURSQUARE_API_KEY;
-      if (!key || key === 'YOUR_FOURSQUARE_API_KEY') return [];
-      try {
-        const url = `https://api.foursquare.com/v3/places/search?query=${encodeURIComponent(query)}&limit=20`;
-        const resp = await fetch(url, { headers: { 'Authorization': key } });
-        const data = await resp.json();
-        if (!data.results) return [];
-        return data.results.map(place => ({
-          source: 'foursquare',
-          id: `fsq_${place.fsq_id}`,
-          name: place.name,
-          address: place.location?.formatted_address || '',
-          lat: place.geocodes?.main?.latitude || 0,
-          lng: place.geocodes?.main?.longitude || 0,
-          phone: place.tel || '',
-          website: place.website || '',
-          types: place.categories?.map(c => c.name) || [],
-          confidence: 65
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  yelp: {
-    name: 'Yelp',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.YELP_API_KEY;
-      if (!key || key === 'YOUR_YELP_API_KEY') return [];
-      try {
-        const url = `https://api.yelp.com/v3/businesses/search?term=${encodeURIComponent(query)}&limit=20`;
-        const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${key}` } });
-        const data = await resp.json();
-        if (!data.businesses) return [];
-        return data.businesses.map(biz => ({
-          source: 'yelp',
-          id: `yelp_${biz.id}`,
-          name: biz.name,
-          address: biz.location?.address1 || '',
-          lat: biz.coordinates?.latitude || 0,
-          lng: biz.coordinates?.longitude || 0,
-          phone: biz.phone || '',
-          website: biz.url || '',
-          types: biz.categories?.map(c => c.title) || [],
-          confidence: 70
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  tomtom: {
-    name: 'TomTom',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.TOMTOM_API_KEY;
-      if (!key || key === 'YOUR_TOMTOM_API_KEY') return [];
-      try {
-        const url = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${key}&limit=20`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data.results) return [];
-        return data.results.map(item => ({
-          source: 'tomtom',
-          id: `tomtom_${item.id}`,
-          name: item.poi?.name || item.address?.streetName || 'Unknown',
-          address: item.address?.freeformAddress || '',
-          lat: item.position?.lat || 0,
-          lng: item.position?.lon || 0,
-          phone: '',
-          website: '',
-          types: item.poi?.categorySet?.map(c => c.name) || [],
-          confidence: 60
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  mapbox: {
-    name: 'Mapbox',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.MAPBOX_API_KEY;
-      if (!key || key === 'YOUR_MAPBOX_API_KEY') return [];
-      try {
-        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${key}&limit=10`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data.features) return [];
-        return data.features.slice(0, 10).map(f => ({
-          source: 'mapbox',
-          id: `mbx_${f.id}`,
-          name: f.place_name || query,
-          address: f.place_name || '',
-          lat: f.center?.[1] || 0,
-          lng: f.center?.[0] || 0,
-          phone: '',
-          website: '',
-          types: ['geocode'],
-          confidence: 65
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  opencage: {
-    name: 'OpenCage',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.OPENCAGE_API_KEY;
-      if (!key || key === 'YOUR_OPENCAGE_API_KEY') return [];
-      try {
-        const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=${key}&limit=10`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data.results) return [];
-        return data.results.map(r => ({
-          source: 'opencage',
-          id: `oc_${r.annotations?.geohash || Date.now()}`,
-          name: r.components?.city || query,
-          address: r.formatted || '',
-          lat: r.geometry?.lat || 0,
-          lng: r.geometry?.lng || 0,
-          phone: '',
-          website: '',
-          types: ['geocode'],
-          confidence: 65
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  locationiq: {
-    name: 'LocationIQ',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.LOCATIONIQ_API_KEY;
-      if (!key || key === 'YOUR_LOCATIONIQ_API_KEY') return [];
-      try {
-        const url = `https://us1.locationiq.com/v1/search.php?key=${key}&q=${encodeURIComponent(query)}&format=json&limit=10`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!Array.isArray(data)) return [];
-        return data.slice(0, 10).map(item => ({
-          source: 'locationiq',
-          id: `liq_${item.place_id}`,
-          name: item.display_name.split(',')[0] || query,
-          address: item.display_name || '',
-          lat: item.lat || 0,
-          lng: item.lon || 0,
-          phone: '',
-          website: '',
-          types: ['geocode'],
-          confidence: 60
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  here: {
-    name: 'HERE Maps',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.HERE_API_KEY;
-      if (!key || key === 'YOUR_HERE_API_KEY') return [];
-      try {
-        const url = `https://discover.search.hereapi.com/v1/discover?q=${encodeURIComponent(query)}&apiKey=${key}&limit=10`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data.items) return [];
-        return data.items.slice(0, 10).map(item => ({
-          source: 'here',
-          id: `here_${item.id}`,
-          name: item.title || query,
-          address: item.address?.label || '',
-          lat: item.position?.lat || 0,
-          lng: item.position?.lng || 0,
-          phone: '',
-          website: '',
-          types: ['place'],
-          confidence: 65
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  geoapify: {
-    name: 'Geoapify',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.GEOAPIFY_API_KEY;
-      if (!key || key === 'YOUR_GEOAPIFY_API_KEY') return [];
-      try {
-        const url = `https://api.geoapify.com/v2/places?text=${encodeURIComponent(query)}&apiKey=${key}&limit=10`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data.features) return [];
-        return data.features.slice(0, 10).map(f => ({
-          source: 'geoapify',
-          id: `gpf_${f.properties?.place_id}`,
-          name: f.properties?.name || query,
-          address: f.properties?.formatted || '',
-          lat: f.geometry?.coordinates?.[1] || 0,
-          lng: f.geometry?.coordinates?.[0] || 0,
-          phone: '',
-          website: '',
-          types: f.properties?.categories || [],
-          confidence: 65
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  positionstack: {
-    name: 'PositionStack',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.POSITIONSTACK_API_KEY;
-      if (!key || key === 'YOUR_POSITIONSTACK_API_KEY') return [];
-      try {
-        const url = `http://api.positionstack.com/v1/forward?access_key=${key}&query=${encodeURIComponent(query)}&limit=10`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data.data) return [];
-        return data.data.map(item => ({
-          source: 'positionstack',
-          id: `ps_${item.latitude}_${item.longitude}`,
-          name: item.label || query,
-          address: item.label || '',
-          lat: item.latitude || 0,
-          lng: item.longitude || 0,
-          phone: '',
-          website: '',
-          types: ['geocode'],
-          confidence: 60
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  radar: {
-    name: 'Radar',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.RADAR_API_KEY;
-      if (!key || key === 'YOUR_RADAR_API_KEY') return [];
-      try {
-        const url = `https://api.radar.io/v1/geocode/forward?query=${encodeURIComponent(query)}`;
-        const resp = await fetch(url, { headers: { 'Authorization': key } });
-        const data = await resp.json();
-        if (!data.addresses) return [];
-        return data.addresses.slice(0, 10).map(a => ({
-          source: 'radar',
-          id: `rd_${a.id}`,
-          name: a.addressLabel || query,
-          address: a.formattedAddress || '',
-          lat: a.latitude || 0,
-          lng: a.longitude || 0,
-          phone: '',
-          website: '',
-          types: ['geocode'],
-          confidence: 60
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  graphhopper: {
-    name: 'GraphHopper',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.GRAPHHOPPER_API_KEY;
-      if (!key || key === 'YOUR_GRAPHHOPPER_API_KEY') return [];
-      try {
-        const url = `https://graphhopper.com/api/1/geocode?q=${encodeURIComponent(query)}&key=${key}&limit=10`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data.hits) return [];
-        return data.hits.slice(0, 10).map(h => ({
-          source: 'graphhopper',
-          id: `gh_${h.point?.lat || Date.now()}`,
-          name: h.name || query,
-          address: h.country || '',
-          lat: h.point?.lat || 0,
-          lng: h.point?.lng || 0,
-          phone: '',
-          website: '',
-          types: ['geocode'],
-          confidence: 60
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  openrouteservice: {
-    name: 'OpenRouteService',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.OPENROUTESERVICE_API_KEY;
-      if (!key || key === 'YOUR_OPENROUTESERVICE_API_KEY') return [];
-      try {
-        const url = `https://api.openrouteservice.org/geocode/search?api_key=${key}&text=${encodeURIComponent(query)}&size=10`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data.features) return [];
-        return data.features.slice(0, 10).map(f => ({
-          source: 'openrouteservice',
-          id: `ors_${f.properties?.id}`,
-          name: f.properties?.name || query,
-          address: f.properties?.label || '',
-          lat: f.geometry?.coordinates?.[1] || 0,
-          lng: f.geometry?.coordinates?.[0] || 0,
-          phone: '',
-          website: '',
-          types: ['geocode'],
-          confidence: 60
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  azure_maps: {
-    name: 'Azure Maps',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.AZURE_MAPS_API_KEY;
-      if (!key || key === 'YOUR_AZURE_MAPS_API_KEY') return [];
-      try {
-        const url = `https://atlas.microsoft.com/search/poi/json?api-version=1.0&query=${encodeURIComponent(query)}&subscription-key=${key}&limit=10`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data.results) return [];
-        return data.results.slice(0, 10).map(r => ({
-          source: 'azure_maps',
-          id: `az_${r.id}`,
-          name: r.poi?.name || 'Unknown',
-          address: r.address?.freeformAddress || '',
-          lat: r.position?.lat || 0,
-          lng: r.position?.lon || 0,
-          phone: r.poi?.phone || '',
-          website: '',
-          types: ['place'],
-          confidence: 60
-        }));
-      } catch (e) { return []; }
-    }
-  },
-  ipapi: {
-    name: 'ip-api.com',
-    active: true,
-    fetch: async (query) => {
-      try {
-        const url = `http://ip-api.com/json/${encodeURIComponent(query)}?fields=status,message,country,regionName,city,lat,lon`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (data.status === 'success') {
-          return [{
-            source: 'ipapi',
-            id: `ipa_${Date.now()}`,
-            name: data.city || query,
-            address: `${data.regionName}, ${data.country}`.trim(),
-            lat: data.lat || 0,
-            lng: data.lon || 0,
-            phone: '',
-            website: '',
-            types: ['location'],
-            confidence: 50
-          }];
-        }
-        return [];
-      } catch (e) { return []; }
-    }
-  },
-  ipinfo: {
-    name: 'ipinfo.io',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.IPINFO_API_KEY;
-      if (!key || key === 'YOUR_IPINFO_API_KEY') return [];
-      try {
-        const url = `https://ipinfo.io/${encodeURIComponent(query)}/json?token=${key}`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (data.loc) {
-          const coords = data.loc.split(',');
-          return [{
-            source: 'ipinfo',
-            id: `ipi_${Date.now()}`,
-            name: data.city || query,
-            address: `${data.region}, ${data.country}`.trim(),
-            lat: parseFloat(coords[0]) || 0,
-            lng: parseFloat(coords[1]) || 0,
-            phone: '',
-            website: '',
-            types: ['location'],
-            confidence: 55
-          }];
-        }
-        return [];
-      } catch (e) { return []; }
-    }
-  },
-  ipwhois: {
-    name: 'ipwhois',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.IPWHOIS_API_KEY;
-      if (!key || key === 'YOUR_IPWHOIS_API_KEY') return [];
-      try {
-        const url = `https://ipwhois.app/api/v2?ip=${encodeURIComponent(query)}&key=${key}`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (data.latitude) {
-          return [{
-            source: 'ipwhois',
-            id: `ipw_${Date.now()}`,
-            name: data.city || query,
-            address: `${data.region}, ${data.country}`.trim(),
-            lat: data.latitude || 0,
-            lng: data.longitude || 0,
-            phone: '',
-            website: '',
-            types: ['location'],
-            confidence: 50
-          }];
-        }
-        return [];
-      } catch (e) { return []; }
-    }
-  },
   hunter: {
     name: 'Hunter.io',
     active: true,
@@ -665,17 +160,20 @@ const API_CONFIG = {
       const key = env.HUNTER_API_KEY;
       if (!key || key === 'YOUR_HUNTER_API_KEY') return [];
       try {
-        const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(query)}&api_key=${key}`;
+        // query হতে ডোমেইন বের করার চেষ্টা (যদি ইমেইল বা ডোমেইন দেওয়া থাকে)
+        let domain = query.trim().toLowerCase();
+        if (domain.includes('@')) domain = domain.split('@')[1];
+        if (!domain.includes('.')) return [];
+        const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${key}`;
         const resp = await fetch(url);
         const data = await resp.json();
         if (!data.data?.emails) return [];
         return data.data.emails.slice(0, 10).map(e => ({
           source: 'hunter',
           id: `hnt_${e.value}`,
-          name: e.first_name || e.value,
+          name: e.first_name ? `${e.first_name} ${e.last_name || ''}`.trim() : e.value,
           address: e.domain || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
           email: e.value,
           phone: '',
           website: e.domain || '',
@@ -701,8 +199,8 @@ const API_CONFIG = {
           id: `clb_${c.domain}`,
           name: c.name || query,
           address: c.location || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
+          email: '',
           phone: '',
           website: c.domain || '',
           types: ['business'],
@@ -727,8 +225,8 @@ const API_CONFIG = {
           id: `apollo_${p.id}`,
           name: p.name || 'Unknown',
           address: p.location || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
+          email: p.email || '',
           phone: p.phone || '',
           website: p.website || '',
           types: ['business'],
@@ -753,8 +251,8 @@ const API_CONFIG = {
           id: `zi_${c.id}`,
           name: c.name || query,
           address: c.location || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
+          email: '',
           phone: c.phone || '',
           website: c.website || '',
           types: ['b2b'],
@@ -779,8 +277,8 @@ const API_CONFIG = {
           id: `up_${r.id}`,
           name: r.name || query,
           address: r.location || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
+          email: r.email || '',
           phone: r.phone || '',
           website: r.website || '',
           types: ['b2b'],
@@ -805,8 +303,8 @@ const API_CONFIG = {
           id: `si_${r.id}`,
           name: r.name || query,
           address: r.location || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
+          email: r.email || '',
           phone: r.phone || '',
           website: r.website || '',
           types: ['b2b'],
@@ -831,8 +329,8 @@ const API_CONFIG = {
           id: `pdl_${p.id}`,
           name: p.full_name || query,
           address: p.location || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
+          email: p.email || '',
           phone: p.phone || '',
           website: p.company_website || '',
           types: ['profile'],
@@ -857,8 +355,8 @@ const API_CONFIG = {
           id: `pc_${r.id}`,
           name: r.name || query,
           address: r.location || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
+          email: r.email || '',
           phone: r.phone || '',
           website: r.website || '',
           types: ['linkedin'],
@@ -883,8 +381,8 @@ const API_CONFIG = {
           id: `rr_${p.id}`,
           name: p.name || query,
           address: p.location || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
+          email: p.email || '',
           phone: p.phone || '',
           website: p.website || '',
           types: ['b2b'],
@@ -909,8 +407,8 @@ const API_CONFIG = {
           id: `lu_${r.id}`,
           name: r.name || query,
           address: r.location || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
+          email: r.email || '',
           phone: r.phone || '',
           website: r.company || '',
           types: ['b2b'],
@@ -935,8 +433,8 @@ const API_CONFIG = {
           id: `kp_${r.id}`,
           name: r.name || query,
           address: r.location || '',
-          lat: 0,
-          lng: 0,
+          lat: 0, lng: 0,
+          email: r.email || '',
           phone: r.phone || '',
           website: r.company || '',
           types: ['linkedin'],
@@ -944,38 +442,10 @@ const API_CONFIG = {
         }));
       } catch (e) { return []; }
     }
-  },
-  serpapi: {
-    name: 'SerpAPI',
-    active: true,
-    fetch: async (query, env) => {
-      const key = env.SERPAPI_API_KEY;
-      if (!key || key === 'YOUR_SERPAPI_API_KEY') return [];
-      try {
-        const url = `https://serpapi.com/search.json?q=${encodeURIComponent(query)}&api_key=${key}&engine=google&num=10`;
-        const resp = await fetch(url);
-        const data = await resp.json();
-        if (!data.organic_results) return [];
-        return data.organic_results.slice(0, 10).map(r => ({
-          source: 'serpapi',
-          id: `serp_${r.position}`,
-          name: r.title || query,
-          address: r.snippet || '',
-          lat: 0,
-          lng: 0,
-          phone: '',
-          website: r.link || '',
-          types: ['web'],
-          confidence: 50
-        }));
-      } catch (e) { return []; }
-    }
   }
 };
 
-// =========================================================================
-// BATCH FETCH ENGINE - generates profiles from all APIs for a country
-// =========================================================================
+// ==================== সব API থেকে ডেটা ফেচ ====================
 async function fetchFromAllAPIs(query, env) {
   const activeAPIs = Object.values(API_CONFIG).filter(api => api.active);
   const results = [];
@@ -989,47 +459,12 @@ async function fetchFromAllAPIs(query, env) {
   return results;
 }
 
-async function fetchAllLocationsForCountry(country, env) {
-  const allTerms = [];
-  allTerms.push(country);
-  const divisions = Object.entries(ENTERPRISE_GEO_REGISTRY.divisions)
-    .filter(([_, val]) => val.country === country)
-    .map(([key]) => key);
-  allTerms.push(...divisions);
-  for (const div of divisions) {
-    const districts = Object.entries(ENTERPRISE_GEO_REGISTRY.districts)
-      .filter(([_, val]) => val.division === div)
-      .map(([key]) => key);
-    allTerms.push(...districts);
-  }
-  // Removed thana loop entirely
-  const categories = ['restaurant', 'hotel', 'business', 'company', 'shop', 'school', 'hospital', 'cafe', 'gym', 'spa'];
-  const finalTerms = [];
-  for (const term of allTerms) {
-    finalTerms.push(term);
-    for (const cat of categories) {
-      finalTerms.push(`${cat} ${term}`);
-      finalTerms.push(`${term} ${cat}`);
-    }
-  }
-  const uniqueTerms = [...new Set(finalTerms)].slice(0, 200);
-  let allItems = [];
-  for (const term of uniqueTerms) {
-    const items = await fetchFromAllAPIs(term, env);
-    if (items.length) allItems = allItems.concat(items);
-    await sleep(300);
-  }
-  return allItems;
-}
-
-// =========================================================================
-// NORMALIZE & INSERT (without thana)
-// =========================================================================
+// ==================== ডেটাবেসে ইনসার্ট (থানা বাদ) ====================
 async function normalizeAndInsertProfiles(rawItems, env, country) {
   let inserted = 0;
   let skipped = 0;
   for (const item of rawItems) {
-    if (!item.name || (!item.lat && item.source !== 'hunter' && item.source !== 'clearbit' && item.source !== 'apollo' && item.source !== 'zoominfo' && item.source !== 'uplead' && item.source !== 'salesintel' && item.source !== 'pdl' && item.source !== 'proxycurl' && item.source !== 'rocketreach' && item.source !== 'lusha' && item.source !== 'kaspr' && item.source !== 'serpapi')) {
+    if (!item.name) {
       skipped++;
       continue;
     }
@@ -1043,7 +478,7 @@ async function normalizeAndInsertProfiles(rawItems, env, country) {
       SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       WHERE NOT EXISTS (
         SELECT 1 FROM profiles 
-        WHERE name = ? AND lat = ? AND lng = ?
+        WHERE name = ? AND email = ? AND phone = ?
       )
     `;
     const params = [
@@ -1053,7 +488,7 @@ async function normalizeAndInsertProfiles(rawItems, env, country) {
       country,
       division || '',
       district || '',
-      '', // thana left empty
+      '', // thana খালি
       item.lat || 0,
       item.lng || 0,
       item.email || '',
@@ -1063,8 +498,8 @@ async function normalizeAndInsertProfiles(rawItems, env, country) {
       item.confidence || 60,
       'UNVERIFIED',
       item.name.substring(0, 100),
-      item.lat || 0,
-      item.lng || 0
+      item.email || '',
+      item.phone || ''
     ];
     try {
       const result = await env.DB.prepare(query).bind(...params).run();
@@ -1074,9 +509,7 @@ async function normalizeAndInsertProfiles(rawItems, env, country) {
   return inserted;
 }
 
-// =========================================================================
-// CLOUDFLARE WORKER HANDLER (with simplified search mode)
-// =========================================================================
+// ==================== ক্লাউডফ্লেয়ার ওয়ার্কার হ্যান্ডলার ====================
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -1093,23 +526,7 @@ export async function onRequest(context) {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // --- CRON endpoint (no auth) ---
-  if (action === 'cronFetch') {
-    if (!env.DB) return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
-    const countries = Object.keys(ENTERPRISE_GEO_REGISTRY.countries);
-    let totalInserted = 0;
-    for (const c of countries) {
-      const rawItems = await fetchAllLocationsForCountry(c, env);
-      if (rawItems.length) {
-        const inserted = await normalizeAndInsertProfiles(rawItems, env, c);
-        totalInserted += inserted;
-      }
-      await sleep(1000);
-    }
-    return jsonResponse({ success: true, message: `Cron fetch completed. Inserted ${totalInserted} new profiles.` }, 200, corsHeaders);
-  }
-
-  // --- Regular auth check for other endpoints ---
+  // --- অথেনটিকেশন (JWT) ---
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return jsonResponse({ success: false, error: 'Unauthorized' }, 401, corsHeaders);
@@ -1147,31 +564,7 @@ export async function onRequest(context) {
       return jsonResponse({ success: true, districts: filtered }, 200, corsHeaders);
     }
 
-    // ----- getThanas removed -----
-
-    // ----- verifyProfile (kept but not used in simplified UI) -----
-    if (action === 'verifyProfile') {
-      return jsonResponse({ success: false, error: 'Not implemented in simplified version' }, 400, corsHeaders);
-    }
-
-    // ----- batchFetchAll (manual trigger) -----
-    if (action === 'batchFetchAll') {
-      if (!env.DB) return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
-      const country = searchParams.get('country') || 'all';
-      const countries = country === 'all' ? Object.keys(ENTERPRISE_GEO_REGISTRY.countries) : [country];
-      let totalInserted = 0;
-      for (const c of countries) {
-        const rawItems = await fetchAllLocationsForCountry(c, env);
-        if (rawItems.length) {
-          const inserted = await normalizeAndInsertProfiles(rawItems, env, c);
-          totalInserted += inserted;
-        }
-        await sleep(1000);
-      }
-      return jsonResponse({ success: true, message: `Batch fetch completed. Inserted ${totalInserted} new profiles.` }, 200, corsHeaders);
-    }
-
-    // ----- SEARCH (with mode parameter and targeted keyword) -----
+    // ----- search (মূল ফিচার) -----
     if (action === 'search') {
       if (!env.DB) return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
 
@@ -1183,7 +576,6 @@ export async function onRequest(context) {
       const page = parseInt(searchParams.get('page') || '1', 10);
       const limit = parseInt(searchParams.get('limit') || '25', 10);
       const offset = (page - 1) * limit;
-
       const mode = searchParams.get('mode') || 'live';
 
       const conditions = [];
@@ -1199,15 +591,14 @@ export async function onRequest(context) {
       const countResult = await env.DB.prepare(countQuery).bind(...params).first();
       let totalRecords = countResult ? countResult.total : 0;
 
-      // Auto-fetch ONLY if mode is live and we have a specific query and few records
+      // যদি live mode হয় এবং রেকর্ড কম থাকে এবং queryTerm থাকে, তাহলে API থেকে ডেটা এনে সেভ করি
       if (mode !== 'db' && totalRecords < 10 && country && queryTerm && queryTerm.trim().length > 0) {
-        // Build a targeted query: e.g., "Software Company in Dhaka, Bangladesh"
         const locationParts = [district, division, country].filter(Boolean);
         const targetedQuery = `${queryTerm} in ${locationParts.join(', ')}`;
         const rawItems = await fetchFromAllAPIs(targetedQuery, env);
         if (rawItems.length) {
           await normalizeAndInsertProfiles(rawItems, env, country);
-          // Re-count after insertion
+          // পুনরায় কাউন্ট করি
           const newCount = await env.DB.prepare(countQuery).bind(...params).first();
           totalRecords = newCount ? newCount.total : 0;
         }
@@ -1232,7 +623,7 @@ export async function onRequest(context) {
         country: p.country,
         division: p.division,
         district: p.district,
-        thana: p.thana, // will be empty in most cases
+        thana: p.thana,
         lat: p.lat,
         lng: p.lng,
         email: p.email || '',
@@ -1251,6 +642,11 @@ export async function onRequest(context) {
         meta: { totalRecords, page, limit, totalPages: Math.ceil(totalRecords / limit) },
         contacts
       }, 200, corsHeaders);
+    }
+
+    // ----- অন্যান্য অ্যাকশন (cronFetch, batchFetchAll, verifyProfile) নিষ্ক্রিয় -----
+    if (['cronFetch', 'batchFetchAll', 'verifyProfile'].includes(action)) {
+      return jsonResponse({ success: false, error: 'This action is disabled in the simplified version.' }, 400, corsHeaders);
     }
 
     return jsonResponse({ success: false, error: 'Invalid action' }, 400, corsHeaders);
