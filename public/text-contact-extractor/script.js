@@ -38,6 +38,7 @@
   let filteredData = [];
   let currentPage = 1;
   const pageSize = 50;
+  let selectedFile = null; // ✅ নতুন ভেরিয়েবল: ফাইল অবজেক্ট সংরক্ষণের জন্য
 
   // ========== Helpers ==========
   function updateCharWordCount() {
@@ -215,12 +216,12 @@
     fileName.textContent = file.name;
     fileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
     processFileBtn.disabled = false;
-    processFileBtn.dataset.file = file;
+    // ফাইল অবজেক্টটি dataset-এ না রেখে ভেরিয়েবলে রাখা হচ্ছে
+    selectedFile = file;
   }
 
   processFileBtn.addEventListener('click', () => {
-    const file = processFileBtn.dataset.file;
-    if (file) extractFromFile(file);
+    if (selectedFile) extractFromFile(selectedFile);
   });
 
   // Text extraction
