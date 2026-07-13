@@ -1,10 +1,10 @@
 /**
  * Smart Contact Finder – Core API (Simplified)
- * শুধুমাত্র wrangler.toml-এর কীগুলো ব্যবহার করে।
- * ConfidenceScore বাদ, শুধু email/phone থাকলেই ডেটাবেসে সেভ হয়।
+ * Mode: api → only external APIs, no DB save
+ * Mode: db  → only D1 database query, no API call
  */
 
-// ==================== JWT ভেরিফিকেশন ====================
+// ==================== JWT VERIFICATION ====================
 function base64UrlToBuffer(str) {
   str = str.replace(/-/g, '+').replace(/_/g, '/');
   while (str.length % 4) str += '=';
@@ -44,7 +44,7 @@ async function verifyJWT(token, secret) {
   }
 }
 
-// ==================== জিও রেজিস্ট্রি ====================
+// ==================== GEO REGISTRY ====================
 const ENTERPRISE_GEO_REGISTRY = {
   countries: {
     'bangladesh': { name: 'Bangladesh', code: 'BD' },
@@ -121,7 +121,7 @@ const ENTERPRISE_GEO_REGISTRY = {
   }
 };
 
-// ==================== জিও ইন্টেলিজেন্স ====================
+// ==================== GEO INTELLIGENCE ====================
 class GeoIntelligenceEngine {
   static extractDivisionFromAddress(address, country) {
     if (!address) return '';
@@ -149,7 +149,7 @@ class GeoIntelligenceEngine {
   }
 }
 
-// ==================== এনরিচমেন্ট API (confidence বাদ) ====================
+// ==================== ENRICHMENT APIs ====================
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 const API_CONFIG = {
@@ -433,7 +433,6 @@ const API_CONFIG = {
   }
 };
 
-// ==================== সব API থেকে ডেটা ফেচ ====================
 async function fetchFromAllAPIs(query, env) {
   const activeAPIs = Object.values(API_CONFIG).filter(api => api.active);
   const results = [];
@@ -447,66 +446,7 @@ async function fetchFromAllAPIs(query, env) {
   return results;
 }
 
-// ==================== ডেটাবেসে ইনসার্ট (শুধু email/phone থাকলেই) ====================
-async function normalizeAndInsertProfiles(rawItems, env, country) {
-  let inserted = 0;
-  let skipped = 0;
-  for (const item of rawItems) {
-    // শুধুমাত্র যাদের email অথবা phone আছে তাদের সেভ করব
-    if (!item.email && !item.phone) {
-      skipped++;
-      continue;
-    }
-    if (!item.name) {
-      skipped++;
-      continue;
-    }
-
-    const division = GeoIntelligenceEngine.extractDivisionFromAddress(item.address, country) || '';
-    const district = GeoIntelligenceEngine.extractDistrictFromAddress(item.address, country) || '';
-    const entityType = (item.types && item.types.some(t => ['restaurant', 'hotel', 'spa', 'tourism', 'food', 'cafe', 'gym'].includes(t))) ? 'SERVICE' : 'BUSINESS';
-
-    // ডুপ্লিকেট চেক: নাম, ইমেইল এবং ফোনের সংমিশ্রণে
-    const query = `
-      INSERT OR IGNORE INTO profiles 
-      (id, name, entityType, country, division, district, thana, lat, lng, email, phone, whatsapp, social, verificationStatus)
-      SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-      WHERE NOT EXISTS (
-        SELECT 1 FROM profiles 
-        WHERE name = ? AND email = ? AND phone = ?
-      )
-    `;
-    const params = [
-      item.id,
-      item.name.substring(0, 100),
-      entityType,
-      country,
-      division || '',
-      district || '',
-      '', // thana খালি
-      item.lat || 0,
-      item.lng || 0,
-      item.email || '',
-      item.phone || '',
-      '', // whatsapp
-      item.website || '', // social হিসেবে website সংরক্ষণ
-      'UNVERIFIED',
-      item.name.substring(0, 100),
-      item.email || '',
-      item.phone || ''
-    ];
-    try {
-      const result = await env.DB.prepare(query).bind(...params).run();
-      if (result.meta?.changes > 0) inserted++;
-    } catch (e) {
-      // duplicate বা অন্য কোনো error এ skip
-      skipped++;
-    }
-  }
-  return inserted;
-}
-
-// ==================== ক্লাউডফ্লেয়ার ওয়ার্কার হ্যান্ডলার ====================
+// ==================== CLOUDFLARE WORKER HANDLER ====================
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -523,7 +463,7 @@ export async function onRequest(context) {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // --- অথেনটিকেশন (JWT) ---
+  // --- AUTHENTICATION ---
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return jsonResponse({ success: false, error: 'Unauthorized' }, 401, corsHeaders);
@@ -561,10 +501,10 @@ export async function onRequest(context) {
       return jsonResponse({ success: true, districts: filtered }, 200, corsHeaders);
     }
 
-    // ----- search (মূল ফিচার) -----
+    // ============================================================
+    //  SEARCH – two modes: api / db
+    // ============================================================
     if (action === 'search') {
-      if (!env.DB) return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
-
       const queryTerm = searchParams.get('query') || '';
       const country = searchParams.get('country') || 'bangladesh';
       const division = searchParams.get('division') || '';
@@ -573,74 +513,111 @@ export async function onRequest(context) {
       const page = parseInt(searchParams.get('page') || '1', 10);
       const limit = parseInt(searchParams.get('limit') || '25', 10);
       const offset = (page - 1) * limit;
-      const mode = searchParams.get('mode') || 'live';
+      const mode = searchParams.get('mode') || 'api';   // default api
 
-      const conditions = [];
-      const params = [];
-      if (country) { conditions.push(`country = ?`); params.push(country); }
-      if (queryTerm) { conditions.push(`(name LIKE ? OR entityType LIKE ?)`); const q = `%${queryTerm}%`; params.push(q, q); }
-      if (division) { conditions.push(`division = ?`); params.push(division); }
-      if (district) { conditions.push(`district = ?`); params.push(district); }
-      if (hasEmail) { conditions.push(`email IS NOT NULL AND email != ''`); }
-
-      let whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-      const countQuery = `SELECT COUNT(*) as total FROM profiles ${whereClause}`;
-      const countResult = await env.DB.prepare(countQuery).bind(...params).first();
-      let totalRecords = countResult ? countResult.total : 0;
-
-      // যদি live mode হয় এবং রেকর্ড কম থাকে এবং queryTerm থাকে, তাহলে API থেকে ডেটা এনে সেভ করি
-      if (mode !== 'db' && totalRecords < 10 && country && queryTerm && queryTerm.trim().length > 0) {
-        const locationParts = [district, division, country].filter(Boolean);
-        const targetedQuery = `${queryTerm} in ${locationParts.join(', ')}`;
-        const rawItems = await fetchFromAllAPIs(targetedQuery, env);
-        if (rawItems.length) {
-          // শুধু email/phone থাকলেই সেভ হবে (ফাংশনের ভেতরেই চেক আছে)
-          await normalizeAndInsertProfiles(rawItems, env, country);
-          // পুনরায় কাউন্ট করি
-          const newCount = await env.DB.prepare(countQuery).bind(...params).first();
-          totalRecords = newCount ? newCount.total : 0;
+      // ---------- MODE: API ----------
+      if (mode === 'api') {
+        let rawItems = [];
+        if (queryTerm && queryTerm.trim().length > 0) {
+          const locationParts = [district, division, country].filter(Boolean);
+          const targetedQuery = locationParts.length
+            ? `${queryTerm} in ${locationParts.join(', ')}`
+            : queryTerm;
+          rawItems = await fetchFromAllAPIs(targetedQuery, env);
         }
+
+        // Transform API results to consistent format
+        const contacts = rawItems.slice(0, limit).map(item => ({
+          id: item.id || `api_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          name: item.name || 'Unknown',
+          entityType: (item.types && item.types.some(t => ['restaurant','hotel','spa','tourism','food','cafe','gym'].includes(t))) ? 'SERVICE' : 'BUSINESS',
+          country: country,
+          division: GeoIntelligenceEngine.extractDivisionFromAddress(item.address, country) || '',
+          district: GeoIntelligenceEngine.extractDistrictFromAddress(item.address, country) || '',
+          thana: '',
+          lat: item.lat || 0,
+          lng: item.lng || 0,
+          email: item.email || '',
+          phone: item.phone || '',
+          whatsapp: '',
+          social: item.website || '',
+          source: item.source || 'api',
+          address: item.address || '',
+          website: item.website || ''
+        }));
+
+        const totalRecords = contacts.length;
+        const totalPages = Math.ceil(totalRecords / limit) || 1;
+
+        return jsonResponse({
+          success: true,
+          meta: { totalRecords, page, limit, totalPages },
+          contacts
+        }, 200, corsHeaders);
       }
 
-      const dataQuery = `
-        SELECT id, name, entityType, country, division, district, thana, lat, lng,
-               email, phone, whatsapp, social,
-               '' as source, '' as address, '' as website
-        FROM profiles
-        ${whereClause}
-        LIMIT ? OFFSET ?
-      `;
-      const dataParams = [...params, limit, offset];
-      const dataResult = await env.DB.prepare(dataQuery).bind(...dataParams).all();
-      let results = dataResult.results || [];
+      // ---------- MODE: DATABASE ----------
+      if (mode === 'db') {
+        if (!env.DB) {
+          return jsonResponse({ success: false, error: 'Database binding not found' }, 500, corsHeaders);
+        }
 
-      const contacts = results.map(p => ({
-        id: p.id,
-        name: p.name,
-        entityType: p.entityType,
-        country: p.country,
-        division: p.division,
-        district: p.district,
-        thana: p.thana,
-        lat: p.lat,
-        lng: p.lng,
-        email: p.email || '',
-        phone: p.phone || '',
-        whatsapp: p.whatsapp || '',
-        social: p.social || '',
-        source: p.source || 'database',
-        address: p.address || '',
-        website: p.website || ''
-      }));
+        const conditions = [];
+        const params = [];
+        if (country) { conditions.push(`country = ?`); params.push(country); }
+        if (queryTerm) { conditions.push(`(name LIKE ? OR entityType LIKE ?)`); const q = `%${queryTerm}%`; params.push(q, q); }
+        if (division) { conditions.push(`division = ?`); params.push(division); }
+        if (district) { conditions.push(`district = ?`); params.push(district); }
+        if (hasEmail) { conditions.push(`email IS NOT NULL AND email != ''`); }
 
-      return jsonResponse({
-        success: true,
-        meta: { totalRecords, page, limit, totalPages: Math.ceil(totalRecords / limit) },
-        contacts
-      }, 200, corsHeaders);
+        let whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+        const countQuery = `SELECT COUNT(*) as total FROM profiles ${whereClause}`;
+        const countResult = await env.DB.prepare(countQuery).bind(...params).first();
+        let totalRecords = countResult ? countResult.total : 0;
+
+        const dataQuery = `
+          SELECT id, name, entityType, country, division, district, thana, lat, lng,
+                 email, phone, whatsapp, social,
+                 '' as source, '' as address, '' as website
+          FROM profiles
+          ${whereClause}
+          LIMIT ? OFFSET ?
+        `;
+        const dataParams = [...params, limit, offset];
+        const dataResult = await env.DB.prepare(dataQuery).bind(...dataParams).all();
+        let results = dataResult.results || [];
+
+        const contacts = results.map(p => ({
+          id: p.id,
+          name: p.name,
+          entityType: p.entityType,
+          country: p.country,
+          division: p.division,
+          district: p.district,
+          thana: p.thana,
+          lat: p.lat,
+          lng: p.lng,
+          email: p.email || '',
+          phone: p.phone || '',
+          whatsapp: p.whatsapp || '',
+          social: p.social || '',
+          source: 'database',
+          address: p.address || '',
+          website: p.website || ''
+        }));
+
+        return jsonResponse({
+          success: true,
+          meta: { totalRecords, page, limit, totalPages: Math.ceil(totalRecords / limit) },
+          contacts
+        }, 200, corsHeaders);
+      }
+
+      // invalid mode
+      return jsonResponse({ success: false, error: 'Invalid mode parameter. Use "api" or "db".' }, 400, corsHeaders);
     }
 
-    // ----- অন্যান্য অ্যাকশন (cronFetch, batchFetchAll, verifyProfile) নিষ্ক্রিয় -----
+    // ----- other actions disabled -----
     if (['cronFetch', 'batchFetchAll', 'verifyProfile'].includes(action)) {
       return jsonResponse({ success: false, error: 'This action is disabled in the simplified version.' }, 400, corsHeaders);
     }
