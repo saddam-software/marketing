@@ -1,764 +1,337 @@
 /**
- * AI-Powered Smart People & Business Finder Platform
+ * Smart Contact Finder – Simplified Module
  * File: public/location-contact-search/script.js
- * Clean version – no debug logs, only critical errors.
- * 
- * Updated: Multi-Country support (9 countries) with dynamic hierarchy loading.
- * Updated: Verify Node feature, Export CSV, AI Query parser.
+ * Purpose: Clean, minimal logic for searching contacts with API/Database toggle.
+ * No extra logs, no metadata, no verify/export/bulk actions.
  */
 
 (function() {
     'use strict';
 
-    if (window.SmartLocationFinder) {
-        return;
+    // ==================== DOM REFS ====================
+    const countrySelect = document.getElementById('filterCountry');
+    const divisionSelect = document.getElementById('filterDivision');
+    const districtSelect = document.getElementById('filterDistrict');
+    const hasEmailCheck = document.getElementById('filterHasEmail');
+    const executeBtn = document.getElementById('executeSearchBtn');
+    const toggle = document.getElementById('dataSourceToggle');
+    const modeIndicator = document.getElementById('modeIndicator');
+    const resultList = document.getElementById('resultList');
+    const emptyState = document.getElementById('emptyState');
+    const resultsMeta = document.getElementById('resultsMeta');
+    const resultCountBadge = document.getElementById('resultCountBadge');
+    const filterHint = document.getElementById('filterHint');
+    const paginationInfo = document.getElementById('paginationInfo');
+    const pageIndicator = document.getElementById('pageIndicator');
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+
+    // ==================== STATE ====================
+    let isDatabaseMode = false;       // false = Live API, true = Database only
+    let currentPage = 1;
+    let totalPages = 1;
+    let totalResults = 0;
+    let currentData = [];
+    const PAGE_LIMIT = 25;
+
+    // ==================== HELPERS ====================
+    function getToken() {
+        return localStorage.getItem('emailExtractorToken') || '';
     }
 
-    class SmartLocationFinder {
-        constructor() {
-            this.state = {
-                filters: {
-                    country: 'bangladesh',       // default country
-                    entityType: 'all',
-                    division: '',
-                    district: '',
-                    thana: '',
-                    radius: 0,
-                    minConfidence: 0,
-                    verificationStatus: 'all',
-                    channels: {
-                        email: false,
-                        phone: false,
-                        whatsapp: false,
-                        social: false
-                    }
-                },
-                searchQuery: '',
-                pagination: {
-                    currentPage: 1,
-                    limit: 25,
-                    totalPages: 1,
-                    totalRecords: 0
-                },
-                data: []
-            };
-            this.currentModalProfileId = null;
-            this.retryCount = 0;
-            this.maxRetries = 5;
-            this.init();
+    async function apiFetch(endpoint, options = {}) {
+        const token = getToken();
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            ...(options.headers || {})
+        };
+        const resp = await fetch(endpoint, { ...options, headers });
+        return resp.json();
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return str.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    // ==================== UI HELPERS ====================
+    function showEmpty(message, detail) {
+        resultList.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        const p1 = emptyState.querySelector('p:first-of-type');
+        const p2 = emptyState.querySelector('p:last-of-type');
+        if (p1) p1.textContent = message || 'No results';
+        if (p2) p2.textContent = detail || 'Try adjusting filters and search again.';
+        resultsMeta.textContent = message || 'No results';
+        paginationInfo.textContent = 'Showing 0';
+        pageIndicator.textContent = '0 / 0';
+        prevPageBtn.disabled = true;
+        nextPageBtn.disabled = true;
+        resultCountBadge.textContent = '0 results';
+    }
+
+    function clearResults() {
+        currentData = [];
+        totalResults = 0;
+        totalPages = 1;
+        currentPage = 1;
+        resultList.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        const p1 = emptyState.querySelector('p:first-of-type');
+        const p2 = emptyState.querySelector('p:last-of-type');
+        if (p1) p1.textContent = 'Ready to search';
+        if (p2) p2.textContent = 'Adjust filters and click Execute Smart Find';
+        resultsMeta.textContent = 'Ready';
+        paginationInfo.textContent = 'Showing 0';
+        pageIndicator.textContent = '1 / 1';
+        prevPageBtn.disabled = true;
+        nextPageBtn.disabled = true;
+        resultCountBadge.textContent = '0 results';
+    }
+
+    function renderPage() {
+        const start = (currentPage - 1) * PAGE_LIMIT;
+        const end = Math.min(start + PAGE_LIMIT, currentData.length);
+        const pageData = currentData.slice(start, end);
+
+        resultList.innerHTML = '';
+        emptyState.classList.add('hidden');
+
+        if (!pageData || pageData.length === 0) {
+            showEmpty('No results on this page.');
+            return;
         }
 
-        init() {
-            this.cacheDOM();
-            if (this.countrySelect) {
-                this.bindEvents();
-                this.loadGeoHierarchy();
-                this.updateStatsBar();
-            } else {
-                this.retryInit();
-            }
-        }
+        const hasEmail = hasEmailCheck.checked;
 
-        retryInit() {
-            if (this.retryCount >= this.maxRetries) return;
-            this.retryCount++;
-            setTimeout(() => {
-                this.cacheDOM();
-                if (this.countrySelect) {
-                    this.bindEvents();
-                    this.loadGeoHierarchy();
-                    this.updateStatsBar();
-                } else {
-                    this.retryInit();
-                }
-            }, 200);
-        }
+        pageData.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'result-card fade-in';
 
-        cacheDOM() {
-            // Country dropdown
-            this.countrySelect = document.getElementById('countrySelect');
-            this.divisionSelect = document.getElementById('divisionSelect');
-            this.districtSelect = document.getElementById('districtSelect');
-            this.thanaSelect = document.getElementById('thanaSelect');
-            this.entityTypeSelect = document.getElementById('entityTypeSelect');
-            this.geoRadiusSlider = document.getElementById('geoRadiusSlider');
-            this.radiusValueDisplay = document.getElementById('radiusValueDisplay');
-            this.confidenceScoreSlider = document.getElementById('confidenceScoreSlider');
-            this.confidenceValueDisplay = document.getElementById('confidenceValueDisplay');
-            this.verificationStatusSelect = document.getElementById('verificationStatusSelect');
-            this.hasEmailCheck = document.getElementById('hasEmailCheck');
-            this.hasPhoneCheck = document.getElementById('hasPhoneCheck');
-            this.hasWhatsappCheck = document.getElementById('hasWhatsappCheck');
-            this.hasSocialCheck = document.getElementById('hasSocialCheck');
-            this.smartNlpSearchInput = document.getElementById('smartNlpSearchInput');
-            this.clearSmartSearchBtn = document.getElementById('clearSmartSearchBtn');
-            this.searchLocationBtn = document.getElementById('searchLocationBtn');
-            this.resetAllFiltersBtn = document.getElementById('resetAllFiltersBtn');
-            this.locationResultBody = document.getElementById('locationResultBody');
-            this.locationResultCount = document.getElementById('locationResultCount');
-            this.locationResultMeta = document.getElementById('locationResultMeta');
-            this.tablePaginationWrapper = document.getElementById('tablePaginationWrapper');
-            this.paginationLimitSelect = document.getElementById('paginationLimitSelect');
-            this.prevPageBtn = document.getElementById('prevPageBtn');
-            this.nextPageBtn = document.getElementById('nextPageBtn');
-            this.currentPageNumDisplay = document.getElementById('currentPageNumDisplay');
-            this.totalPageNumDisplay = document.getElementById('totalPageNumDisplay');
-            this.masterProfileDetailsModal = document.getElementById('masterProfileDetailsModal');
-            this.closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
-            this.closeProfileModalBottomBtn = document.getElementById('closeProfileModalBottomBtn');
-            this.verifyProfileInstanceBtn = document.getElementById('verifyProfileInstanceBtn');
-            this.exportLocationCsvBtn = document.getElementById('exportLocationCsv');
-            this.aiIntentBadge = document.getElementById('aiIntentBadge');
-        }
+            // Primary contact: email if filter is on, else phone
+            const primaryContact = hasEmail ? (item.email || '') : (item.phone || '');
+            const contactLabel = hasEmail ? 'Email' : 'Phone';
+            const contactValue = primaryContact || '—';
 
-        bindEvents() {
-            // Country change -> load divisions
-            this.countrySelect?.addEventListener('change', async (e) => {
-                const country = e.target.value;
-                this.state.filters.country = country;
-                // Reset lower hierarchy
-                this.divisionSelect.innerHTML = '<option value="">— Select Division —</option>';
-                this.districtSelect.innerHTML = '<option value="">— Select District —</option>';
-                this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
-                this.districtSelect.disabled = true;
-                this.thanaSelect.disabled = true;
-                // Load divisions for the selected country
-                await this.loadDivisions(country);
-                // Automatically trigger search? Maybe not; user will click search.
-            });
+            // Build description from available fields (1-2 lines)
+            let descParts = [];
+            if (item.address) descParts.push(item.address);
+            if (item.website) descParts.push(item.website);
+            if (item.entityType) descParts.push(item.entityType);
+            if (item.division) descParts.push(item.division);
+            if (item.district) descParts.push(item.district);
+            // Also include any extra context like "Chamber time..." if present
+            if (item.description) descParts.push(item.description);
+            const description = descParts.join(' · ') || 'No additional details';
 
-            // Division change -> load districts
-            this.divisionSelect?.addEventListener('change', async (e) => {
-                const division = e.target.value;
-                this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
-                this.thanaSelect.disabled = true;
-                if (!division) {
-                    this.districtSelect.innerHTML = '<option value="">— Select District —</option>';
-                    this.districtSelect.disabled = true;
-                    return;
-                }
-                this.districtSelect.innerHTML = '<option value="">Loading districts...</option>';
-                this.districtSelect.disabled = true;
-                try {
-                    const headers = this.getAuthHeaders();
-                    const response = await fetch(`/api/finder-api/location-secret?action=getDistricts&division=${division}`, { headers });
-                    const data = await response.json();
-                    if (data.success && data.districts && data.districts.length > 0) {
-                        this.districtSelect.innerHTML = '<option value="">— Select District —</option>';
-                        data.districts.forEach(dist => {
-                            const opt = document.createElement('option');
-                            opt.value = dist.id;
-                            opt.textContent = dist.name;
-                            this.districtSelect.appendChild(opt);
-                        });
-                        this.districtSelect.disabled = false;
-                    } else {
-                        this.districtSelect.innerHTML = '<option value="">No districts found</option>';
-                        this.districtSelect.disabled = true;
-                    }
-                } catch (_) {
-                    this.districtSelect.innerHTML = '<option value="">Error loading districts</option>';
-                    this.districtSelect.disabled = true;
-                }
-            });
-
-            // District change -> load thanas
-            this.districtSelect?.addEventListener('change', async (e) => {
-                const district = e.target.value;
-                if (!district) {
-                    this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
-                    this.thanaSelect.disabled = true;
-                    return;
-                }
-                this.thanaSelect.innerHTML = '<option value="">Loading thanas...</option>';
-                this.thanaSelect.disabled = true;
-                try {
-                    const headers = this.getAuthHeaders();
-                    const response = await fetch(`/api/finder-api/location-secret?action=getThanas&district=${district}`, { headers });
-                    const data = await response.json();
-                    if (data.success && data.thanas && data.thanas.length > 0) {
-                        this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
-                        data.thanas.forEach(thana => {
-                            const opt = document.createElement('option');
-                            opt.value = thana.id;
-                            opt.textContent = thana.name;
-                            this.thanaSelect.appendChild(opt);
-                        });
-                        this.thanaSelect.disabled = false;
-                    } else {
-                        this.thanaSelect.innerHTML = '<option value="">No thanas found</option>';
-                        this.thanaSelect.disabled = true;
-                    }
-                } catch (_) {
-                    this.thanaSelect.innerHTML = '<option value="">Error loading thanas</option>';
-                    this.thanaSelect.disabled = true;
-                }
-            });
-
-            // Radius slider
-            this.geoRadiusSlider?.addEventListener('input', (e) => {
-                const val = e.target.value;
-                this.radiusValueDisplay.textContent = val == 0 ? 'Global' : `${val} KM`;
-                this.state.filters.radius = val;
-            });
-
-            // Confidence slider
-            this.confidenceScoreSlider?.addEventListener('input', (e) => {
-                this.confidenceValueDisplay.textContent = `${e.target.value}%`;
-                this.state.filters.minConfidence = e.target.value;
-            });
-
-            // Search button
-            this.searchLocationBtn?.addEventListener('click', () => {
-                this.state.pagination.currentPage = 1;
-                this.executeSearch();
-            });
-
-            // Clear search
-            this.clearSmartSearchBtn?.addEventListener('click', () => {
-                this.smartNlpSearchInput.value = '';
-                this.state.searchQuery = '';
-                if (this.aiIntentBadge) {
-                    this.aiIntentBadge.classList.add('hidden');
-                }
-            });
-
-            // Reset filters
-            this.resetAllFiltersBtn?.addEventListener('click', () => this.resetFilters());
-
-            // Pagination
-            this.paginationLimitSelect?.addEventListener('change', (e) => {
-                this.state.pagination.limit = parseInt(e.target.value);
-                this.state.pagination.currentPage = 1;
-                this.executeSearch();
-            });
-            this.prevPageBtn?.addEventListener('click', () => {
-                if (this.state.pagination.currentPage > 1) {
-                    this.state.pagination.currentPage--;
-                    this.executeSearch();
-                }
-            });
-            this.nextPageBtn?.addEventListener('click', () => {
-                if (this.state.pagination.currentPage < this.state.pagination.totalPages) {
-                    this.state.pagination.currentPage++;
-                    this.executeSearch();
-                }
-            });
-
-            // Modal
-            this.closeProfileModalBtn?.addEventListener('click', () => this.toggleModal(false));
-            this.closeProfileModalBottomBtn?.addEventListener('click', () => this.toggleModal(false));
-            this.verifyProfileInstanceBtn?.addEventListener('click', () => this.verifyCurrentProfile());
-            this.exportLocationCsvBtn?.addEventListener('click', () => this.exportToCSV());
-        }
-
-        getAuthHeaders() {
-            const token = localStorage.getItem('emailExtractorToken');
-            return {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            };
-        }
-
-        async loadGeoHierarchy() {
-            // Initially load divisions for the default country (Bangladesh)
-            const defaultCountry = this.countrySelect.value || 'bangladesh';
-            await this.loadDivisions(defaultCountry);
-        }
-
-        async loadDivisions(country) {
-            this.divisionSelect.innerHTML = '<option value="">Loading divisions...</option>';
-            this.divisionSelect.disabled = true;
-            try {
-                const headers = this.getAuthHeaders();
-                const response = await fetch(`/api/finder-api/location-secret?action=getDivisions&country=${country}`, { headers });
-                const data = await response.json();
-                if (data.success && data.divisions && data.divisions.length > 0) {
-                    this.divisionSelect.innerHTML = '<option value="">— Select Division —</option>';
-                    data.divisions.forEach(div => {
-                        const opt = document.createElement('option');
-                        opt.value = div.id;
-                        opt.textContent = div.name;
-                        this.divisionSelect.appendChild(opt);
-                    });
-                    this.divisionSelect.disabled = false;
-                } else {
-                    this.divisionSelect.innerHTML = '<option value="">No divisions found</option>';
-                    this.divisionSelect.disabled = true;
-                }
-            } catch (_) {
-                this.divisionSelect.innerHTML = '<option value="">Error loading divisions</option>';
-                this.divisionSelect.disabled = true;
-            }
-            // Reset district and thana
-            this.districtSelect.innerHTML = '<option value="">— Select District —</option>';
-            this.thanaSelect.innerHTML = '<option value="">— Select Thana —</option>';
-            this.districtSelect.disabled = true;
-            this.thanaSelect.disabled = true;
-        }
-
-        resetFilters() {
-            document.getElementById('advancedSearchForm')?.reset();
-            // Reset country to default (Bangladesh) and trigger load
-            this.countrySelect.value = 'bangladesh';
-            this.state.filters.country = 'bangladesh';
-            this.geoRadiusSlider.value = 0;
-            this.radiusValueDisplay.textContent = 'Global';
-            this.confidenceScoreSlider.value = 0;
-            this.confidenceValueDisplay.textContent = '0%';
-            this.smartNlpSearchInput.value = '';
-            if (this.aiIntentBadge) {
-                this.aiIntentBadge.classList.add('hidden');
-            }
-
-            this.state.filters.entityType = 'all';
-            this.state.filters.division = '';
-            this.state.filters.district = '';
-            this.state.filters.thana = '';
-            this.state.pagination.currentPage = 1;
-            this.state.data = [];
-
-            // Reload divisions for default country
-            this.loadDivisions('bangladesh');
-
-            this.locationResultBody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center text-slate-500 py-16">
-                        <div class="flex flex-col items-center justify-center space-y-3">
-                            <div class="p-4 bg-slate-50 text-slate-400 rounded-full">
-                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-                            </div>
-                            <div>
-                                <p class="font-semibold text-slate-700">Filters Reset Successful</p>
-                                <p class="text-xs text-slate-400 mt-1">Ready for new parameters execution.</p>
-                            </div>
+            card.innerHTML = `
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1">
+                    <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-slate-800 text-base">${escapeHtml(item.name || 'Unknown')}</div>
+                        <div class="mt-0.5 flex items-center gap-2 flex-wrap">
+                            <span class="label">${contactLabel}</span>
+                            <span class="value">${escapeHtml(contactValue)}</span>
                         </div>
-                    </td>
-                </tr>`;
-            this.locationResultCount.textContent = '0 Records';
-            this.tablePaginationWrapper.classList.add('hidden');
-            if (this.exportLocationCsvBtn) {
-                this.exportLocationCsvBtn.disabled = true;
-            }
-        }
-
-        // ================= AI PARSER =================
-        parseSmartQuery(query) {
-            if (!query || query.trim() === '') {
-                if (this.aiIntentBadge) {
-                    this.aiIntentBadge.classList.add('hidden');
-                }
-                return;
-            }
-
-            const lower = query.toLowerCase();
-            let intentDetected = false;
-
-            if (lower.includes('email')) {
-                if (this.hasEmailCheck) {
-                    this.hasEmailCheck.checked = true;
-                    intentDetected = true;
-                }
-            }
-            if (lower.includes('phone') || lower.includes('call')) {
-                if (this.hasPhoneCheck) {
-                    this.hasPhoneCheck.checked = true;
-                    intentDetected = true;
-                }
-            }
-            if (lower.includes('business') || lower.includes('company')) {
-                if (this.entityTypeSelect) {
-                    this.entityTypeSelect.value = 'BUSINESS';
-                    intentDetected = true;
-                }
-            }
-            if (lower.includes('creator') || lower.includes('influencer')) {
-                if (this.entityTypeSelect) {
-                    this.entityTypeSelect.value = 'CREATOR';
-                    intentDetected = true;
-                }
-            }
-
-            // Country detection (optional)
-            const countryMap = {
-                'bangladesh': 'Bangladesh',
-                'india': 'India',
-                'uae': 'United Arab Emirates',
-                'thailand': 'Thailand',
-                'niger': 'Niger (West African)',
-                'argentina': 'Argentina',
-                'ireland': 'Ireland',
-                'malta': 'Malta',
-                'brazil': 'Brazil'
-            };
-            for (const [key, name] of Object.entries(countryMap)) {
-                if (lower.includes(key)) {
-                    const options = this.countrySelect?.options;
-                    if (options) {
-                        for (let i = 0; i < options.length; i++) {
-                            if (options[i].value === key) {
-                                this.countrySelect.value = key;
-                                intentDetected = true;
-                                // Load divisions for that country
-                                this.loadDivisions(key);
-                                break;
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-
-            // Division detection could be added but complex; skip.
-
-            if (lower.includes('verified')) {
-                if (this.verificationStatusSelect) {
-                    this.verificationStatusSelect.value = 'VERIFIED';
-                    intentDetected = true;
-                }
-            }
-
-            if (this.aiIntentBadge) {
-                if (intentDetected) {
-                    this.aiIntentBadge.classList.remove('hidden');
-                } else {
-                    this.aiIntentBadge.classList.add('hidden');
-                }
-            }
-        }
-
-        async executeSearch() {
-            this.parseSmartQuery(this.smartNlpSearchInput.value);
-
-            this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center py-10"><div class="animate-pulse flex flex-col items-center"><div class="h-8 w-8 bg-blue-200 rounded-full mb-3"></div><div class="text-sm text-slate-500">Searching...</div></div></td></tr>`;
-
-            this.state.searchQuery = this.smartNlpSearchInput.value;
-            this.state.filters.country = this.countrySelect.value;
-            this.state.filters.entityType = this.entityTypeSelect.value;
-            this.state.filters.division = this.divisionSelect.value;
-            this.state.filters.district = this.districtSelect.value;
-            this.state.filters.thana = this.thanaSelect.value;
-            this.state.filters.verificationStatus = this.verificationStatusSelect.value;
-
-            const queryParams = new URLSearchParams({
-                action: 'search',
-                query: this.state.searchQuery,
-                country: this.state.filters.country,
-                entityType: this.state.filters.entityType,
-                division: this.state.filters.division,
-                district: this.state.filters.district,
-                thana: this.state.filters.thana,
-                radius: this.state.filters.radius,
-                minConfidence: this.state.filters.minConfidence,
-                verificationStatus: this.state.filters.verificationStatus,
-                hasEmail: this.hasEmailCheck.checked,
-                hasPhone: this.hasPhoneCheck.checked,
-                hasWhatsapp: this.hasWhatsappCheck.checked,
-                hasSocial: this.hasSocialCheck.checked,
-                page: this.state.pagination.currentPage,
-                limit: this.state.pagination.limit
-            });
-
-            try {
-                const token = localStorage.getItem('emailExtractorToken');
-                if (!token) {
-                    this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-10 font-bold">Authentication Error: Please log in again.</td></tr>`;
-                    return;
-                }
-
-                const response = await fetch(`/api/finder-api/location-secret?${queryParams.toString()}`, {
-                    method: 'GET',
-                    headers: this.getAuthHeaders()
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    this.state.data = data.contacts;
-                    this.state.pagination.totalRecords = data.meta.totalRecords;
-                    this.state.pagination.totalPages = data.meta.totalPages;
-
-                    this.renderTable();
-                    this.updatePaginationUI();
-                } else {
-                    this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-10">Search Error: ${data.error}</td></tr>`;
-                }
-            } catch (_) {
-                this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-red-500 py-10">Network error. Please try again.</td></tr>`;
-            }
-        }
-
-        renderTable() {
-            this.locationResultBody.innerHTML = '';
-            this.locationResultCount.textContent = `${this.state.pagination.totalRecords} Records Found (Page ${this.state.pagination.currentPage})`;
-            this.locationResultMeta.textContent = 'Showing real-time results directly from Master Engine.';
-
-            if (this.exportLocationCsvBtn) {
-                this.exportLocationCsvBtn.disabled = (this.state.data.length === 0);
-            }
-
-            if (this.state.data.length === 0) {
-                this.locationResultBody.innerHTML = `<tr><td colspan="6" class="text-center text-slate-500 py-10">No profiles found matching your criteria. Try loosening the filters.</td></tr>`;
-                return;
-            }
-
-            this.state.data.forEach(profile => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50/50 transition-colors cursor-pointer group";
-
-                const locationText = [profile.thana, profile.district].filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
-
-                // Check for direct properties or fallback to channels object (compatibility)
-                const hasEmail = !!(profile.email || (profile.channels && profile.channels.email));
-                const hasPhone = !!(profile.phone || (profile.channels && profile.channels.phone));
-                const hasWhatsapp = !!(profile.whatsapp || (profile.channels && profile.channels.whatsapp));
-                const hasSocial = !!(profile.social || (profile.channels && profile.channels.social));
-
-                tr.innerHTML = `
-                    <td class="p-3 text-center">
-                        <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" value="${profile.id}">
-                    </td>
-                    <td class="p-3">
-                        <div class="font-semibold text-slate-800">${profile.name}</div>
-                        <div class="text-[11px] text-slate-500 uppercase tracking-wide mt-0.5">${profile.entityType}</div>
-                    </td>
-                    <td class="p-3">
-                        <div class="flex items-center gap-2">
-                            ${hasEmail ? `<span title="Email" class="w-2 h-2 rounded-full bg-emerald-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
-                            ${hasPhone ? `<span title="Phone" class="w-2 h-2 rounded-full bg-blue-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
-                            ${hasWhatsapp ? `<span title="WhatsApp" class="w-2 h-2 rounded-full bg-green-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
-                            ${hasSocial ? `<span title="Social" class="w-2 h-2 rounded-full bg-purple-500"></span>` : `<span class="w-2 h-2 rounded-full bg-slate-200"></span>`}
-                        </div>
-                    </td>
-                    <td class="p-3 text-xs text-slate-600 capitalize">
-                        ${locationText || 'Location Unknown'}
-                    </td>
-                    <td class="p-3 text-center">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${profile.confidenceScore > 80 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-                            ${profile.confidenceScore}% Match
-                        </span>
-                    </td>
-                    <td class="p-3 text-right">
-                        <button class="view-profile-btn text-xs bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600 px-3 py-1.5 rounded transition-all shadow-sm" data-id="${profile.id}">View Matrix</button>
-                    </td>
-                `;
-                this.locationResultBody.appendChild(tr);
-            });
-
-            document.querySelectorAll('.view-profile-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = e.target.getAttribute('data-id');
-                    this.openProfileModal(id);
-                });
-            });
-        }
-
-        updatePaginationUI() {
-            if (this.state.pagination.totalPages > 0) {
-                this.tablePaginationWrapper.classList.remove('hidden');
-            } else {
-                this.tablePaginationWrapper.classList.add('hidden');
-            }
-
-            this.currentPageNumDisplay.textContent = this.state.pagination.currentPage;
-            this.totalPageNumDisplay.textContent = this.state.pagination.totalPages || 1;
-
-            this.prevPageBtn.disabled = this.state.pagination.currentPage <= 1;
-            this.nextPageBtn.disabled = this.state.pagination.currentPage >= this.state.pagination.totalPages;
-        }
-
-        openProfileModal(profileId) {
-            const profile = this.state.data.find(p => p.id === profileId);
-            if (!profile) return;
-
-            this.currentModalProfileId = profileId;
-
-            document.getElementById('modalProfileTitle').innerHTML = `<span>🛡️</span> Entity Reference: #${profile.id}`;
-
-            // Direct properties or fallback to channels
-            const email = profile.email || (profile.channels && profile.channels.email) || '';
-            const phone = profile.phone || (profile.channels && profile.channels.phone) || '';
-            const whatsapp = profile.whatsapp || (profile.channels && profile.channels.whatsapp) || '';
-            const social = profile.social || (profile.channels && profile.channels.social) || '';
-
-            document.getElementById('modalProfileBody').innerHTML = `
-                <div class="p-4 bg-blue-50 rounded-lg border border-blue-100 text-blue-800 text-sm">
-                    <strong>System Note:</strong> Live Data Matrix established securely. 
-                </div>
-                
-                <div class="mt-4">
-                    <h4 class="text-lg font-bold text-slate-800">${profile.name}</h4>
-                    <p class="text-xs text-slate-500 uppercase tracking-wide">${profile.entityType}</p>
-                    <p class="text-xs text-slate-400">Country: ${profile.country || 'N/A'}</p>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div class="bg-slate-50 p-3 rounded border border-slate-200">
-                        <p class="text-xs text-slate-500 uppercase">Contact Channels</p>
-                        <div class="mt-1 space-y-1 text-sm font-medium">
-                            ${email ? `<p class="text-slate-800">✉️ ${email}</p>` : ''}
-                            ${phone ? `<p class="text-slate-800">📞 ${phone}</p>` : ''}
-                            ${whatsapp ? `<p class="text-slate-800">💬 ${whatsapp}</p>` : ''}
-                            ${social ? `<p class="text-slate-800">🔗 ${social}</p>` : ''}
-                            ${!email && !phone && !whatsapp && !social ? '<p class="text-slate-400">No contact info</p>' : ''}
-                        </div>
+                        <div class="desc mt-1">${escapeHtml(description)}</div>
                     </div>
-                    <div class="bg-slate-50 p-3 rounded border border-slate-200">
-                        <p class="text-xs text-slate-500 uppercase">Verification Level</p>
-                        <p class="font-medium ${profile.verificationStatus === 'VERIFIED' ? 'text-emerald-600' : 'text-amber-600'} mt-1">
-                            ${profile.verificationStatus}
-                        </p>
-                        <p class="text-xs text-slate-500 mt-2">Confidence: ${profile.confidenceScore}%</p>
+                    <div class="flex items-start gap-2 mt-1 sm:mt-0 flex-shrink-0">
+                        <span class="badge-source">${item.source || 'web'}</span>
+                        ${item.country ? `<span class="badge-source">${escapeHtml(item.country)}</span>` : ''}
                     </div>
                 </div>
             `;
-            this.toggleModal(true);
-        }
+            resultList.appendChild(card);
+        });
 
-        toggleModal(show) {
-            if (show) {
-                this.masterProfileDetailsModal.classList.remove('hidden');
-            } else {
-                this.masterProfileDetailsModal.classList.add('hidden');
-                this.currentModalProfileId = null;
-            }
-        }
+        // Update pagination
+        const totalDisplay = Math.min(totalResults, currentData.length);
+        paginationInfo.textContent = `Showing ${start + 1}–${Math.min(end, totalResults)} of ${totalResults}`;
+        pageIndicator.textContent = `${currentPage} / ${totalPages || 1}`;
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
+        resultCountBadge.textContent = `${totalResults} results`;
+    }
 
-        updateStatsBar() {
-            document.getElementById('metaTotalProfiles').textContent = 'Live Data';
-            document.getElementById('metaVerifiedProfiles').textContent = 'Secured';
-            document.getElementById('metaAvgConfidence').textContent = 'Engine';
-            document.getElementById('metaGeocodedCount').textContent = 'Active';
-        }
-
-        // ================= VERIFY NODE FEATURE =================
-        async verifyCurrentProfile() {
-            if (!this.currentModalProfileId) {
-                alert('No profile selected for verification.');
-                return;
-            }
-
-            const token = localStorage.getItem('emailExtractorToken');
-            if (!token) {
-                alert('Authentication required. Please log in again.');
-                return;
-            }
-
-            const btn = this.verifyProfileInstanceBtn;
-            const originalText = btn.textContent;
-            btn.textContent = 'Verifying...';
-            btn.disabled = true;
-
-            try {
-                const response = await fetch('/api/finder-api/location-secret?action=verifyProfile', {
-                    method: 'POST',
-                    headers: this.getAuthHeaders(),
-                    body: JSON.stringify({ profileId: this.currentModalProfileId })
+    // ==================== API CALLS FOR GEO HIERARCHY ====================
+    async function loadDivisions(country) {
+        divisionSelect.innerHTML = '<option value="">Loading...</option>';
+        divisionSelect.disabled = true;
+        try {
+            const data = await apiFetch(`/api/finder-api/location-secret?action=getDivisions&country=${country}`);
+            if (data.success && data.divisions) {
+                divisionSelect.innerHTML = '<option value="">— All —</option>';
+                data.divisions.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.textContent = d.name;
+                    divisionSelect.appendChild(opt);
                 });
-                const data = await response.json();
+                divisionSelect.disabled = false;
+            } else {
+                divisionSelect.innerHTML = '<option value="">No divisions</option>';
+                divisionSelect.disabled = true;
+            }
+        } catch (_) {
+            divisionSelect.innerHTML = '<option value="">Error</option>';
+            divisionSelect.disabled = true;
+        }
+        // Reset district
+        districtSelect.innerHTML = '<option value="">— All —</option>';
+        districtSelect.disabled = true;
+    }
 
-                if (data.success) {
-                    const profileIndex = this.state.data.findIndex(p => p.id === this.currentModalProfileId);
-                    if (profileIndex !== -1) {
-                        this.state.data[profileIndex].verificationStatus = data.profile.verificationStatus;
-                        this.state.data[profileIndex].confidenceScore = data.profile.confidenceScore;
-                    }
-                    this.renderTable();
-                    const updatedProfile = this.state.data.find(p => p.id === this.currentModalProfileId);
-                    if (updatedProfile) {
-                        this.openProfileModal(this.currentModalProfileId);
-                    }
-                    this.locationResultMeta.textContent = '✅ Profile successfully verified!';
-                } else {
-                    alert('Verification failed: ' + (data.error || 'Unknown error'));
+    async function loadDistricts(division) {
+        if (!division) {
+            districtSelect.innerHTML = '<option value="">— All —</option>';
+            districtSelect.disabled = true;
+            return;
+        }
+        districtSelect.innerHTML = '<option value="">Loading...</option>';
+        districtSelect.disabled = true;
+        try {
+            const data = await apiFetch(`/api/finder-api/location-secret?action=getDistricts&division=${division}`);
+            if (data.success && data.districts) {
+                districtSelect.innerHTML = '<option value="">— All —</option>';
+                data.districts.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.id;
+                    opt.textContent = d.name;
+                    districtSelect.appendChild(opt);
+                });
+                districtSelect.disabled = false;
+            } else {
+                districtSelect.innerHTML = '<option value="">No districts</option>';
+                districtSelect.disabled = true;
+            }
+        } catch (_) {
+            districtSelect.innerHTML = '<option value="">Error</option>';
+            districtSelect.disabled = true;
+        }
+    }
+
+    // ==================== MAIN SEARCH ====================
+    async function performSearch() {
+        const country = countrySelect.value || 'bangladesh';
+        const division = divisionSelect.value || '';
+        const district = districtSelect.value || '';
+        const hasEmail = hasEmailCheck.checked;
+
+        const params = new URLSearchParams({
+            action: 'search',
+            country: country,
+            division: division,
+            district: district,
+            hasEmail: hasEmail ? 'true' : 'false',
+            page: currentPage,
+            limit: PAGE_LIMIT,
+            query: ''   // empty for broad search
+        });
+
+        // Add mode hint for backend (optional)
+        if (isDatabaseMode) {
+            params.set('mode', 'db');
+        }
+
+        const url = `/api/finder-api/location-secret?${params.toString()}`;
+
+        // UI feedback
+        executeBtn.disabled = true;
+        executeBtn.innerHTML = '<span class="inline-block animate-spin mr-1">⟳</span> Searching...';
+        resultList.innerHTML = '';
+        emptyState.classList.add('hidden');
+        resultsMeta.textContent = 'Searching...';
+
+        try {
+            const data = await apiFetch(url);
+            if (data.success && data.contacts) {
+                currentData = data.contacts || [];
+                totalResults = data.meta?.totalRecords || currentData.length;
+                totalPages = Math.ceil(totalResults / PAGE_LIMIT) || 1;
+                if (currentPage > totalPages) currentPage = totalPages;
+                renderPage();
+                resultsMeta.textContent = `Found ${totalResults} result${totalResults !== 1 ? 's' : ''}`;
+                resultCountBadge.textContent = `${totalResults} results`;
+            } else {
+                showEmpty('No results found. Try adjusting filters.', data.error);
+            }
+        } catch (_) {
+            showEmpty('Something went wrong. Please try again.');
+        } finally {
+            executeBtn.disabled = false;
+            executeBtn.innerHTML =
+                '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg> Execute Smart Find';
+        }
+    }
+
+    // ==================== EVENT BINDINGS ====================
+    function init() {
+        // ---- Toggle ----
+        toggle.addEventListener('click', function() {
+            isDatabaseMode = !isDatabaseMode;
+            this.classList.toggle('active', isDatabaseMode);
+            this.setAttribute('aria-checked', isDatabaseMode);
+            modeIndicator.textContent = isDatabaseMode ? 'Database' : 'Live';
+            modeIndicator.className = 'text-[10px] px-2 py-0.5 rounded-full ' +
+                (isDatabaseMode ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700');
+            filterHint.innerHTML = isDatabaseMode ?
+                '💡 Using <strong>Database</strong> cache. Results may be limited to stored data.' :
+                '💡 Using <strong>Live API</strong>. Fetches fresh data from multiple sources.';
+            clearResults();
+        });
+
+        // ---- Country change ----
+        countrySelect.addEventListener('change', function() {
+            loadDivisions(this.value);
+        });
+
+        // ---- Division change ----
+        divisionSelect.addEventListener('change', function() {
+            loadDistricts(this.value);
+        });
+
+        // ---- Execute search ----
+        executeBtn.addEventListener('click', function() {
+            currentPage = 1;
+            performSearch();
+        });
+
+        // ---- Pagination ----
+        prevPageBtn.addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderPage();
+            }
+        });
+        nextPageBtn.addEventListener('click', function() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderPage();
+            }
+        });
+
+        // ---- Keyboard shortcut: Enter on any input/select triggers search ----
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.closest('#locationContactFinder')) {
+                const active = document.activeElement;
+                if (active && (active.tagName === 'INPUT' || active.tagName === 'SELECT')) {
+                    executeBtn.click();
                 }
-            } catch (_) {
-                alert('Network error while verifying. Please try again.');
-            } finally {
-                btn.textContent = originalText;
-                btn.disabled = false;
             }
-        }
+        });
 
-        // ================= EXPORT CSV FEATURE =================
-        exportToCSV() {
-            const data = this.state.data;
-            if (!data || data.length === 0) {
-                alert('No data to export.');
-                return;
-            }
-
-            const headers = [
-                'ID',
-                'Name',
-                'Entity Type',
-                'Country',
-                'Division',
-                'District',
-                'Thana',
-                'Verification Status',
-                'Confidence Score',
-                'Email',
-                'Phone',
-                'WhatsApp',
-                'Social'
-            ];
-
-            const rows = data.map(profile => {
-                const email = profile.email || (profile.channels && profile.channels.email) || '';
-                const phone = profile.phone || (profile.channels && profile.channels.phone) || '';
-                const whatsapp = profile.whatsapp || (profile.channels && profile.channels.whatsapp) || '';
-                const social = profile.social || (profile.channels && profile.channels.social) || '';
-                return [
-                    profile.id || '',
-                    profile.name || '',
-                    profile.entityType || '',
-                    profile.country || '',
-                    profile.division || '',
-                    profile.district || '',
-                    profile.thana || '',
-                    profile.verificationStatus || '',
-                    profile.confidenceScore || '',
-                    email,
-                    phone,
-                    whatsapp,
-                    social
-                ];
-            });
-
-            const csvContent = [
-                headers.join(','),
-                ...rows.map(row => row.join(','))
-            ].join('\n');
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.href = url;
-            link.setAttribute('download', `location_contacts_${new Date().toISOString().slice(0,10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }
+        // ---- Initial load ----
+        const defaultCountry = countrySelect.value || 'bangladesh';
+        loadDivisions(defaultCountry);
+        clearResults();
     }
 
-    window.SmartLocationFinder = SmartLocationFinder;
-
-    function initApp() {
-        if (document.getElementById('countrySelect')) {
-            if (!window.AppController || !(window.AppController instanceof SmartLocationFinder)) {
-                window.AppController = new SmartLocationFinder();
-            }
-        } else {
-            setTimeout(initApp, 200);
-        }
-    }
-
+    // ---- Start when DOM ready ----
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initApp);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        setTimeout(initApp, 100);
+        init();
     }
 
 })();
