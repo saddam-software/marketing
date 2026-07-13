@@ -145,18 +145,7 @@
   // ========== API call to backend (টোকেন ডায়নামিকভাবে নেওয়া) ==========
   async function extractFromText(text) {
     // ✅ টোকেন ডায়নামিকভাবে নেওয়া
-    // ✅ টোকেন জেনারেট এবং অ্যাসাইন করা (টেস্টিংয়ের জন্য সাময়িক পরিবর্তন)
-// পুরোনো লাইনটি কমেন্ট করে রাখা হলো:
-// const token = localStorage.getItem('emailExtractorToken');
-
-// ১. একটি পেলোড অবজেক্ট তৈরি করা হলো যার মেয়াদ (exp) বর্তমান সময় থেকে ১ বছর বেশি
-const tokenPayload = {
-  username: "developer_user",
-  exp: Date.now() + (365 * 24 * 60 * 60 * 1000) // ১ বছর মেয়াদ (মিলিলেকেন্ডে)
-};
-
-// ২. অবজেক্টটিকে টেক্সটে রূপান্তর করে Base64 এনকোড করা হলো (যা ব্যাকএন্ড আশা করে)
-const token = btoa(JSON.stringify(tokenPayload));
+    const token = localStorage.getItem('emailExtractorToken');
     if (!token) {
       alert('Authentication token is missing. Please log in first.');
       return;
