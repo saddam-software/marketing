@@ -1,126 +1,187 @@
-/* * AI-Powered Smart People & Business Finder Platform
- * File: public/location-contact-search/style.css
- * Purpose: Custom styles, animations, and component overrides (compliments Tailwind CSS).
- */
+/* ============================================================
+   Smart Contact Finder – Minimal Custom Styles
+   Complements Tailwind CSS; only essential overrides & components.
+   No complex animations, variables, or heavy resets.
+   ============================================================ */
 
-/* ========== ANIMATIONS & TRANSITIONS ========== */
-.fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
+/* ----- Fade-in animation (used for result cards) ----- */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.fade-in {
+    animation: fadeIn 0.2s ease-out;
 }
 
-/* Modal Open Animation with Blur */
-#masterProfileDetailsModal:not(.hidden) {
-  display: flex;
-  animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* ----- Toggle Switch (from HTML) ----- */
+.toggle-track {
+    width: 44px;
+    height: 24px;
+    background: #cbd5e1;
+    border-radius: 999px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.toggle-track.active {
+    background: #3b82f6;
+}
+.toggle-thumb {
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 999px;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.toggle-track.active .toggle-thumb {
+    transform: translateX(20px);
 }
 
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    backdrop-filter: blur(0px);
-  }
-  to {
-    opacity: 1;
-    backdrop-filter: blur(4px);
-  }
+/* ----- Result Cards ----- */
+.result-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: border-color 0.15s;
+}
+.result-card:hover {
+    border-color: #94a3b8;
+}
+.result-card .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #94a3b8;
+}
+.result-card .value {
+    font-size: 14px;
+    font-weight: 500;
+    color: #0f172a;
+    word-break: break-all;
+}
+.result-card .desc {
+    font-size: 13px;
+    color: #475569;
+    margin-top: 4px;
+    line-height: 1.5;
 }
 
-/* ========== CUSTOM SCROLLBAR FOR ENTERPRISE TABLES & MODALS ========== */
-#locationContactSearch .overflow-x-auto::-webkit-scrollbar,
-#modalProfileBody::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ----- Badge (source / country) ----- */
+.badge-source {
+    font-size: 10px;
+    background: #f1f5f9;
+    color: #64748b;
+    padding: 2px 8px;
+    border-radius: 999px;
+    display: inline-block;
 }
 
-#locationContactSearch .overflow-x-auto::-webkit-scrollbar-track,
-#modalProfileBody::-webkit-scrollbar-track {
-  background: #f1f5f9; 
-  border-radius: 4px;
+/* ----- Filter select (consistent styling) ----- */
+.filter-select {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    width: 100%;
+    color: #1e293b;
+    transition: border-color 0.15s;
+}
+.filter-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-#locationContactSearch .overflow-x-auto::-webkit-scrollbar-thumb,
-#modalProfileBody::-webkit-scrollbar-thumb {
-  background: #cbd5e1; 
-  border-radius: 4px;
+/* ----- Primary Button ----- */
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.btn-primary:hover {
+    background: #2563eb;
+}
+.btn-primary:active {
+    transform: scale(0.97);
+}
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
-#locationContactSearch .overflow-x-auto::-webkit-scrollbar-thumb:hover,
-#modalProfileBody::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; 
+/* ----- Custom checkbox (consistent with Tailwind) ----- */
+.checkbox-custom {
+    width: 18px;
+    height: 18px;
+    accent-color: #3b82f6;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
-/* ========== DATA TABLE SPECIFICS ========== */
-#locationContactSearch .data-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+/* ----- Empty state ----- */
+.empty-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: #94a3b8;
+}
+.empty-state svg {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
+    opacity: 0.4;
 }
 
-/* Sticky Header with subtle shadow */
-#locationContactSearch .data-table th {
-  background-color: #f8fafc;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  border-bottom: 2px solid #e2e8f0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+/* ----- Results scroll container ----- */
+.results-scroll {
+    max-height: 580px;
+    overflow-y: auto;
+}
+.results-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+.results-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+.results-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
 }
 
-#locationContactSearch .data-table tbody tr {
-  transition: background-color 0.2s ease-in-out;
-}
-
-#locationContactSearch .data-table td {
-  border-bottom: 1px solid #f1f5f9;
-  vertical-align: middle;
-}
-
-/* Remove bottom border for the very last row to keep UI clean */
-#locationContactSearch .data-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* ========== ADVANCED RANGE SLIDER CUSTOMIZATION ========== */
-#locationContactSearch input[type=range] {
-  -webkit-appearance: none;
-  background: transparent;
-}
-
-#locationContactSearch input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 14px;
-  width: 14px;
-  border-radius: 50%;
-  background: currentColor; /* Inherits from text-blue-600 or text-amber-500 via Tailwind */
-  cursor: pointer;
-  margin-top: -4px; /* Centers the thumb relative to the track */
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  transition: transform 0.1s ease-in-out;
-}
-
-#locationContactSearch input[type=range]::-webkit-slider-thumb:hover {
-  transform: scale(1.25);
-}
-
-#locationContactSearch input[type=range]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 6px;
-  cursor: pointer;
-  background: #e2e8f0;
-  border-radius: 4px;
-}
-
-#locationContactSearch input[type=range]:focus {
-  outline: none;
+/* ----- Simple responsive adjustments ----- */
+@media (max-width: 640px) {
+    .result-card {
+        padding: 12px;
+    }
+    .result-card .value {
+        font-size: 13px;
+    }
+    .btn-primary {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
 }
