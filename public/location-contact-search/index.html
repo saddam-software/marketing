@@ -1,64 +1,876 @@
-<!-- public/location-contact-search/index.html -->
-<div id="locationContactSearch" class="space-y-6">
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Control Panel -->
-    <div class="lg:col-span-1">
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky-top-24">
-        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          Location-Based Search
-        </h3>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">জেলা (District)</label>
-            <select id="districtSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
-              <option value="">— Select District —</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">থানা (Thana)</label>
-            <select id="thanaSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" disabled>
-              <option value="">— Select Thana —</option>
-            </select>
-          </div>
-          <button id="searchLocationBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md flex items-center justify-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            Search Contacts
-          </button>
-          <div id="locationSearchStatus" class="hidden p-3 bg-slate-50 rounded-lg text-sm text-slate-600"></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Contact Finder · Pro</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+
+    <style>
+        /* ----- Global Reset & Font ----- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(145deg, #f0f4f8 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            color: #0f172a;
+        }
+
+        /* ----- Main Card (the black border container) ----- */
+        .finder-card {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 2px solid #0b1120;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+                  
+            overflow: hidden;
+            transition: box-shadow 0.25s ease;
+        }
+        .finder-card:hover {
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.45);
+        }
+
+        /* ----- Header (dark) ----- */
+        .finder-header {
+            background: #0b1120;
+            padding: 1.2rem 1.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #0b1120;
+            gap: 0.75rem;
+        }
+        .finder-header h1 {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .finder-header h1 svg {
+            width: 1.4rem;
+            height: 1.4rem;
+            stroke: #60a5fa;
+        }
+        .header-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #1e293b;
+            padding: 0.3rem 0.9rem 0.3rem 0.6rem;
+            border-radius: 999px;
+            border: 1px solid #334155;
+        }
+        .header-badge .mode-label {
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            background: #10b981;
+            color: #064e3b;
+            letter-spacing: 0.3px;
+        }
+        .header-badge .mode-label.db {
+            background: #3b82f6;
+            color: #eff6ff;
+        }
+
+        /* ----- Toggle Switch (custom) ----- */
+        .toggle-track {
+            width: 44px;
+            height: 24px;
+            background: #475569;
+            border-radius: 999px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.25s;
+            flex-shrink: 0;
+        }
+        .toggle-track.active {
+            background: #3b82f6;
+        }
+        .toggle-thumb {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 999px;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.25s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+        }
+        .toggle-track.active .toggle-thumb {
+            transform: translateX(20px);
+        }
+
+        /* ----- Body / Filters area ----- */
+        .finder-body {
+            padding: 1.8rem 2rem 1.2rem;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem 1.2rem;
+        }
+        @media (max-width: 640px) {
+            .filter-grid {
+                grid-template-columns: 1fr;
+                gap: 0.6rem;
+            }
+        }
+        .filter-group label {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #475569;
+            margin-bottom: 0.2rem;
+        }
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 0.5rem 0.8rem;
+            border: 1px solid #d1d9e6;
+            border-radius: 0.6rem;
+            font-size: 0.85rem;
+            background: white;
+            transition: border 0.15s, box-shadow 0.15s;
+            outline: none;
+            color: #0f172a;
+        }
+        .filter-group input:focus,
+        .filter-group select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .action-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            margin-top: 1rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .action-row .email-filter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #1e293b;
+            cursor: pointer;
+        }
+        .action-row .email-filter input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            accent-color: #2563eb;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1.6rem;
+            border-radius: 0.6rem;
+            border: none;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.15s, transform 0.1s;
+            box-shadow: 0 4px 6px -2px rgba(37, 99, 235, 0.25);
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .hint-box {
+            margin-top: 0.8rem;
+            padding: 0.5rem 1rem;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 0.6rem;
+            font-size: 0.7rem;
+            color: #3730a3;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* ----- Results header ----- */
+        .results-header {
+            padding: 0.6rem 2rem;
+            background: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #334155;
+        }
+        .results-header .badge-count {
+            background: #cbd5e1;
+            color: #0f172a;
+            padding: 0.1rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+
+        /* ----- Results list (scroll) ----- */
+        .results-scroll {
+            max-height: 380px;
+            overflow-y: auto;
+            padding: 0.8rem 1.5rem;
+            background: white;
+        }
+        .results-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .results-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .results-scroll::-webkit-scrollbar-thumb {
+            background: #b9c7da;
+            border-radius: 4px;
+        }
+
+        /* ----- Result Card ----- */
+        .result-item {
+            background: #ffffff;
+            border: 1px solid #e9edf3;
+            border-radius: 0.75rem;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.6rem;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .result-item:hover {
+            border-color: #94a3b8;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        .result-item .name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #0f172a;
+        }
+        .result-item .contact-line {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.3rem 0.8rem;
+            margin-top: 0.15rem;
+        }
+        .result-item .contact-line .label {
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #94a3b8;
+        }
+        .result-item .contact-line .value {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #0f172a;
+            word-break: break-all;
+        }
+        .result-item .desc {
+            font-size: 0.75rem;
+            color: #475569;
+            margin-top: 0.2rem;
+            line-height: 1.4;
+        }
+        .result-item .meta-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem;
+            margin-top: 0.3rem;
+        }
+        .result-item .meta-tags span {
+            font-size: 0.6rem;
+            background: #f1f5f9;
+            color: #475569;
+            padding: 0.1rem 0.6rem;
+            border-radius: 999px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #94a3b8;
+        }
+        .empty-state svg {
+            width: 2.8rem;
+            height: 2.8rem;
+            margin: 0 auto 0.5rem;
+            opacity: 0.4;
+            stroke: #94a3b8;
+        }
+        .empty-state p:first-of-type {
+            font-weight: 600;
+            color: #64748b;
+        }
+        .empty-state p:last-of-type {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        /* ----- Pagination footer ----- */
+        .pagination-footer {
+            padding: 0.5rem 2rem;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+        .pagination-footer .page-buttons {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .pagination-footer .page-buttons button {
+            background: white;
+            border: 1px solid #d1d9e6;
+            padding: 0.2rem 0.8rem;
+            border-radius: 0.4rem;
+            font-weight: 600;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            color: #1e293b;
+        }
+        .pagination-footer .page-buttons button:hover:not(:disabled) {
+            background: #f1f5f9;
+        }
+        .pagination-footer .page-buttons button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .pagination-footer .page-indicator {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        /* fade-in animation */
+        .fade-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* responsive tweaks */
+        @media (max-width: 480px) {
+            .finder-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            .finder-header h1 {
+                font-size: 1rem;
+                justify-content: center;
+            }
+            .header-badge {
+                justify-content: center;
+            }
+            .finder-body {
+                padding: 1rem;
+            }
+            .results-scroll {
+                padding: 0.5rem;
+            }
+            .pagination-footer {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+   <div class="finder-card max-w-6xl mx-auto w-full" id="locationContactFinder">
+
+        <!-- ===== HEADER ===== -->
+        <div class="finder-header">
+            <h1>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Smart Contact Finder
+            </h1>
+            <div class="header-badge">
+                <span id="modeIndicator" class="mode-label">Live</span>
+                <div id="dataSourceToggle" class="toggle-track" role="checkbox" aria-checked="false">
+                    <div class="toggle-thumb"></div>
+                </div>
+            </div>
         </div>
-      </div>
+
+        <!-- ===== BODY: Filters ===== -->
+        <div class="finder-body">
+            <div class="filter-grid">
+                <!-- Keyword -->
+                <div class="filter-group" style="grid-column: 1 / -1;">
+                    <label for="searchKeyword">Keyword / Industry</label>
+                    <input type="text" id="searchKeyword" placeholder="e.g. Hotels, Software, Healthcare, Real Estate..." />
+                </div>
+                <!-- Country -->
+                <div class="filter-group">
+                    <label for="filterCountry">Country</label>
+                    <select id="filterCountry">
+                        <option value="bangladesh">Bangladesh</option>
+                        <option value="india">India</option>
+                        <option value="uae">United Arab Emirates</option>
+                        <option value="thailand">Thailand</option>
+                        <option value="niger">Niger</option>
+                        <option value="argentina">Argentina</option>
+                        <option value="ireland">Ireland</option>
+                        <option value="malta">Malta</option>
+                        <option value="brazil">Brazil</option>
+                    </select>
+                </div>
+                <!-- Division -->
+                <div class="filter-group">
+                    <label for="filterDivision">Division / State</label>
+                    <select id="filterDivision">
+                        <option value="">— All —</option>
+                    </select>
+                </div>
+                <!-- District -->
+                <div class="filter-group">
+                    <label for="filterDistrict">District / City</label>
+                    <select id="filterDistrict">
+                        <option value="">— All —</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Action row -->
+            <div class="action-row">
+                <label class="email-filter">
+                    <input type="checkbox" id="filterHasEmail" />
+                    <span>Only with Email</span>
+                </label>
+                <button id="executeSearchBtn" class="btn-primary">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    Search Contacts
+                </button>
+            </div>
+
+            <!-- Hint -->
+            <div class="hint-box" id="filterHint">
+                💡 Toggle <strong>Database</strong> (cache) or <strong>Live</strong> (API) mode.
+            </div>
+        </div>
+
+        <!-- ===== RESULTS HEADER ===== -->
+        <div class="results-header">
+            <span>📋 Extracted Leads</span>
+            <span>
+                <span class="badge-count" id="resultCountBadge">0</span>
+                <span id="resultsMeta" class="ml-2 font-normal text-slate-500">Ready</span>
+            </span>
+        </div>
+
+        <!-- ===== RESULTS LIST (scroll) ===== -->
+        <div class="results-scroll" id="resultsContainer">
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p>No records yet</p>
+                <p>Adjust filters and click <strong>Search Contacts</strong></p>
+            </div>
+            <!-- Dynamic results will be injected here -->
+            <div id="resultList" class="space-y-2"></div>
+        </div>
+
+        <!-- ===== PAGINATION ===== -->
+        <div class="pagination-footer">
+            <span id="paginationInfo">Showing 0 of 0</span>
+            <div class="page-buttons">
+                <button id="prevPageBtn" disabled>‹ Prev</button>
+                <span class="page-indicator" id="pageIndicator">1 / 1</span>
+                <button id="nextPageBtn" disabled>Next ›</button>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Results Panel -->
-    <div class="lg:col-span-2">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-[500px]">
-        <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl flex items-center justify-between">
-          <h3 class="font-semibold text-slate-800">📍 Contacts</h3>
-          <span id="locationResultCount" class="text-xs bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full">0 contacts</span>
-        </div>
-        <div class="flex-1 overflow-y-auto p-4">
-          <table class="data-table w-full" id="locationResultTable">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Thana</th>
-              </tr>
-            </thead>
-            <tbody id="locationResultBody">
-              <tr><td colspan="4" class="text-center text-slate-500 py-8">Select district &amp; thana to search</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center flex justify-between items-center">
-          <span id="locationResultMeta">—</span>
-          <div class="flex gap-2">
-            <button id="exportLocationCsv" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all disabled:opacity-50" disabled>Export CSV</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+    <!-- ============================================================ -->
+    <!-- JAVASCRIPT — Fully functional with all features               -->
+    <!-- ============================================================ -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ---- DOM refs ----
+            const countrySelect = document.getElementById('filterCountry');
+            const divisionSelect = document.getElementById('filterDivision');
+            const districtSelect = document.getElementById('filterDistrict');
+            const hasEmailCheck = document.getElementById('filterHasEmail');
+            const searchKeywordInput = document.getElementById('searchKeyword');
+            const executeBtn = document.getElementById('executeSearchBtn');
+            const toggle = document.getElementById('dataSourceToggle');
+            const modeIndicator = document.getElementById('modeIndicator');
+            const resultList = document.getElementById('resultList');
+            const emptyState = document.getElementById('emptyState');
+            const resultsMeta = document.getElementById('resultsMeta');
+            const resultCountBadge = document.getElementById('resultCountBadge');
+            const filterHint = document.getElementById('filterHint');
+            const paginationInfo = document.getElementById('paginationInfo');
+            const pageIndicator = document.getElementById('pageIndicator');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+
+            // ---- State ----
+            let isDatabaseMode = false;
+            let currentPage = 1;
+            let totalPages = 1;
+            let totalResults = 0;
+            let currentData = [];
+            const PAGE_LIMIT = 25;
+
+            // ---- Helper: token ----
+            function getToken() {
+                return localStorage.getItem('emailExtractorToken') || '';
+            }
+
+            // ---- Helper: API fetch ----
+            async function apiFetch(endpoint, options = {}) {
+                const token = getToken();
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    ...(options.headers || {})
+                };
+                const resp = await fetch(endpoint, { ...options, headers });
+                return resp.json();
+            }
+
+            // ---- Load divisions ----
+            async function loadDivisions(country) {
+                divisionSelect.innerHTML = '<option value="">Loading...</option>';
+                divisionSelect.disabled = true;
+                try {
+                    const data = await apiFetch(
+                        `/api/finder-api/location-secret?action=getDivisions&country=${country}`);
+                    if (data.success && data.divisions) {
+                        divisionSelect.innerHTML = '<option value="">— All —</option>';
+                        data.divisions.forEach(d => {
+                            const opt = document.createElement('option');
+                            opt.value = d.id;
+                            opt.textContent = d.name;
+                            divisionSelect.appendChild(opt);
+                        });
+                        divisionSelect.disabled = false;
+                    } else {
+                        divisionSelect.innerHTML = '<option value="">No divisions</option>';
+                        divisionSelect.disabled = true;
+                    }
+                } catch (_) {
+                    divisionSelect.innerHTML = '<option value="">Error</option>';
+                    divisionSelect.disabled = true;
+                }
+                districtSelect.innerHTML = '<option value="">— All —</option>';
+                districtSelect.disabled = true;
+            }
+
+            // ---- Load districts ----
+            async function loadDistricts(division) {
+                if (!division) {
+                    districtSelect.innerHTML = '<option value="">— All —</option>';
+                    districtSelect.disabled = true;
+                    return;
+                }
+                districtSelect.innerHTML = '<option value="">Loading...</option>';
+                districtSelect.disabled = true;
+                try {
+                    const data = await apiFetch(
+                        `/api/finder-api/location-secret?action=getDistricts&division=${division}`);
+                    if (data.success && data.districts) {
+                        districtSelect.innerHTML = '<option value="">— All —</option>';
+                        data.districts.forEach(d => {
+                            const opt = document.createElement('option');
+                            opt.value = d.id;
+                            opt.textContent = d.name;
+                            districtSelect.appendChild(opt);
+                        });
+                        districtSelect.disabled = false;
+                    } else {
+                        districtSelect.innerHTML = '<option value="">No districts</option>';
+                        districtSelect.disabled = true;
+                    }
+                } catch (_) {
+                    districtSelect.innerHTML = '<option value="">Error</option>';
+                    districtSelect.disabled = true;
+                }
+            }
+
+            // ---- Toggle switch ----
+            toggle.addEventListener('click', function() {
+                isDatabaseMode = !isDatabaseMode;
+                this.classList.toggle('active', isDatabaseMode);
+                this.setAttribute('aria-checked', isDatabaseMode);
+                modeIndicator.textContent = isDatabaseMode ? 'Database' : 'Live';
+                modeIndicator.className = 'mode-label' + (isDatabaseMode ? ' db' : '');
+                filterHint.innerHTML = isDatabaseMode ?
+                    '💡 Using <strong>Database</strong> cache. Results may be limited.' :
+                    '💡 Using <strong>Live API</strong>. Fetches fresh data.';
+                clearResults();
+            });
+
+            // ---- Country change ----
+            countrySelect.addEventListener('change', function() {
+                loadDivisions(this.value);
+            });
+
+            // ---- Division change ----
+            divisionSelect.addEventListener('change', function() {
+                loadDistricts(this.value);
+            });
+
+            // ---- Execute search ----
+            executeBtn.addEventListener('click', function() {
+                currentPage = 1;
+                performSearch();
+            });
+
+            // ---- Pagination ----
+            prevPageBtn.addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderPage();
+                }
+            });
+            nextPageBtn.addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderPage();
+                }
+            });
+
+            // ---- Perform search ----
+            async function performSearch() {
+                const country = countrySelect.value || 'bangladesh';
+                const division = divisionSelect.value || '';
+                const district = districtSelect.value || '';
+                const hasEmail = hasEmailCheck.checked;
+                const keyword = searchKeywordInput.value.trim();
+
+                const params = new URLSearchParams({
+                    action: 'search',
+                    country: country,
+                    division: division,
+                    district: district,
+                    hasEmail: hasEmail ? 'true' : 'false',
+                    page: currentPage,
+                    limit: PAGE_LIMIT,
+                    query: keyword
+                });
+                if (isDatabaseMode) params.set('mode', 'db');
+
+                const url = `/api/finder-api/location-secret?${params.toString()}`;
+
+                executeBtn.disabled = true;
+                executeBtn.innerHTML = '<span class="inline-block animate-spin mr-1">⟳</span> Searching...';
+                resultList.innerHTML = '';
+                emptyState.classList.add('hidden');
+                resultsMeta.textContent = 'Searching...';
+
+                try {
+                    const data = await apiFetch(url);
+                    if (data.success && data.contacts) {
+                        currentData = data.contacts || [];
+                        totalResults = data.meta?.totalRecords || currentData.length;
+                        totalPages = Math.ceil(totalResults / PAGE_LIMIT) || 1;
+                        if (currentPage > totalPages) currentPage = totalPages;
+                        renderPage();
+                        resultsMeta.textContent = `Found ${totalResults} result${totalResults !== 1 ? 's' : ''}`;
+                        resultCountBadge.textContent = totalResults;
+                    } else {
+                        showEmpty('No results found.', data.error || 'Adjust filters or keyword.');
+                    }
+                } catch (_) {
+                    showEmpty('Something went wrong.', 'Please try again later.');
+                } finally {
+                    executeBtn.disabled = false;
+                    executeBtn.innerHTML =
+                        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg> Search Contacts';
+                }
+            }
+
+            // ---- Render page ----
+            function renderPage() {
+                const start = (currentPage - 1) * PAGE_LIMIT;
+                const end = Math.min(start + PAGE_LIMIT, currentData.length);
+                const pageData = currentData.slice(start, end);
+
+                resultList.innerHTML = '';
+                emptyState.classList.add('hidden');
+
+                if (!pageData || pageData.length === 0) {
+                    showEmpty('No results on this page.');
+                    return;
+                }
+
+                const hasEmail = hasEmailCheck.checked;
+
+                pageData.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'result-item fade-in';
+
+                    const contactLabel = hasEmail ? 'Email' : 'Phone';
+                    const contactValue = hasEmail ? (item.email || '—') : (item.phone || '—');
+
+                    let descParts = [];
+                    if (item.address) descParts.push(item.address);
+                    if (item.website) descParts.push(item.website);
+                    if (item.entityType) descParts.push(item.entityType);
+                    if (item.division) descParts.push(item.division);
+                    if (item.district) descParts.push(item.district);
+                    const description = descParts.join(' · ') || 'No additional details';
+
+                    const tags = [];
+                    if (item.source) tags.push(item.source);
+                    if (item.country) tags.push(item.country);
+                    if (item.entityType) tags.push(item.entityType);
+
+                    card.innerHTML = `
+                        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1">
+                            <div class="flex-1 min-w-0">
+                                <div class="name">${escapeHtml(item.name || 'Unknown')}</div>
+                                <div class="contact-line">
+                                    <span class="label">${contactLabel}</span>
+                                    <span class="value">${escapeHtml(contactValue)}</span>
+                                </div>
+                                <div class="desc">${escapeHtml(description)}</div>
+                                ${tags.length ? `<div class="meta-tags">${tags.map(t => `<span>${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    resultList.appendChild(card);
+                });
+
+                const totalDisplay = Math.min(totalResults, currentData.length);
+                paginationInfo.textContent = `Showing ${start + 1}–${Math.min(end, totalResults)} of ${totalResults}`;
+                pageIndicator.textContent = `${currentPage} / ${totalPages || 1}`;
+                prevPageBtn.disabled = currentPage <= 1;
+                nextPageBtn.disabled = currentPage >= totalPages;
+                resultCountBadge.textContent = totalResults;
+            }
+
+            // ---- Show empty ----
+            function showEmpty(message, detail) {
+                resultList.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.querySelector('p:first-of-type').textContent = message || 'No results';
+                emptyState.querySelector('p:last-of-type').textContent = detail || 'Try adjusting filters and search again.';
+                resultsMeta.textContent = message || 'No results';
+                paginationInfo.textContent = 'Showing 0';
+                pageIndicator.textContent = '0 / 0';
+                prevPageBtn.disabled = true;
+                nextPageBtn.disabled = true;
+                resultCountBadge.textContent = '0';
+            }
+
+            // ---- Clear results ----
+            function clearResults() {
+                currentData = [];
+                totalResults = 0;
+                totalPages = 1;
+                currentPage = 1;
+                resultList.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.querySelector('p:first-of-type').textContent = 'Ready to search';
+                emptyState.querySelector('p:last-of-type').textContent = 'Adjust filters and click Search Contacts';
+                resultsMeta.textContent = 'Ready';
+                paginationInfo.textContent = 'Showing 0';
+                pageIndicator.textContent = '1 / 1';
+                prevPageBtn.disabled = true;
+                nextPageBtn.disabled = true;
+                resultCountBadge.textContent = '0';
+            }
+
+            // ---- Escape HTML ----
+            function escapeHtml(str) {
+                if (!str) return '';
+                const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+                return str.replace(/[&<>"']/g, function(m) { return map[m]; });
+            }
+
+            // ---- Init ----
+            async function init() {
+                toggle.classList.remove('active');
+                toggle.setAttribute('aria-checked', 'false');
+                modeIndicator.textContent = 'Live';
+                modeIndicator.className = 'mode-label';
+
+                await loadDivisions(countrySelect.value);
+                clearResults();
+
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && e.target.closest('#locationContactFinder')) {
+                        const active = document.activeElement;
+                        if (active && (active.tagName === 'INPUT' || active.tagName === 'SELECT')) {
+                            executeBtn.click();
+                        }
+                    }
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+        })();
+    </script>
+
+</body>
+</html>
