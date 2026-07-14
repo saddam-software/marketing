@@ -363,10 +363,14 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 
 
 
-
-
-body {
-    overflow-y: scroll; /* এটি সব সময় ডানপাশে স্ক্রলবার দেখাবে */
+/* সবগুলো পেজের উইডথ একদম সমান রাখার জন্য */
+.main-page-wrapper {
+    max-width: 72rem; /* এটি 6xl এর সমান */
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
 }
+
+
 
 
