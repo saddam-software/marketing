@@ -360,7 +360,8 @@
             ============================================================ -->
 
             <!-- ===== DASHBOARD TAB ===== -->
-            <div id="dashboardTab" class="tab-content hidden tab-panel space-y-6">
+            <!-- সঠিক কোড -->
+<div id="dashboardTab" class="tab-content tab-panel space-y-6">
            
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -436,12 +437,21 @@
                 </div>
             </div>
 
-            <!-- ===== SCRAPER TAB ===== -->
-            <div id="scraperTab" class="tab-content hidden tab-panel space-y-6">
-                <div id="bulkTextExtractorContainer"></div>
-                <div id="websiteExtractorContainer"></div>
-                <div id="locationSearchContainer"></div>
-            </div>
+         <!-- ===== SCRAPER TAB ===== -->
+<div id="scraperTab" class="tab-content hidden tab-panel space-y-6">
+    <!-- আমরা প্রতিটি কন্টেইনারের বাইরে একটি overflow div যুক্ত করেছি -->
+    <div class="overflow-x-auto w-full">
+        <div id="bulkTextExtractorContainer" class="min-w-full"></div>
+    </div>
+    
+    <div class="overflow-x-auto w-full">
+        <div id="websiteExtractorContainer" class="min-w-full"></div>
+    </div>
+    
+    <div class="overflow-x-auto w-full">
+        <div id="locationSearchContainer" class="min-w-full"></div>
+    </div>
+</div>
 
             <!-- ===== CAMPAIGNS TAB ===== -->
             <div id="campaignTab" class="tab-content hidden tab-panel space-y-6">
