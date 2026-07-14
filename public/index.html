@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Email & SMS Marketing Pro · Admin</title>
+    <title>Marketing Pro · Dashboard</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,20 +12,21 @@
     <!-- CryptoJS (for Gravatar / hashing) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
-    <!-- Global Styles -->
+    <!-- Global Styles (আপডেটেড) -->
     <link rel="stylesheet" href="/style.css" />
 
     <style>
-        /* ===== BASE OVERRIDES ===== */
+        /* ===== BASE OVERRIDES (অতিরিক্ত টুইক) ===== */
         body {
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #0f172a;
         }
         .fade-in {
             animation: fadeIn 0.3s ease-out;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .spinner {
@@ -46,146 +47,334 @@
             100% { transform: rotate(360deg); }
         }
         .tab-button {
-            @apply px-4 py-2.5 font-medium text-slate-600 border-b-2 border-transparent hover:border-blue-400 transition-all text-sm whitespace-nowrap;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            color: #64748b;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+        .tab-button:hover {
+            color: #2563eb;
+            border-bottom-color: #bfdbfe;
         }
         .tab-button.active {
-            @apply text-blue-600 border-blue-600;
+            color: #2563eb;
+            border-bottom-color: #2563eb;
         }
         .tab-button .tab-icon {
-            @apply mr-2 inline-block;
+            margin-right: 0.4rem;
+            display: inline-block;
         }
         .stat-card {
-            @apply bg-white p-5 rounded-xl shadow-sm border border-slate-200 transition-all hover:shadow-md hover:-translate-y-0.5;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: all 0.2s;
         }
-        .stat-card .stat-icon {
-            @apply w-10 h-10 rounded-full flex items-center justify-center text-white text-lg;
+        .stat-card:hover {
+            box-shadow: 0 8px 25px -6px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
         }
         .stat-card .stat-value {
-            @apply text-2xl font-bold;
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.2;
         }
         .stat-card .stat-label {
-            @apply text-xs text-slate-500 font-semibold uppercase tracking-wider;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .stat-card .stat-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
         }
         .data-table {
-            @apply w-full text-sm;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
         }
         .data-table thead {
-            @apply bg-slate-50;
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
         }
         .data-table thead th {
-            @apply px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200;
+            padding: 0.6rem 1rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #64748b;
         }
         .data-table tbody td {
-            @apply px-4 py-3 border-b border-slate-100 text-slate-700;
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
         }
         .data-table tbody tr:hover {
-            @apply bg-slate-50/80;
+            background: #f8fafc;
         }
         .status-badge {
-            @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+            display: inline-block;
+            padding: 0.1rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
         }
         .status-badge.success {
-            @apply bg-emerald-100 text-emerald-700;
+            background: #d1fae5;
+            color: #065f46;
         }
         .status-badge.failed {
-            @apply bg-red-100 text-red-700;
+            background: #fee2e2;
+            color: #991b1b;
         }
         .status-badge.pending {
-            @apply bg-amber-100 text-amber-700;
+            background: #fef3c7;
+            color: #92400e;
         }
         .status-badge.info {
-            @apply bg-blue-100 text-blue-700;
-        }
-        .progress-bar-fill {
-            transition: width 0.4s ease;
+            background: #dbeafe;
+            color: #1e40af;
         }
         .table-scroll {
-            max-height: 480px;
+            max-height: 440px;
             overflow-y: auto;
         }
         .table-scroll::-webkit-scrollbar {
-            width: 6px;
+            width: 5px;
         }
         .table-scroll::-webkit-scrollbar-track {
-            background: #f8fafc;
+            background: #f1f5f9;
+            border-radius: 4px;
         }
         .table-scroll::-webkit-scrollbar-thumb {
-            background: #d1d5db;
-            border-radius: 3px;
+            background: #cbd5e1;
+            border-radius: 4px;
         }
         .sticky-top-24 {
             position: sticky;
             top: 96px;
             z-index: 30;
         }
-        .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
+        /* settings card tweak */
+        .settings-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: all 0.2s;
         }
-        .email-editor-toolbar {
-            @apply flex flex-wrap gap-1 p-2 bg-slate-50 border border-slate-200 rounded-t-lg border-b-0;
+        .settings-card:hover {
+            box-shadow: 0 8px 25px -6px rgba(0,0,0,0.06);
         }
-        .email-editor-toolbar button {
-            @apply px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600;
+        .settings-card h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .email-editor-content {
-            @apply w-full border border-slate-200 rounded-b-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y font-mono text-xs min-h-[160px];
+        .settings-card h3 svg {
+            width: 1.4rem;
+            height: 1.4rem;
         }
-        .sms-counter {
-            @apply text-xs font-medium;
+        /* Login page (অপরিবর্তিত) */
+        .login-card {
+            background: white;
+            border-radius: 1.5rem;
+            border: 2px solid #0b1120;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35);
+            padding: 2.5rem 2rem;
+            max-width: 420px;
+            width: 100%;
         }
-        .sms-counter.danger {
-            @apply text-red-600;
+        .login-card .logo-icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            background: #dbeafe;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
         }
-        .sms-counter.warning {
-            @apply text-amber-600;
+        .login-card .logo-icon svg {
+            width: 2rem;
+            height: 2rem;
+            color: #2563eb;
         }
-        .sms-counter.safe {
-            @apply text-emerald-600;
+        .login-card h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2563eb;
+            text-align: center;
         }
-        .char-progress {
-            @apply h-1.5 w-full bg-slate-200 rounded-full overflow-hidden mt-1;
+        .login-card p.sub {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.85rem;
         }
-        .char-progress .char-progress-fill {
-            @apply h-full rounded-full transition-all duration-300;
+        .login-card input {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border: 1px solid #d1d9e6;
+            border-radius: 0.6rem;
+            font-size: 0.9rem;
+            transition: border 0.15s;
+            outline: none;
+        }
+        .login-card input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+        }
+        .login-card .btn-login {
+            width: 100%;
+            background: #2563eb;
+            color: white;
+            font-weight: 600;
+            padding: 0.6rem;
+            border-radius: 0.6rem;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 0.95rem;
+        }
+        .login-card .btn-login:hover {
+            background: #1d4ed8;
+        }
+        /* Header (ডার্ক) */
+        .dashboard-header {
+            background: #0b1120;
+            padding: 0.8rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #0b1120;
+            gap: 0.75rem;
+        }
+        .dashboard-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .dashboard-header .brand .logo-box {
+            width: 2.4rem;
+            height: 2.4rem;
+            background: #2563eb;
+            border-radius: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .dashboard-header .brand .logo-box svg {
+            width: 1.4rem;
+            height: 1.4rem;
+            stroke: white;
+        }
+        .dashboard-header .brand h1 {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .dashboard-header .brand p {
+            color: #94a3b8;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: -0.1rem;
+        }
+        .dashboard-header .user-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .dashboard-header .user-area .user-badge {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 0.3rem 1rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border: 1px solid #334155;
+        }
+        .dashboard-header .user-area .logout-btn {
+            background: #dc2626;
+            color: white;
+            padding: 0.3rem 1.2rem;
+            border-radius: 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .dashboard-header .user-area .logout-btn:hover {
+            background: #b91c1c;
         }
         /* Responsive */
-        @media (max-width: 768px) {
+        @media (max-width: 640px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 1rem;
+            }
+            .dashboard-header .brand h1 {
+                font-size: 1rem;
+            }
             .tab-button {
-                @apply px-3 py-2 text-xs;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.7rem;
             }
             .stat-card .stat-value {
-                @apply text-xl;
+                font-size: 1.4rem;
             }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+<body>
 
-    <!-- ===== LOGIN PAGE ===== -->
+    <!-- ===== LOGIN PAGE (অপরিবর্তিত) ===== -->
     <div id="loginPage" class="fixed inset-0 bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md fade-in">
-            <div class="text-center mb-8">
-                <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                </div>
-                <h1 class="text-3xl font-bold text-blue-600">Marketing Pro</h1>
-                <p class="text-slate-500 text-sm mt-1">Email &amp; SMS Marketing Platform</p>
+        <div class="login-card">
+            <div class="logo-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
             </div>
+            <h1>Marketing Pro</h1>
+            <p class="sub">Email &amp; SMS Marketing Platform</p>
 
-            <form id="loginForm" class="space-y-4">
+            <form id="loginForm" class="space-y-4 mt-6">
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Username</label>
-                    <input type="text" id="loginUsername" placeholder="Enter your username" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter your username" required />
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required />
                 </div>
                 <div id="loginError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                <button type="submit" class="btn-login flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
                     Sign In
                 </button>
@@ -197,22 +386,20 @@
     <!-- ===== DASHBOARD ===== -->
     <div id="dashboardPage" class="hidden min-h-screen bg-slate-50">
 
-        <!-- HEADER -->
-        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                    </div>
-                    <div>
-                        <h1 class="text-lg sm:text-xl font-bold text-blue-600 leading-tight">Marketing Pro</h1>
-                        <p class="text-[10px] sm:text-xs text-slate-500 leading-tight">Email &amp; SMS Platform</p>
-                    </div>
+        <!-- HEADER (ডার্ক) -->
+        <header class="dashboard-header sticky top-0 z-40">
+            <div class="brand">
+                <div class="logo-box">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                 </div>
-                <div class="flex items-center gap-3">
-                    <span id="userBadge" class="text-sm px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full font-medium">—</span>
-                    <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all">Logout</button>
+                <div>
+                    <h1>Marketing Pro</h1>
+                    <p>Email &amp; SMS Platform</p>
                 </div>
+            </div>
+            <div class="user-area">
+                <span id="userBadge" class="user-badge">—</span>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
             </div>
         </header>
 
@@ -220,7 +407,7 @@
         <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
             <!-- TABS -->
-            <div class="flex gap-1 border-b border-slate-200 mb-6 overflow-x-auto pb-0.5">
+            <div class="flex gap-1 border-b border-slate-200 mb-6 overflow-x-auto pb-0.5 bg-white/80 rounded-t-xl px-2 py-1 shadow-sm">
                 <button class="tab-button active" data-tab="dashboard">
                     <span class="tab-icon">📊</span> Dashboard
                 </button>
@@ -238,7 +425,7 @@
                 </button>
             </div>
 
-            <!-- ===== TAB CONTENT CONTAINERS ===== -->
+            <!-- ===== TAB CONTENTS ===== -->
             <!-- Dashboard Tab -->
             <div id="dashboardTab" class="tab-content space-y-6">
                 <!-- Stats -->
@@ -281,7 +468,7 @@
                     </div>
                 </div>
 
-                <!-- Chart + Brevo Remaining -->
+                <!-- Chart + Brevo -->
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
                     <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 7-Day Activity</h2>
@@ -306,34 +493,34 @@
                 </div>
             </div>
 
-            <!-- Scraper Tab (dynamic) -->
+            <!-- Scraper Tab -->
             <div id="scraperTab" class="tab-content hidden space-y-6">
                 <div id="bulkTextExtractorContainer"></div>
                 <div id="websiteExtractorContainer"></div>
                 <div id="locationSearchContainer"></div>
             </div>
 
-            <!-- Campaigns Tab (dynamic) -->
+            <!-- Campaigns Tab -->
             <div id="campaignTab" class="tab-content hidden space-y-6">
                 <div id="emailCampaignContainer"></div>
                 <div id="smsCampaignContainer"></div>
                 <div id="callCampaignContainer"></div>
             </div>
 
-            <!-- ===== API SETTINGS TAB (সর্বশেষ আপডেট) ===== -->
+            <!-- API SETTINGS TAB -->
             <div id="api-settingsTab" class="tab-content hidden space-y-6">
-                <!-- প্রথম সারি: Email ও SMS (আগের মতো) -->
+                <!-- প্রথম সারি: Email ও SMS -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Email API -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    <div class="settings-card">
+                        <h3>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                             Email API
                         </h3>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Provider</label>
-                                <select id="emailProviderSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Provider</label>
+                                <select id="emailProviderSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white">
                                     <option value="brevo">Brevo (Sendinblue)</option>
                                     <option value="sendgrid">SendGrid</option>
                                     <option value="mailgun">Mailgun</option>
@@ -341,14 +528,14 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label>
-                                <input type="password" id="brevoApiKey" placeholder="Your Email API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-xs" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">API Key</label>
+                                <input type="password" id="brevoApiKey" placeholder="Your Email API Key" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono" />
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Sender Email</label>
-                                <input type="email" id="brevoSenderEmail" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Sender Email</label>
+                                <input type="email" id="brevoSenderEmail" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
                             </div>
-                            <button id="saveBrevoApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Email API</button>
+                            <button id="saveBrevoApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all">Save Email API</button>
                             <div id="brevoStats" class="hidden p-4 bg-slate-50 rounded-lg border border-slate-200">
                                 <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
                                 <div class="grid grid-cols-3 gap-2 text-center">
@@ -361,15 +548,15 @@
                     </div>
 
                     <!-- SMS API -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                    <div class="settings-card">
+                        <h3>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                             SMS API
                         </h3>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Provider</label>
-                                <select id="smsProviderSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Provider</label>
+                                <select id="smsProviderSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all bg-white">
                                     <option value="twilio">Twilio</option>
                                     <option value="vonage">Vonage (Nexmo)</option>
                                     <option value="africastalking">Africa's Talking</option>
@@ -377,19 +564,19 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key / Token</label>
-                                <input type="password" id="smsApiKey" placeholder="Your SMS API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all font-mono text-xs" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">API Key / Token</label>
+                                <input type="password" id="smsApiKey" placeholder="Your SMS API Key" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all font-mono" />
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Base URL</label>
-                                <input type="url" id="smsApiBaseUrl" placeholder="https://api.twilio.com/2010-04-01" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">API Base URL</label>
+                                <input type="url" id="smsApiBaseUrl" placeholder="https://api.twilio.com/2010-04-01" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Default Sender ID</label>
-                                <input type="text" id="smsDefaultSender" placeholder="YourBrand" maxlength="11" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
-                                <p class="text-[10px] text-slate-400 mt-1">Max 11 alphanumeric characters</p>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Default Sender ID</label>
+                                <input type="text" id="smsDefaultSender" placeholder="YourBrand" maxlength="11" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                                <p class="text-[10px] text-slate-400 mt-0.5">Max 11 alphanumeric characters</p>
                             </div>
-                            <button id="saveSmsApiBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save SMS API</button>
+                            <button id="saveSmsApiBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg transition-all">Save SMS API</button>
                             <div id="smsStats" class="hidden p-4 bg-slate-50 rounded-lg border border-slate-200">
                                 <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
                                 <div class="grid grid-cols-3 gap-2 text-center">
@@ -403,35 +590,35 @@
                 </div>
 
                 <!-- দ্বিতীয় সারি: Call ও Text API -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Call API -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                    <div class="settings-card">
+                        <h3>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                             Call API
                         </h3>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Provider</label>
-                                <select id="callProviderSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Provider</label>
+                                <select id="callProviderSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all bg-white">
                                     <option value="twilio">Twilio</option>
                                     <option value="custom">Custom HTTP API</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key / Token</label>
-                                <input type="password" id="callApiKey" placeholder="Your Call API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all font-mono text-xs" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">API Key / Token</label>
+                                <input type="password" id="callApiKey" placeholder="Your Call API Key" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all font-mono" />
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Base URL</label>
-                                <input type="url" id="callApiBaseUrl" placeholder="https://api.twilio.com/2010-04-01" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">API Base URL</label>
+                                <input type="url" id="callApiBaseUrl" placeholder="https://api.twilio.com/2010-04-01" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Default Caller ID</label>
-                                <input type="text" id="callDefaultCallerId" placeholder="+1234567890" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
-                                <p class="text-[10px] text-slate-400 mt-1">E.164 format</p>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Default Caller ID</label>
+                                <input type="text" id="callDefaultCallerId" placeholder="+1234567890" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                                <p class="text-[10px] text-slate-400 mt-0.5">E.164 format</p>
                             </div>
-                            <button id="saveCallApiBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Call API</button>
+                            <button id="saveCallApiBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg transition-all">Save Call API</button>
                             <div id="callStats" class="hidden p-4 bg-slate-50 rounded-lg border border-slate-200">
                                 <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
                                 <div class="grid grid-cols-3 gap-2 text-center">
@@ -444,79 +631,78 @@
                     </div>
 
                     <!-- Text Extraction API -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    <div class="settings-card">
+                        <h3>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                             Text Extraction API
                         </h3>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key (optional)</label>
-                                <input type="password" id="textApiKey" placeholder="Leave empty if not required" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-xs" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">API Key (optional)</label>
+                                <input type="password" id="textApiKey" placeholder="Leave empty if not required" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono" />
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Base URL (if custom)</label>
-                                <input type="url" id="textApiBaseUrl" placeholder="https://api.example.com/extract" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Base URL (if custom)</label>
+                                <input type="url" id="textApiBaseUrl" placeholder="https://api.example.com/extract" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
                             </div>
-                            <button id="saveTextApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Text API</button>
+                            <button id="saveTextApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all">Save Text API</button>
                         </div>
                     </div>
                 </div>
 
                 <!-- তৃতীয় সারি: Website ও Location API -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Website Scraping API -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+                    <div class="settings-card">
+                        <h3>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" /></svg>
                             Website Scraping API
                         </h3>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key (optional)</label>
-                                <input type="password" id="websiteApiKey" placeholder="API Key if required" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-mono text-xs" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">API Key (optional)</label>
+                                <input type="password" id="websiteApiKey" placeholder="API Key if required" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-mono" />
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Base URL (if custom)</label>
-                                <input type="url" id="websiteApiBaseUrl" placeholder="https://api.example.com/scrape" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Base URL (if custom)</label>
+                                <input type="url" id="websiteApiBaseUrl" placeholder="https://api.example.com/scrape" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all" />
                             </div>
-                            <button id="saveWebsiteApiBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Website API</button>
+                            <button id="saveWebsiteApiBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg transition-all">Save Website API</button>
                         </div>
                     </div>
 
                     <!-- Location-based Search API -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <div class="settings-card">
+                        <h3>
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                             Location-based Search API
                         </h3>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key (optional)</label>
-                                <input type="password" id="locationApiKey" placeholder="API Key if required" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all font-mono text-xs" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">API Key (optional)</label>
+                                <input type="password" id="locationApiKey" placeholder="API Key if required" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all font-mono" />
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Base URL (if custom)</label>
-                                <input type="url" id="locationApiBaseUrl" placeholder="https://api.example.com/location" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all" />
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Base URL (if custom)</label>
+                                <input type="url" id="locationApiBaseUrl" placeholder="https://api.example.com/location" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all" />
                             </div>
-                            <button id="saveLocationApiBtn" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Location API</button>
+                            <button id="saveLocationApiBtn" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 rounded-lg transition-all">Save Location API</button>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- ===== API SETTINGS TAB শেষ ===== -->
 
             <!-- Audit Logs Tab -->
             <div id="audit-logsTab" class="tab-content hidden space-y-6">
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col">
                     <!-- Filter Bar -->
                     <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl">
-                        <div class="filter-bar flex flex-wrap items-center gap-3">
-                            <div class="filter-group flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="flex items-center gap-2">
                                 <label for="auditDateFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">📅 Date</label>
                                 <input type="date" id="auditDateFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white" />
                             </div>
-                            <div class="filter-group flex items-center gap-2">
+                            <div class="flex items-center gap-2">
                                 <label for="auditActionFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">🎯 Action</label>
                                 <select id="auditActionFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white">
                                     <option value="all">All</option>
@@ -530,7 +716,7 @@
                                     <option value="CONTACTS_IMPORT">Import Contacts</option>
                                 </select>
                             </div>
-                            <div class="filter-group flex items-center gap-2 flex-1 min-w-[140px]">
+                            <div class="flex items-center gap-2 flex-1 min-w-[140px]">
                                 <label for="auditSearchFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">🔍 Search</label>
                                 <input type="text" id="auditSearchFilter" placeholder="Search user or details…" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white flex-1" />
                             </div>
@@ -563,7 +749,7 @@
                         </table>
                     </div>
 
-                    <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center flex items-center justify-between">
+                    <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 flex items-center justify-between">
                         <span id="auditLogsCount">0 events</span>
                         <button id="refreshAuditLogsBtn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">🔄 Refresh</button>
                     </div>
@@ -577,7 +763,7 @@
     <!-- GLOBAL JAVASCRIPT -->
     <!-- ============================================================ -->
     <script src="/script.js"></script>
-<script src="/location-contact-search/script.js"></script>
-    
+    <script src="/location-contact-search/script.js"></script>
+
 </body>
 </html>
