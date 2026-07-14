@@ -359,72 +359,72 @@
             TAB CONTENT — all use .tab-panel for consistent width
             ============================================================ -->
 
-            <!-- ===== DASHBOARD TAB ===== -->
-            <div id="dashboardTab" class="tab-content tab-panel space-y-6">
-                <!-- Stats -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="stat-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="stat-label">Emails Extracted Today</p>
-                                <p class="stat-value text-blue-600" id="statEmailsToday">0</p>
-                            </div>
-                            <div class="stat-icon bg-blue-100 text-blue-600">✉️</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="stat-label">Emails Sent Today</p>
-                                <p class="stat-value text-emerald-600" id="statEmailsSent">0</p>
-                            </div>
-                            <div class="stat-icon bg-emerald-100 text-emerald-600">📤</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="stat-label">SMS Sent Today</p>
-                                <p class="stat-value text-purple-600" id="statSmsSent">0</p>
-                            </div>
-                            <div class="stat-icon bg-purple-100 text-purple-600">📱</div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="stat-label">Total Contacts</p>
-                                <p class="stat-value text-cyan-600" id="statTotalContacts">0</p>
-                            </div>
-                            <div class="stat-icon bg-cyan-100 text-cyan-600">👥</div>
-                        </div>
-                    </div>
+       <!-- ===== DASHBOARD TAB ===== -->
+<div id="dashboardTab" class="tab-content tab-panel space-y-6">
+    <!-- Stats Cards – প্রতিটি কার্ড এখন স্ক্র্যাপার মডিউলের মতো একই প্যাডিং ও বর্ডার পাবে -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Emails Extracted Today</p>
+                    <p class="text-2xl font-bold text-blue-600" id="statEmailsToday">0</p>
                 </div>
-
-                <!-- Chart + Brevo Remaining -->
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                    <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 7-Day Activity</h2>
-                        <canvas id="analyticsChart" height="80"></canvas>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center">
-                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Brevo Remaining</p>
-                        <p class="text-4xl font-bold text-indigo-600" id="statBrevoRemaining">0</p>
-                        <p class="text-xs text-slate-400 mt-1">of 300 daily limit</p>
-                        <div class="w-full mt-3 bg-slate-200 rounded-full h-2 overflow-hidden">
-                            <div id="brevoUsageBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width:0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Activities -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-semibold text-slate-800 mb-4">🕐 Recent Events</h2>
-                    <div id="recentActivities" class="space-y-3 max-h-64 overflow-y-auto">
-                        <div class="text-sm text-slate-500 text-center py-6">No activity yet</div>
-                    </div>
-                </div>
+                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-lg">✉️</div>
             </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Emails Sent Today</p>
+                    <p class="text-2xl font-bold text-emerald-600" id="statEmailsSent">0</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-lg">📤</div>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">SMS Sent Today</p>
+                    <p class="text-2xl font-bold text-purple-600" id="statSmsSent">0</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-lg">📱</div>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Contacts</p>
+                    <p class="text-2xl font-bold text-cyan-600" id="statTotalContacts">0</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 text-lg">👥</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart + Brevo Remaining – দুটি আলাদা কার্ড, স্ক্র্যাপারের মতো স্ট্যাকড -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 7-Day Activity</h2>
+            <canvas id="analyticsChart" height="80"></canvas>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Brevo Remaining</p>
+            <p class="text-4xl font-bold text-indigo-600" id="statBrevoRemaining">0</p>
+            <p class="text-xs text-slate-400 mt-1">of 300 daily limit</p>
+            <div class="w-full mt-3 bg-slate-200 rounded-full h-2 overflow-hidden">
+                <div id="brevoUsageBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width:0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities – কার্ড ডিজাইন স্ক্র্যাপারের মতো -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-semibold text-slate-800 mb-4">🕐 Recent Events</h2>
+        <div id="recentActivities" class="space-y-3 max-h-64 overflow-y-auto">
+            <div class="text-sm text-slate-500 text-center py-6">No activity yet</div>
+        </div>
+    </div>
+</div>
 
             <!-- ===== SCRAPER TAB ===== -->
             <div id="scraperTab" class="tab-content hidden tab-panel space-y-6">
