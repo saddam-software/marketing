@@ -6,11 +6,14 @@
     <title>Email & SMS Marketing Pro · Admin</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+    </script>
     <!-- CryptoJS (for Gravatar / hashing) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js">
+    </script>
 
     <!-- Global Styles -->
     <link rel="stylesheet" href="/style.css" />
@@ -25,8 +28,14 @@
             animation: fadeIn 0.3s ease-out;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         .spinner {
             border: 3px solid #e2e8f0;
@@ -42,20 +51,137 @@
             border-width: 2px;
         }
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
-        /* ===== TAB BUTTONS NEW DESIGN ===== */
-.tab-button {
-    @apply px-5 py-2.5 font-medium text-slate-600 rounded-xl hover:bg-slate-200 hover:text-slate-900 transition-all duration-300 text-sm whitespace-nowrap flex items-center;
-}
-.tab-button.active {
-    @apply bg-blue-600 text-white shadow-md shadow-blue-500/30 transform -translate-y-0.5;
-}
-.tab-button .tab-icon {
-    @apply mr-2 text-lg;
-}
+        /* ============================================================
+               NEW TAB BUTTONS — BEAUTIFUL & MODERN
+               ============================================================ */
+        .tab-button {
+            position: relative;
+            padding: 0.65rem 1.4rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #64748b;
+            border-radius: 1rem;
+            background: transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            letter-spacing: 0.2px;
+        }
+
+        .tab-button .tab-icon {
+            font-size: 1.2rem;
+            line-height: 1;
+            transition: transform 0.2s ease;
+        }
+
+        .tab-button:hover {
+            color: #0f172a;
+            background: #f1f5f9;
+            transform: translateY(-1px);
+        }
+
+        .tab-button:hover .tab-icon {
+            transform: scale(1.15);
+        }
+
+        .tab-button.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            box-shadow: 0 8px 24px -6px rgba(37, 99, 235, 0.40), 0 2px 8px -2px rgba(37, 99, 235, 0.20);
+            transform: translateY(-2px);
+        }
+
+        .tab-button.active .tab-icon {
+            transform: scale(1.1);
+        }
+
+        /* subtle glow pulse on active */
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 1rem;
+            background: inherit;
+            z-index: -1;
+            filter: blur(12px);
+            opacity: 0.35;
+            animation: glowPulse 2.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes glowPulse {
+            0% {
+                opacity: 0.20;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0.45;
+                transform: scale(1.04);
+            }
+        }
+
+        /* tab button responsive */
+        @media (max-width: 768px) {
+            .tab-button {
+                padding: 0.5rem 0.9rem;
+                font-size: 0.75rem;
+                gap: 0.3rem;
+                border-radius: 0.75rem;
+            }
+            .tab-button .tab-icon {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tab-button {
+                padding: 0.4rem 0.65rem;
+                font-size: 0.65rem;
+                gap: 0.2rem;
+                border-radius: 0.6rem;
+            }
+            .tab-button .tab-icon {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* ============================================================
+               UNIFIED TAB CONTENT WRAPPER — SAME WIDTH FOR ALL
+               ============================================================ */
+        .tab-panel {
+            max-width: 76rem;
+            /* 1216px — slightly wider than 6xl for breathing room */
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+            padding: 0 1.25rem;
+        }
+
+        /* inner content wrapper for cards etc. */
+        .tab-panel-inner {
+            width: 100%;
+        }
+
+        /* keep child elements from breaking out */
+        .tab-panel>*,
+        .tab-panel-inner>* {
+            max-width: 100%;
+        }
+
+        /* ============================================================
+               OTHER COMPONENT STYLES (unchanged from original)
+               ============================================================ */
         .stat-card {
             @apply bg-white p-5 rounded-xl shadow-sm border border-slate-200 transition-all hover:shadow-md hover:-translate-y-0.5;
         }
@@ -151,10 +277,9 @@
         .char-progress .char-progress-fill {
             @apply h-full rounded-full transition-all duration-300;
         }
-        /* Responsive */
         @media (max-width: 768px) {
-            .tab-button {
-                @apply px-3 py-2 text-xs;
+            .tab-panel {
+                padding: 0 0.75rem;
             }
             .stat-card .stat-value {
                 @apply text-xl;
@@ -221,8 +346,8 @@
         <!-- MAIN -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
-            <!-- TABS -->
-            <div class="flex gap-1 border-b border-slate-200 mb-6 overflow-x-auto pb-0.5">
+            <!-- ===== TABS (Redesigned) ===== -->
+            <div class="flex flex-wrap gap-1.5 border-b border-slate-200 mb-6 pb-1.5 overflow-x-auto">
                 <button class="tab-button active" data-tab="dashboard">
                     <span class="tab-icon">📊</span> Dashboard
                 </button>
@@ -240,9 +365,12 @@
                 </button>
             </div>
 
-            <!-- ===== TAB CONTENT CONTAINERS ===== -->
-            <!-- Dashboard Tab -->
-            <div id="dashboardTab" class="tab-content space-y-6 main-page-wrapper"
+            <!-- ============================================================
+            TAB CONTENT — all use .tab-panel for consistent width
+            ============================================================ -->
+
+            <!-- ===== DASHBOARD TAB ===== -->
+            <div id="dashboardTab" class="tab-content tab-panel space-y-6">
                 <!-- Stats -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="stat-card">
@@ -308,23 +436,23 @@
                 </div>
             </div>
 
-            <!-- Scraper Tab (dynamic) -->
-           <div id="scraperTab" class="tab-content hidden space-y-6 max-w-6xl mx-auto w-full">
+            <!-- ===== SCRAPER TAB ===== -->
+            <div id="scraperTab" class="tab-content hidden tab-panel space-y-6">
                 <div id="bulkTextExtractorContainer"></div>
                 <div id="websiteExtractorContainer"></div>
                 <div id="locationSearchContainer"></div>
             </div>
 
-            <!-- Campaigns Tab (dynamic) -->
-         <div id="campaignTab" class="tab-content hidden space-y-6 max-w-6xl mx-auto w-full">
+            <!-- ===== CAMPAIGNS TAB ===== -->
+            <div id="campaignTab" class="tab-content hidden tab-panel space-y-6">
                 <div id="emailCampaignContainer"></div>
                 <div id="smsCampaignContainer"></div>
                 <div id="callCampaignContainer"></div>
             </div>
 
-            <!-- ===== API SETTINGS TAB (সর্বশেষ আপডেট) ===== -->
-          <div id="api-settingsTab" class="tab-content hidden space-y-6 max-w-6xl mx-auto w-full">
-                <!-- প্রথম সারি: Email ও SMS (আগের মতো) -->
+            <!-- ===== API SETTINGS TAB ===== -->
+            <div id="api-settingsTab" class="tab-content hidden tab-panel space-y-6">
+                <!-- প্রথম সারি: Email ও SMS -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Email API -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -506,10 +634,9 @@
                     </div>
                 </div>
             </div>
-            <!-- ===== API SETTINGS TAB শেষ ===== -->
 
-            <!-- Audit Logs Tab -->
-           <div id="audit-logsTab" class="tab-content hidden space-y-6 max-w-6xl mx-auto w-full">
+            <!-- ===== AUDIT LOGS TAB ===== -->
+            <div id="audit-logsTab" class="tab-content hidden tab-panel space-y-6">
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col">
                     <!-- Filter Bar -->
                     <div class="p-4 border-b border-slate-200 bg-slate-50/80 rounded-t-xl">
@@ -578,8 +705,10 @@
     <!-- ============================================================ -->
     <!-- GLOBAL JAVASCRIPT -->
     <!-- ============================================================ -->
-    <script src="/script.js"></script>
-<script src="/location-contact-search/script.js"></script>
-    
+    <script src="/script.js">
+    </script>
+    <script src="/location-contact-search/script.js">
+    </script>
+
 </body>
 </html>
