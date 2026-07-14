@@ -365,3 +365,8 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 
 
 
+body {
+    overflow-y: scroll; /* এটি সব সময় ডানপাশে স্ক্রলবার দেখাবে */
+}
+
+
