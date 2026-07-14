@@ -1,129 +1,157 @@
-<div id="bulkTextExtractor" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-  
-  <!-- Top Inputs Section: Text & File Upload (Compact & Side-by-Side) -->
-  <div class="p-4 md:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-slate-50/50">
-    
-    <!-- Left: Compact Text Editor -->
-    <div class="flex flex-col gap-2">
-      <div class="flex justify-between items-center">
-        <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
-          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-          Paste Text
-        </label>
-        <div class="text-[10px] text-slate-500 font-medium">
-          <span id="charCount">0 characters</span> | <span id="wordCount">0 words</span>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bulk Text Extractor · Pro</title>
+
+    <!-- Tailwind CSS (lightweight) -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <!-- External CSS (আমাদের কাস্টম স্টাইল) -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <div id="bulkTextExtractor" class="extractor-card">
+
+        <!-- ===== HEADER (ডার্ক) ===== -->
+        <div class="extractor-header">
+            <h1>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Bulk Text Extractor
+            </h1>
+            <div class="header-badge">
+                <span class="status-dot"></span>
+                <span class="status-text">Ready</span>
+            </div>
         </div>
-      </div>
-      <textarea id="textInput" rows="3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y font-mono" placeholder="Paste text here..."></textarea>
-      <button id="extractTextBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 rounded-lg transition-all">Extract Text</button>
-    </div>
 
-    <!-- Right: Compact Drag & Drop -->
-    <div class="flex flex-col gap-2">
-      <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
-        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-        Upload File
-      </label>
-      <div id="dropZone" class="flex-1 border-2 border-dashed border-slate-300 rounded-lg p-3 flex flex-col items-center justify-center hover:border-blue-500 transition-colors cursor-pointer group text-center bg-white">
-        <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 mb-1 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-        <p class="text-xs text-slate-600 font-medium">Drag & drop or click</p>
-        <p class="text-[10px] text-slate-400">.txt, .csv, .log</p>
-        <input type="file" id="fileInput" accept=".txt,.csv,.log" class="hidden" />
-      </div>
-      
-      <!-- File Info & Process Button -->
-      <div class="flex gap-2 items-center">
-        <div id="fileInfo" class="hidden flex-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] sm:text-xs text-slate-600 flex justify-between items-center overflow-hidden">
-          <span id="fileName" class="truncate font-medium"></span>
-          <span id="fileSize" class="text-slate-400 ml-2 whitespace-nowrap"></span>
+        <!-- ===== BODY: Input Section (Text + File) ===== -->
+        <div class="extractor-body">
+
+            <!-- Left: Text Input -->
+            <div class="input-group">
+                <div class="input-header">
+                    <label>✏️ Paste Text</label>
+                    <span class="counter" id="charCount">0 characters</span>
+                </div>
+                <textarea id="textInput" rows="4" placeholder="Paste your text here..."></textarea>
+                <button id="extractTextBtn" class="btn-primary">Extract Text</button>
+            </div>
+
+            <!-- Right: File Upload -->
+            <div class="input-group">
+                <div class="input-header">
+                    <label>📂 Upload File</label>
+                    <span class="counter" id="wordCount">0 words</span>
+                </div>
+                <div id="dropZone" class="drop-zone">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <p>Drag & drop or click</p>
+                    <span class="text-[10px] text-slate-400">.txt, .csv, .log</span>
+                    <input type="file" id="fileInput" accept=".txt,.csv,.log" class="file-input" />
+                </div>
+                <div id="fileInfo" class="file-info" style="display:none;">
+                    <span id="fileName" class="truncate"></span>
+                    <span id="fileSize" class="text-slate-400"></span>
+                    <button id="fileClearBtn" class="clear-btn">✕</button>
+                </div>
+                <button id="processFileBtn" class="btn-secondary" disabled>Process File</button>
+            </div>
+
         </div>
-        <button id="processFileBtn" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2 rounded-lg transition-all disabled:opacity-50" disabled>Process File</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Processing UI (Compact Inline Bar) -->
-  <div id="processingContainer" class="hidden bg-blue-50 p-2 sm:p-3 border-y border-blue-100">
-    <div class="flex items-center gap-3">
-      <div class="spinner w-4 h-4 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-      <div class="flex-1 flex items-center gap-2">
-        <span class="text-xs font-semibold text-slate-700 hidden sm:inline" id="processingLabel">Processing...</span>
-        <div class="flex-1 bg-slate-200 rounded-full h-1.5">
-          <div id="processingProgress" class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
+        <!-- ===== PROGRESS BAR ===== -->
+        <div id="processingContainer" class="progress-container">
+            <div class="progress-label">
+                <span id="processingLabel" class="font-semibold">Processing...</span>
+                <span id="processingPercent" class="font-bold text-blue-600">0%</span>
+            </div>
+            <div class="progress-track">
+                <div id="processingProgress" class="progress-fill"></div>
+            </div>
         </div>
-      </div>
-      <span id="processingPercent" class="font-bold text-blue-600 text-xs">0%</span>
-    </div>
-  </div>
 
-  <!-- Compact Analytics Bar -->
-  <div class="border-y border-slate-200 bg-white p-3 flex flex-wrap justify-around md:justify-start md:gap-8 gap-3 text-xs sm:text-sm">
-    <div class="flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-      <span class="text-slate-500">Total:</span> 
-      <span class="font-bold text-slate-800" id="totalFound">0</span>
-    </div>
-    <div class="flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-      <span class="text-slate-500">Duplicates Removed:</span> 
-      <span class="font-bold text-slate-800" id="duplicatesRemoved">0</span>
-    </div>
-    <div class="flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-      <span class="text-slate-500">Emails:</span> 
-      <span class="font-bold text-slate-800" id="validEmails">0</span>
-    </div>
-    <div class="flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-purple-500"></span>
-      <span class="text-slate-500">Phones:</span> 
-      <span class="font-bold text-slate-800" id="validPhones">0</span>
-    </div>
-  </div>
+        <!-- ===== ANALYTICS BAR ===== -->
+        <div class="analytics-bar">
+            <div class="analytics-item">
+                <span class="dot blue"></span>
+                <span class="label">Total</span>
+                <span class="value" id="totalFound">0</span>
+            </div>
+            <div class="analytics-item">
+                <span class="dot amber"></span>
+                <span class="label">Duplicates</span>
+                <span class="value" id="duplicatesRemoved">0</span>
+            </div>
+            <div class="analytics-item">
+                <span class="dot green"></span>
+                <span class="label">Emails</span>
+                <span class="value" id="validEmails">0</span>
+            </div>
+            <div class="analytics-item">
+                <span class="dot purple"></span>
+                <span class="label">Phones</span>
+                <span class="value" id="validPhones">0</span>
+            </div>
+        </div>
 
-  <!-- Results Section -->
-  <div class="bg-slate-50/50">
-    <div class="p-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200">
-      <div class="flex items-center gap-2">
-        <span class="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-semibold" id="resultCount">0 items</span>
-        <select id="filterType" class="border border-slate-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white">
-          <option value="all">All</option>
-          <option value="email">Emails</option>
-          <option value="phone">Phones</option>
-        </select>
-        <input type="text" id="searchInput" placeholder="Search..." class="border border-slate-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 outline-none w-24 sm:w-40 bg-white" />
-      </div>
-      <div class="flex gap-1.5">
-        <button id="copyAllBtn" class="px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-semibold rounded transition-all">Copy All</button>
-        <button id="exportCsvBtn" class="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-semibold rounded transition-all">CSV</button>
-        <button id="exportJsonBtn" class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-semibold rounded transition-all">JSON</button>
-      </div>
+        <!-- ===== RESULTS ===== -->
+        <div class="results-section">
+
+            <!-- Toolbar -->
+            <div class="results-toolbar">
+                <div class="toolbar-left">
+                    <span class="badge-count" id="resultCount">0 items</span>
+                    <select id="filterType" class="filter-select">
+                        <option value="all">All</option>
+                        <option value="email">Emails</option>
+                        <option value="phone">Phones</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Search..." class="search-input" />
+                </div>
+                <div class="toolbar-right">
+                    <button id="copyAllBtn" class="btn-tool">Copy All</button>
+                    <button id="exportCsvBtn" class="btn-tool">CSV</button>
+                    <button id="exportJsonBtn" class="btn-tool">JSON</button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-wrap">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Contact</th>
+                            <th>Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody">
+                        <tr class="empty-row">
+                            <td colspan="4">No data extracted yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-bar">
+                <span id="paginationInfo">Showing 0-0 of 0</span>
+                <div class="pagination-buttons">
+                    <button id="prevPageBtn" disabled>← Prev</button>
+                    <span id="pageIndicator" class="page-num">1</span>
+                    <button id="nextPageBtn" disabled>Next →</button>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 
-    <!-- Data Table -->
-    <div class="table-scroll max-h-64 overflow-y-auto bg-white">
-      <table class="w-full text-left border-collapse text-sm" id="resultTable">
-        <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 shadow-sm text-xs text-slate-500">
-          <tr>
-            <th class="py-2 px-3 font-medium w-10">#</th>
-            <th class="py-2 px-3 font-medium">Contact</th>
-            <th class="py-2 px-3 font-medium w-24">Type</th>
-            <th class="py-2 px-3 font-medium w-20">Action</th>
-          </tr>
-        </thead>
-        <tbody id="resultBody" class="divide-y divide-slate-100">
-          <tr><td colspan="4" class="text-center text-slate-400 py-6 text-xs">No data extracted yet.</td></tr>
-        </tbody>
-      </table>
-    </div>
-    
-    <!-- Pagination -->
-    <div class="p-2 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between gap-2 text-[10px] sm:text-xs text-slate-500">
-      <span id="paginationInfo">Showing 0-0 of 0</span>
-      <div class="flex gap-1">
-        <button id="prevPageBtn" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 disabled:opacity-50 transition-colors" disabled>← Prev</button>
-        <span id="pageIndicator" class="px-2.5 py-1 bg-slate-100 border border-slate-200 rounded font-medium text-slate-700">1</span>
-        <button id="nextPageBtn" class="px-2 py-1 bg-white border border-slate-300 rounded hover:bg-slate-100 disabled:opacity-50 transition-colors" disabled>Next →</button>
-      </div>
-    </div>
-  </div>
-</div>
+    <!-- JavaScript (অপরিবর্তিত) -->
+    <script src="script.js"></script>
+</body>
+</html>
