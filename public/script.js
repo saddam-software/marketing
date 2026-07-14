@@ -445,7 +445,7 @@ chartInstance = new Chart(ctx, {
     scales: { y: { beginAtZero: true } }
   }
 });
-
+ }
   // ========== API SETTINGS ==========
   async function loadApiStats() {
     const br = await apiCall('/api-keys/stats?apiName=brevo');
