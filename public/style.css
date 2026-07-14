@@ -360,3 +360,54 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
     transition-duration: 0.01ms !important;
   }
 }
+
+
+
+
+
+/* ===== সব ট্যাবের কন্টেন্টকে ফুল-ওয়াইড করুন ===== */
+
+/* scraper ও campaign ট্যাবের ভিতরের সব মডিউলকে ১০০% প্রস্থ দিন */
+#scraperTab > div,
+#campaignTab > div {
+    width: 100%;
+    max-width: 100%;
+    padding: 0; /* প্রয়োজনে */
+}
+
+/* মডিউলগুলোর নিজস্ব max-width সরিয়ে ফেলুন */
+#scraperTab .extractor-card,
+#scraperTab .finder-card,
+#scraperTab .campaign-card,
+#campaignTab .extractor-card,
+#campaignTab .finder-card,
+#campaignTab .campaign-card {
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+}
+
+/* একইভাবে location-contact-search, text-contact-extractor ইত্যাদি */
+#scraperTab #bulkTextExtractorContainer,
+#scraperTab #websiteExtractorContainer,
+#scraperTab #locationSearchContainer,
+#campaignTab #emailCampaignContainer,
+#campaignTab #smsCampaignContainer,
+#campaignTab #callCampaignContainer {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* API Settings ও Audit Logs ইতিমধ্যে ফুল-ওয়াইড, তবু নিশ্চিত করুন */
+#api-settingsTab,
+#audit-logsTab {
+    width: 100%;
+    max-width: 100%;
+}
+
+
+
+
+
+
