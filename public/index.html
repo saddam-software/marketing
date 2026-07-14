@@ -359,72 +359,72 @@
             TAB CONTENT — all use .tab-panel for consistent width
             ============================================================ -->
 
-       <!-- ===== DASHBOARD TAB ===== -->
-<div id="dashboardTab" class="tab-content tab-panel space-y-6">
-    <!-- Stats Cards – প্রতিটি কার্ড এখন স্ক্র্যাপার মডিউলের মতো একই প্যাডিং ও বর্ডার পাবে -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Emails Extracted Today</p>
-                    <p class="text-2xl font-bold text-blue-600" id="statEmailsToday">0</p>
+            <!-- ===== DASHBOARD TAB ===== -->
+            <div id="dashboardTab" class="tab-content tab-panel space-y-6">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Emails Extracted Today</p>
+                                <p class="text-2xl font-bold text-blue-600" id="statEmailsToday">0</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-lg">✉️</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Emails Sent Today</p>
+                                <p class="text-2xl font-bold text-emerald-600" id="statEmailsSent">0</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-lg">📤</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">SMS Sent Today</p>
+                                <p class="text-2xl font-bold text-purple-600" id="statSmsSent">0</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-lg">📱</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Contacts</p>
+                                <p class="text-2xl font-bold text-cyan-600" id="statTotalContacts">0</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 text-lg">👥</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-lg">✉️</div>
-            </div>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Emails Sent Today</p>
-                    <p class="text-2xl font-bold text-emerald-600" id="statEmailsSent">0</p>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-lg">📤</div>
-            </div>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">SMS Sent Today</p>
-                    <p class="text-2xl font-bold text-purple-600" id="statSmsSent">0</p>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-lg">📱</div>
-            </div>
-        </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Contacts</p>
-                    <p class="text-2xl font-bold text-cyan-600" id="statTotalContacts">0</p>
-                </div>
-                <div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 text-lg">👥</div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Chart + Brevo Remaining – দুটি আলাদা কার্ড, স্ক্র্যাপারের মতো স্ট্যাকড -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 7-Day Activity</h2>
-            <canvas id="analyticsChart" height="80"></canvas>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center">
-            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Brevo Remaining</p>
-            <p class="text-4xl font-bold text-indigo-600" id="statBrevoRemaining">0</p>
-            <p class="text-xs text-slate-400 mt-1">of 300 daily limit</p>
-            <div class="w-full mt-3 bg-slate-200 rounded-full h-2 overflow-hidden">
-                <div id="brevoUsageBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width:0%"></div>
-            </div>
-        </div>
-    </div>
+                <!-- Chart + Brevo Remaining -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 7-Day Activity</h2>
+                        <canvas id="analyticsChart" height="80"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center">
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Brevo Remaining</p>
+                        <p class="text-4xl font-bold text-indigo-600" id="statBrevoRemaining">0</p>
+                        <p class="text-xs text-slate-400 mt-1">of 300 daily limit</p>
+                        <div class="w-full mt-3 bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div id="brevoUsageBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Recent Activities – কার্ড ডিজাইন স্ক্র্যাপারের মতো -->
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-lg font-semibold text-slate-800 mb-4">🕐 Recent Events</h2>
-        <div id="recentActivities" class="space-y-3 max-h-64 overflow-y-auto">
-            <div class="text-sm text-slate-500 text-center py-6">No activity yet</div>
-        </div>
-    </div>
-</div>
+                <!-- Recent Activities -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-4">🕐 Recent Events</h2>
+                    <div id="recentActivities" class="space-y-3 max-h-64 overflow-y-auto">
+                        <div class="text-sm text-slate-500 text-center py-6">No activity yet</div>
+                    </div>
+                </div>
+            </div>
 
             <!-- ===== SCRAPER TAB ===== -->
             <div id="scraperTab" class="tab-content hidden tab-panel space-y-6">
@@ -622,74 +622,18 @@
                 </div>
             </div>
 
-         <!-- ===== AUDIT LOGS TAB — অভিন্ন কার্ড ডিজাইন ===== -->
-<div id="audit-logsTab" class="tab-content hidden tab-panel space-y-6">
-    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <!-- ===== AUDIT LOGS TAB — অভিন্ন কার্ড ডিজাইন ===== -->
+            <div id="audit-logsTab" class="tab-content hidden tab-panel space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 
-        <!-- Filter Bar (অভিন্ন প্যাডিং) -->
-        <div class="p-4 border-b border-slate-200 bg-slate-50/80">
-            <div class="flex flex-wrap items-center gap-3">
-                <div class="flex items-center gap-2">
-                    <label for="auditDateFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">📅 Date</label>
-                    <input type="date" id="auditDateFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white" />
-                </div>
-                <div class="flex items-center gap-2">
-                    <label for="auditActionFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">🎯 Action</label>
-                    <select id="auditActionFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white">
-                        <option value="all">All</option>
-                        <option value="SCRAPE_EMAILS">Scrape Emails</option>
-                        <option value="SCRAPE_PHONES">Scrape Phones</option>
-                        <option value="SEND_EMAILS">Send Email</option>
-                        <option value="SEND_SMS">Send SMS</option>
-                        <option value="LOGIN_SUCCESS">Login</option>
-                        <option value="LOGOUT">Logout</option>
-                        <option value="API_KEY_UPDATED">API Key Update</option>
-                        <option value="CONTACTS_IMPORT">Import Contacts</option>
-                    </select>
-                </div>
-                <div class="flex items-center gap-2 flex-1 min-w-[140px]">
-                    <label for="auditSearchFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">🔍 Search</label>
-                    <input type="text" id="auditSearchFilter" placeholder="Search user or details…" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white flex-1" />
-                </div>
-                <div class="flex gap-2 ml-auto">
-                    <button id="applyAuditFiltersBtn" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">Apply</button>
-                    <button id="resetAuditFiltersBtn" class="px-4 py-1.5 bg-slate-300 hover:bg-slate-400 text-slate-700 text-xs font-medium rounded-lg transition-all">Reset</button>
-                    <button id="exportAuditCsvBtn" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                        CSV
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Table with scroll & overflow fix -->
-        <div class="overflow-x-auto table-scroll">
-            <table class="data-table" style="min-width: 700px;">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>User</th>
-                        <th>Action</th>
-                        <th>Details</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="auditLogsBody">
-                    <tr><td colspan="5" class="text-center text-slate-500 py-8">Loading logs…</td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Footer (অভিন্ন প্যাডিং) -->
-        <div class="p-3 border-t border-slate-200 bg-slate-50/80 text-xs text-slate-500 flex items-center justify-between">
-            <span id="auditLogsCount">0 events</span>
-            <button id="refreshAuditLogsBtn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">🔄 Refresh</button>
-        </div>
-    </div>
-</div>
-
-                            
-                            <div class="filter-group flex items-center gap-2">
+                    <!-- Filter Bar -->
+                    <div class="p-4 border-b border-slate-200 bg-slate-50/80">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="flex items-center gap-2">
+                                <label for="auditDateFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">📅 Date</label>
+                                <input type="date" id="auditDateFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white" />
+                            </div>
+                            <div class="flex items-center gap-2">
                                 <label for="auditActionFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">🎯 Action</label>
                                 <select id="auditActionFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white">
                                     <option value="all">All</option>
@@ -703,7 +647,7 @@
                                     <option value="CONTACTS_IMPORT">Import Contacts</option>
                                 </select>
                             </div>
-                            <div class="filter-group flex items-center gap-2 flex-1 min-w-[140px]">
+                            <div class="flex items-center gap-2 flex-1 min-w-[140px]">
                                 <label for="auditSearchFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">🔍 Search</label>
                                 <input type="text" id="auditSearchFilter" placeholder="Search user or details…" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white flex-1" />
                             </div>
@@ -718,9 +662,9 @@
                         </div>
                     </div>
 
-                    <!-- Table with overflow-x-auto wrapper -->
-                    <div class="audit-table-wrapper table-scroll">
-                        <table class="data-table">
+                    <!-- Table with scroll & overflow fix -->
+                    <div class="overflow-x-auto table-scroll">
+                        <table class="data-table" style="min-width: 700px;">
                             <thead>
                                 <tr>
                                     <th>Timestamp</th>
@@ -736,7 +680,8 @@
                         </table>
                     </div>
 
-                    <div class="p-3 border-t border-slate-200 bg-slate-50/80 rounded-b-xl text-xs text-slate-500 text-center flex items-center justify-between">
+                    <!-- Footer -->
+                    <div class="p-3 border-t border-slate-200 bg-slate-50/80 text-xs text-slate-500 flex items-center justify-between">
                         <span id="auditLogsCount">0 events</span>
                         <button id="refreshAuditLogsBtn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">🔄 Refresh</button>
                     </div>
