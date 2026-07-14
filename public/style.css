@@ -364,4 +364,40 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 
 
 
+/* Audit Logs টেবিলের জন্য বিশেষ */
+.table-scroll {
+    max-height: 480px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 8px 10px;
+    word-break: break-word; /* লম্বা টেক্সট ভেঙে ফেলে */
+}
+
+/* কলামের আনুপাতিক Width (প্রয়োজনমতো adjust করুন) */
+.data-table th:first-child,
+.data-table td:first-child { width: 16%; }
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) { width: 14%; }
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) { width: 18%; }
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) { width: 38%; }
+.data-table th:last-child,
+.data-table td:last-child { width: 14%; }
+
+
+
+
+
+
 
