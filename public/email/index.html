@@ -1,167 +1,195 @@
-<div id="emailCampaign" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-  
-  <div class="p-4 md:p-5 bg-slate-50/50 flex flex-col gap-4">
-    
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-      <div class="col-span-1 md:col-span-1">
-        <input type="email" id="emailSender" placeholder="Sender (e.g. hello@domain.com)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
-      </div>
-      <div class="col-span-1 md:col-span-2">
-        <input type="text" id="emailSubject" placeholder="Email Subject..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
-      </div>
-      <div class="col-span-1 md:col-span-1">
-        <select id="emailProvider" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white">
-          <option value="default">Default API</option>
-          <option value="brevo">Brevo (Sendinblue)</option>
-          <option value="sendgrid">SendGrid</option>
-          <option value="mailgun">Mailgun</option>
-          <option value="smtp">SMTP</option>
-        </select>
-      </div>
-    </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Campaign · Pro</title>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      
-      <div class="col-span-1 flex flex-col gap-2">
-        <label class="text-xs font-semibold text-slate-700 flex items-center gap-1">
-          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-          Recipients
-        </label>
-        
-        <div id="emailDropZone" class="flex-1 border-2 border-dashed border-slate-300 rounded-lg p-3 flex flex-col items-center justify-center hover:border-blue-500 transition-colors cursor-pointer bg-white group text-center min-h-[100px]">
-          <svg class="w-6 h-6 text-slate-400 group-hover:text-blue-500 mb-1 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-          <p class="text-xs text-slate-600 font-medium">Upload .txt or .csv</p>
-          <input type="file" id="emailFileInput" accept=".txt,.csv" class="hidden" />
-        </div>
-        
-        <div id="emailFileInfo" class="hidden px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] text-slate-600 flex justify-between items-center">
-          <span id="emailFileName" class="truncate font-medium max-w-[100px]">file.txt</span>
-          <div class="flex items-center gap-1.5">
-            <span id="emailFileCount" class="font-bold text-blue-600">0</span>
-            <button id="emailClearFileBtn" class="text-red-500 hover:text-red-700 bg-red-50 px-1.5 rounded">✕</button>
-          </div>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <div id="emailCampaign" class="campaign-card">
+
+        <!-- ===== HEADER ===== -->
+        <div class="campaign-header">
+            <h1>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                Email Campaign
+            </h1>
+            <div class="header-badge">
+                <span class="status-dot"></span>
+                <span class="status-text">Ready</span>
+            </div>
         </div>
 
-        <select id="emailFilter" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white">
-          <option value="all">All Contacts</option>
-          <option value="b2b">B2B (Business)</option>
-          <option value="b2c">B2C (Personal)</option>
-          <option value="verified">Verified Only</option>
-        </select>
-      </div>
+        <!-- ===== BODY ===== -->
+        <div class="campaign-body">
 
-      <div class="col-span-1 md:col-span-2 flex flex-col">
-        <div class="flex justify-between items-center mb-2">
-          <label class="text-xs font-semibold text-slate-700 flex items-center gap-1">
-            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            HTML Content
-          </label>
-          <div class="flex items-center gap-3 text-[10px] text-slate-500">
-            <span id="emailHtmlLength">0 characters</span>
-            <button id="emailPreviewBtn" class="text-blue-600 hover:underline font-medium">Preview</button>
-          </div>
+            <!-- Row 1: Sender, Subject, Provider -->
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>📤 Sender</label>
+                    <input type="email" id="emailSender" placeholder="hello@domain.com" />
+                </div>
+                <div class="form-group">
+                    <label>📌 Subject</label>
+                    <input type="text" id="emailSubject" placeholder="Email Subject..." />
+                </div>
+                <div class="form-group">
+                    <label>⚙️ Provider</label>
+                    <select id="emailProvider">
+                        <option value="default">Default API</option>
+                        <option value="brevo">Brevo (Sendinblue)</option>
+                        <option value="sendgrid">SendGrid</option>
+                        <option value="mailgun">Mailgun</option>
+                        <option value="smtp">SMTP</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 2: Recipients + HTML Editor -->
+            <div class="form-row-2">
+
+                <!-- Left: Recipients -->
+                <div class="recipients-panel">
+                    <label>📋 Recipients</label>
+                    <div id="emailDropZone" class="drop-zone">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                        <p>Drop .txt or .csv</p>
+                        <input type="file" id="emailFileInput" accept=".txt,.csv" class="file-input" />
+                    </div>
+                    <div id="emailFileInfo" class="file-info" style="display:none;">
+                        <span id="emailFileName" class="truncate"></span>
+                        <span id="emailFileCount">0 contacts</span>
+                        <button id="emailClearFileBtn" class="clear-btn">✕</button>
+                    </div>
+                    <select id="emailFilter" class="filter-select">
+                        <option value="all">All Contacts</option>
+                        <option value="b2b">B2B (Business)</option>
+                        <option value="b2c">B2C (Personal)</option>
+                        <option value="verified">Verified Only</option>
+                    </select>
+                </div>
+
+                <!-- Right: HTML Editor -->
+                <div class="editor-panel">
+                    <div class="editor-header">
+                        <label>✏️ HTML Content</label>
+                        <span class="counter" id="emailHtmlLength">0 characters</span>
+                        <button id="emailPreviewBtn" class="preview-btn">Preview</button>
+                    </div>
+                    <div class="editor-toolbar">
+                        <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+                        <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+                        <button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+                        <span class="divider"></span>
+                        <button type="button" data-cmd="h1">H1</button>
+                        <button type="button" data-cmd="h2">H2</button>
+                        <span class="divider"></span>
+                        <button type="button" data-cmd="link">🔗</button>
+                        <button type="button" data-cmd="ul">• List</button>
+                        <button type="button" data-cmd="variable" class="var-btn">{ Var }</button>
+                    </div>
+                    <textarea id="emailHtmlContent" rows="6" placeholder="<h1>Hello {{name}}</h1><p>Your content here</p>"></textarea>
+                </div>
+
+            </div>
+
+            <!-- Action Row -->
+            <div class="action-row">
+                <div id="emailStatus" class="status-box"></div>
+                <button id="sendEmailBtn" class="btn-send">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    Send Campaign
+                </button>
+            </div>
+
         </div>
-        
-        <div class="email-editor-toolbar flex flex-wrap gap-1 p-1.5 bg-slate-100 border border-slate-300 rounded-t-lg border-b-0">
-          <button type="button" data-cmd="bold" class="px-2 py-0.5 text-xs font-medium rounded hover:bg-slate-200 text-slate-700" title="Bold"><b>B</b></button>
-          <button type="button" data-cmd="italic" class="px-2 py-0.5 text-xs font-medium rounded hover:bg-slate-200 text-slate-700" title="Italic"><i>I</i></button>
-          <button type="button" data-cmd="underline" class="px-2 py-0.5 text-xs font-medium rounded hover:bg-slate-200 text-slate-700" title="Underline"><u>U</u></button>
-          <span class="w-px h-4 bg-slate-300 mx-1 self-center"></span>
-          <button type="button" data-cmd="h1" class="px-2 py-0.5 text-xs font-medium rounded hover:bg-slate-200 text-slate-700">H1</button>
-          <button type="button" data-cmd="h2" class="px-2 py-0.5 text-xs font-medium rounded hover:bg-slate-200 text-slate-700">H2</button>
-          <span class="w-px h-4 bg-slate-300 mx-1 self-center"></span>
-          <button type="button" data-cmd="link" class="px-2 py-0.5 text-xs font-medium rounded hover:bg-slate-200 text-slate-700">🔗</button>
-          <button type="button" data-cmd="ul" class="px-2 py-0.5 text-xs font-medium rounded hover:bg-slate-200 text-slate-700">• List</button>
-          <button type="button" data-cmd="variable" class="px-2 py-0.5 text-xs font-medium rounded hover:bg-slate-200 text-slate-700 text-blue-600">{ Var }</button>
+
+        <!-- ===== PROGRESS ===== -->
+        <div id="emailProgressContainer" class="progress-container">
+            <div class="progress-label">
+                <span id="emailProgressLabel" class="font-semibold">Sending emails...</span>
+                <span id="emailProgressText" class="font-bold text-blue-600">0%</span>
+            </div>
+            <div class="progress-track">
+                <div id="emailProgressBar" class="progress-fill"></div>
+            </div>
         </div>
-        
-        <textarea id="emailHtmlContent" rows="5" placeholder="<h1>Hello {{name}}</h1><p>Your content here</p>" class="w-full flex-1 border border-slate-300 rounded-b-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none transition-all resize-y font-mono text-xs"></textarea>
-      </div>
-    </div>
 
-    <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
-      <div id="emailStatus" class="hidden flex-1 px-3 py-2 rounded-lg text-xs font-medium text-center sm:text-left"></div>
-      <button id="sendEmailBtn" class="w-full sm:w-auto sm:ml-auto bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-        Send Campaign
-      </button>
-    </div>
-  </div>
-
-  <div id="emailProgressContainer" class="hidden bg-blue-50 p-2 sm:p-3 border-y border-blue-100">
-    <div class="flex items-center gap-3">
-      <div class="spinner w-4 h-4 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-      <div class="flex-1 flex items-center gap-2">
-        <span class="text-xs font-semibold text-slate-700 hidden sm:inline" id="emailProgressLabel">Sending emails...</span>
-        <div class="flex-1 bg-slate-200 rounded-full h-1.5">
-          <div id="emailProgressBar" class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style="width:0%"></div>
+        <!-- ===== STATS ===== -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="label">Total</span>
+                <span class="value" id="emailTotalStat">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="dot green"></span>
+                <span class="label">Success</span>
+                <span class="value green" id="emailSuccessStat">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="dot red"></span>
+                <span class="label">Failed</span>
+                <span class="value red" id="emailFailedStat">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="dot amber"></span>
+                <span class="label">Pending</span>
+                <span class="value amber" id="emailPendingStat">0</span>
+            </div>
         </div>
-      </div>
-      <span id="emailProgressText" class="font-bold text-blue-600 text-xs">0%</span>
-    </div>
-  </div>
 
-  <div class="border-y border-slate-200 bg-white p-3 flex flex-wrap justify-around md:justify-start md:gap-8 gap-3 text-xs sm:text-sm">
-    <div class="flex items-center gap-1.5">
-      <span class="text-slate-500">Total:</span> 
-      <span class="font-bold text-slate-800" id="emailTotalStat">0</span>
-    </div>
-    <div class="flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-      <span class="text-slate-500">Success:</span> 
-      <span class="font-bold text-emerald-600" id="emailSuccessStat">0</span>
-    </div>
-    <div class="flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-red-500"></span>
-      <span class="text-slate-500">Failed:</span> 
-      <span class="font-bold text-red-600" id="emailFailedStat">0</span>
-    </div>
-    <div class="flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-      <span class="text-slate-500">Pending:</span> 
-      <span class="font-bold text-amber-600" id="emailPendingStat">0</span>
-    </div>
-  </div>
+        <!-- ===== LOG ===== -->
+        <div class="log-section">
+            <div class="log-header">
+                <div class="log-left">
+                    <span>📧 Email Log</span>
+                    <span class="badge-count" id="emailResultCount">0 emails</span>
+                </div>
+                <div class="log-right">
+                    <span id="emailResultMeta" class="meta-text">Ready</span>
+                    <button id="emailExportLogBtn" class="btn-export" disabled>Export Log (CSV)</button>
+                </div>
+            </div>
+            <div class="log-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th class="hidden sm:table-cell">Message ID</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="emailResultBody">
+                        <tr class="empty-row">
+                            <td colspan="4">No emails sent yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-  <div class="flex flex-wrap items-center justify-between gap-2 p-2 px-3 border-b border-slate-200 bg-slate-50 text-xs">
-    <div class="flex items-center gap-2">
-      <span class="font-semibold text-slate-700">📧 Email Log</span>
-      <span id="emailResultCount" class="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-bold text-[10px]">0 emails</span>
     </div>
-    <div class="flex items-center gap-2">
-      <span id="emailResultMeta" class="text-[10px] text-slate-400 hidden sm:inline">Ready</span>
-      <button id="emailExportLogBtn" class="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-semibold rounded transition-all disabled:opacity-50" disabled>Export Log (CSV)</button>
-    </div>
-  </div>
 
-  <div class="table-scroll h-56 overflow-y-auto bg-white">
-    <table class="w-full text-left border-collapse text-sm data-table" id="emailResultTable">
-      <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 shadow-sm text-xs text-slate-500">
-        <tr>
-          <th class="py-2 px-3 font-medium">Email</th>
-          <th class="py-2 px-3 font-medium w-24">Status</th>
-          <th class="py-2 px-3 font-medium hidden sm:table-cell">Message ID</th>
-          <th class="py-2 px-3 font-medium w-20">Time</th>
-        </tr>
-      </thead>
-      <tbody id="emailResultBody" class="divide-y divide-slate-100">
-        <tr><td colspan="4" class="text-center text-slate-400 py-8 text-xs">No emails sent yet.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<div id="emailPreviewModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto overflow-x-hidden flex flex-col">
-    <div class="flex justify-between items-center p-4 border-b border-slate-200 sticky top-0 bg-white z-10">
-      <h3 class="font-bold text-slate-800 flex items-center gap-2">
-        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-        Email Preview
-      </h3>
-      <button id="emailPreviewClose" class="text-slate-400 hover:text-red-500 transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
+    <!-- ===== PREVIEW MODAL ===== -->
+    <div id="emailPreviewModal" class="preview-modal hidden">
+        <div class="preview-modal-content">
+            <div class="preview-modal-header">
+                <h3>📧 Email Preview</h3>
+                <button id="emailPreviewClose" class="close-btn">✕</button>
+            </div>
+            <div id="emailPreviewContent" class="preview-body"></div>
+        </div>
     </div>
-    <div id="emailPreviewContent" class="p-6 prose max-w-none text-sm text-slate-700"></div>
-  </div>
-</div>
+
+    <!-- JavaScript (অপরিবর্তিত) -->
+    <script src="script.js"></script>
+</body>
+</html>
