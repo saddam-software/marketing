@@ -428,23 +428,23 @@
     const extracted = data.length ? data.map(d => d.extracted) : [0];
     const sent = data.length ? data.map(d => d.sent) : [0];
 
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [
-          { label: 'Extracted', data: extracted, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 },
-          { label: 'Sent', data: sent, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: { legend: { position: 'top' } },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
+  // পরিবর্তন করার পর কোডটি দেখতে এমন হবে:
+chartInstance = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      { label: 'Extracted', data: extracted, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 },
+      { label: 'Sent', data: sent, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.4 }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false, // এটি true থেকে false করে দেওয়া হয়েছে
+    plugins: { legend: { position: 'top' } },
+    scales: { y: { beginAtZero: true } }
   }
+});
 
   // ========== API SETTINGS ==========
   async function loadApiStats() {
