@@ -59,9 +59,7 @@
             }
         }
 
-        /* ============================================================
-               NEW TAB BUTTONS — BEAUTIFUL & MODERN
-               ============================================================ */
+        /* ===== BEAUTIFUL TAB BUTTONS ===== */
         .tab-button {
             position: relative;
             padding: 0.65rem 1.4rem;
@@ -107,7 +105,6 @@
             transform: scale(1.1);
         }
 
-        /* subtle glow pulse on active */
         .tab-button.active::after {
             content: '';
             position: absolute;
@@ -131,7 +128,6 @@
             }
         }
 
-        /* tab button responsive */
         @media (max-width: 768px) {
             .tab-button {
                 padding: 0.5rem 0.9rem;
@@ -156,32 +152,16 @@
             }
         }
 
-        /* ============================================================
-               UNIFIED TAB CONTENT WRAPPER — SAME WIDTH FOR ALL
-               ============================================================ */
+        /* ===== UNIFIED TAB CONTENT WRAPPER — SAME WIDTH FOR ALL ===== */
         .tab-panel {
             max-width: 76rem;
-            /* 1216px — slightly wider than 6xl for breathing room */
             margin-left: auto;
             margin-right: auto;
             width: 100%;
             padding: 0 1.25rem;
         }
 
-        /* inner content wrapper for cards etc. */
-        .tab-panel-inner {
-            width: 100%;
-        }
-
-        /* keep child elements from breaking out */
-        .tab-panel>*,
-        .tab-panel-inner>* {
-            max-width: 100%;
-        }
-
-        /* ============================================================
-               OTHER COMPONENT STYLES (unchanged from original)
-               ============================================================ */
+        /* ===== OTHER COMPONENT STYLES ===== */
         .stat-card {
             @apply bg-white p-5 rounded-xl shadow-sm border border-slate-200 transition-all hover:shadow-md hover:-translate-y-0.5;
         }
@@ -285,6 +265,16 @@
                 @apply text-xl;
             }
         }
+
+        /* ===== FIX FOR AUDIT LOGS TABLE — PREVENT OVERFLOW ===== */
+        .audit-table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .audit-table-wrapper table {
+            min-width: 700px;
+            /* ensures horizontal scroll on small screens */;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
@@ -346,7 +336,7 @@
         <!-- MAIN -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
 
-            <!-- ===== TABS (Redesigned) ===== -->
+            <!-- ===== TABS ===== -->
             <div class="flex flex-wrap gap-1.5 border-b border-slate-200 mb-6 pb-1.5 overflow-x-auto">
                 <button class="tab-button active" data-tab="dashboard">
                     <span class="tab-icon">📊</span> Dashboard
@@ -452,7 +442,6 @@
 
             <!-- ===== API SETTINGS TAB ===== -->
             <div id="api-settingsTab" class="tab-content hidden tab-panel space-y-6">
-                <!-- প্রথম সারি: Email ও SMS -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Email API -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -532,7 +521,6 @@
                     </div>
                 </div>
 
-                <!-- দ্বিতীয় সারি: Call ও Text API -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                     <!-- Call API -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -593,7 +581,6 @@
                     </div>
                 </div>
 
-                <!-- তৃতীয় সারি: Website ও Location API -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                     <!-- Website Scraping API -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -635,7 +622,7 @@
                 </div>
             </div>
 
-            <!-- ===== AUDIT LOGS TAB ===== -->
+            <!-- ===== AUDIT LOGS TAB — with overflow-x-auto fix ===== -->
             <div id="audit-logsTab" class="tab-content hidden tab-panel space-y-6">
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col">
                     <!-- Filter Bar -->
@@ -674,8 +661,8 @@
                         </div>
                     </div>
 
-                    <!-- Table -->
-                    <div class="table-scroll">
+                    <!-- Table with overflow-x-auto wrapper -->
+                    <div class="audit-table-wrapper table-scroll">
                         <table class="data-table">
                             <thead>
                                 <tr>
