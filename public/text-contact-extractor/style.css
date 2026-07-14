@@ -6,8 +6,7 @@
     border-radius: 1.5rem;
     border: 2px solid #0b1120;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-     width: 100%;
-    margin: 2rem auto;
+ 
     overflow: hidden;
     transition: box-shadow 0.25s ease;
     /* ✅ ফন্ট ফ্যামিলি আগের মতো সিস্টেম ফন্টে সেট করা হলো */
