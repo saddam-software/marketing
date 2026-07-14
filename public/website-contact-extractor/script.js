@@ -38,23 +38,35 @@ const tokenPayload = {
 
 // ২. অবজেক্টটিকে টেক্সটে রূপান্তর করে Base64 এনকোড করা হলো (যা ব্যাকএন্ড আশা করে)
 const token = btoa(JSON.stringify(tokenPayload));
-  // ========== Tab switching ==========
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-      const tab = this.dataset.tab;
-      activeTab = tab;
-      tabBtns.forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      document.querySelectorAll('.website-tab-content').forEach(el => el.classList.add('hidden'));
-      if (tab === 'emails') {
-        emailsTab.classList.remove('hidden');
-        renderEmails();
-      } else {
-        phonesTab.classList.remove('hidden');
-        renderPhones();
-      }
-    });
+// ====== ট্যাব সুইচিং ======
+const tabBtns = document.querySelectorAll('.we-tab-btn');  // ক্লাস ঠিক করা হয়েছে
+const tabPanels = {
+  emails: document.getElementById('websiteEmailsTab'),
+  phones: document.getElementById('websitePhonesTab')
+};
+
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', function() {
+    const tab = this.dataset.tab;  // 'emails' অথবা 'phones'
+    
+    // সব বাটন থেকে active ক্লাস সরান
+    tabBtns.forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    
+    // সব প্যানেল লুকান
+    Object.values(tabPanels).forEach(panel => panel.classList.add('hidden'));
+    
+    // শুধু নির্বাচিত ট্যাব দেখান
+    if (tab === 'emails') {
+      tabPanels.emails.classList.remove('hidden');
+      renderEmails();   // ইমেইল রেন্ডার
+    } else if (tab === 'phones') {
+      tabPanels.phones.classList.remove('hidden');
+      renderPhones();   // ফোন রেন্ডার
+    }
   });
+});
+  
 
   // ========== Render functions ==========
   function renderEmails() {
