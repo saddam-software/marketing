@@ -45,15 +45,17 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .tab-button {
-            @apply px-4 py-2.5 font-medium text-slate-600 border-b-2 border-transparent hover:border-blue-400 transition-all text-sm whitespace-nowrap;
-        }
-        .tab-button.active {
-            @apply text-blue-600 border-blue-600;
-        }
-        .tab-button .tab-icon {
-            @apply mr-2 inline-block;
-        }
+
+        /* ===== TAB BUTTONS NEW DESIGN ===== */
+.tab-button {
+    @apply px-5 py-2.5 font-medium text-slate-600 rounded-xl hover:bg-slate-200 hover:text-slate-900 transition-all duration-300 text-sm whitespace-nowrap flex items-center;
+}
+.tab-button.active {
+    @apply bg-blue-600 text-white shadow-md shadow-blue-500/30 transform -translate-y-0.5;
+}
+.tab-button .tab-icon {
+    @apply mr-2 text-lg;
+}
         .stat-card {
             @apply bg-white p-5 rounded-xl shadow-sm border border-slate-200 transition-all hover:shadow-md hover:-translate-y-0.5;
         }
