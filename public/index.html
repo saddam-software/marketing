@@ -334,7 +334,7 @@
         </header>
 
         <!-- MAIN -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <main class="main-page-wrapper mx-auto px-4 sm:px-6 py-6">
 
             <!-- ===== TABS ===== -->
             <div class="flex flex-wrap gap-1.5 border-b border-slate-200 mb-6 pb-1.5 overflow-x-auto">
@@ -403,10 +403,19 @@
 
                 <!-- Chart + Brevo Remaining -->
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                    <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 7-Day Activity</h2>
-                        <canvas id="analyticsChart" height="80"></canvas>
-                    </div>
+
+                    
+<div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 7-Day Activity</h2>
+    <!-- এই নতুন div টি যোগ করুন -->
+    <div style="position: relative; width: 100%;">
+        <canvas id="analyticsChart" height="80"></canvas>
+    </div>
+</div>
+
+                    
+
+                    
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center">
                         <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Brevo Remaining</p>
                         <p class="text-4xl font-bold text-indigo-600" id="statBrevoRemaining">0</p>
