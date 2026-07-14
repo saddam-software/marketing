@@ -2,7 +2,7 @@
 (function() {
   'use strict';
 
-  // DOM refs
+  // ===== DOM রেফারেন্স =====
   const urlInput = document.getElementById('websiteUrl');
   const limitInput = document.getElementById('websiteLimit');
   const depthInput = document.getElementById('websiteDepth');
@@ -18,70 +18,72 @@
   const resultMeta = document.getElementById('websiteResultMeta');
   const emailsTab = document.getElementById('websiteEmailsTab');
   const phonesTab = document.getElementById('websitePhonesTab');
-  const tabBtns = document.querySelectorAll('.website-tab-btn');
   const copyAllBtn = document.getElementById('websiteCopyAllBtn');
   const exportCsvBtn = document.getElementById('websiteExportCsv');
 
-  // State
+  // ===== স্টেট =====
   let currentData = { emails: [], phones: [] };
   let activeTab = 'emails';
 
-// ✅ টোকেন জেনারেট এবং অ্যাসাইন করা (টেস্টিংয়ের জন্য সাময়িক পরিবর্তন)
-// পুরোনো লাইনটি কমেন্ট করে রাখা হলো:
-// const token = localStorage.getItem('emailExtractorToken');
+  // ===== টোকেন জেনারেশন (ব্যাকএন্ডের সাথে সামঞ্জস্যপূর্ণ) =====
+  const tokenPayload = {
+    username: "developer_user",
+    exp: Date.now() + (365 * 24 * 60 * 60 * 1000) // ১ বছর মেয়াদ
+  };
+  const token = btoa(JSON.stringify(tokenPayload));
 
-// ১. একটি পেলোড অবজেক্ট তৈরি করা হলো যার মেয়াদ (exp) বর্তমান সময় থেকে ১ বছর বেশি
-const tokenPayload = {
-  username: "developer_user",
-  exp: Date.now() + (365 * 24 * 60 * 60 * 1000) // ১ বছর মেয়াদ (মিলিলেকেন্ডে)
-};
+  // ===== ট্যাব সুইচিং (সঠিক সিলেক্টর) =====
+  const tabBtns = document.querySelectorAll('.we-tab-btn');
+  const tabPanels = {
+    emails: emailsTab,
+    phones: phonesTab
+  };
 
-// ২. অবজেক্টটিকে টেক্সটে রূপান্তর করে Base64 এনকোড করা হলো (যা ব্যাকএন্ড আশা করে)
-const token = btoa(JSON.stringify(tokenPayload));
-// ====== ট্যাব সুইচিং ======
-const tabBtns = document.querySelectorAll('.we-tab-btn');  // ক্লাস ঠিক করা হয়েছে
-const tabPanels = {
-  emails: document.getElementById('websiteEmailsTab'),
-  phones: document.getElementById('websitePhonesTab')
-};
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tab = this.dataset.tab; // 'emails' বা 'phones'
+      activeTab = tab;
 
-tabBtns.forEach(btn => {
-  btn.addEventListener('click', function() {
-    const tab = this.dataset.tab;  // 'emails' অথবা 'phones'
-    
-    // সব বাটন থেকে active ক্লাস সরান
-    tabBtns.forEach(b => b.classList.remove('active'));
-    this.classList.add('active');
-    
-    // সব প্যানেল লুকান
-    Object.values(tabPanels).forEach(panel => panel.classList.add('hidden'));
-    
-    // শুধু নির্বাচিত ট্যাব দেখান
-    if (tab === 'emails') {
-      tabPanels.emails.classList.remove('hidden');
-      renderEmails();   // ইমেইল রেন্ডার
-    } else if (tab === 'phones') {
-      tabPanels.phones.classList.remove('hidden');
-      renderPhones();   // ফোন রেন্ডার
-    }
+      // সব বাটন থেকে active ক্লাস সরান
+      tabBtns.forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+
+      // সব প্যানেল লুকান
+      Object.values(tabPanels).forEach(panel => panel.classList.add('hidden'));
+
+      // নির্বাচিত প্যানেল দেখান
+      if (tab === 'emails') {
+        tabPanels.emails.classList.remove('hidden');
+        renderEmails();
+      } else if (tab === 'phones') {
+        tabPanels.phones.classList.remove('hidden');
+        renderPhones();
+      }
+    });
   });
-});
-  
 
-  // ========== Render functions ==========
+  // ===== রেন্ডার ফাংশন =====
   function renderEmails() {
     const emails = currentData.emails || [];
     if (!emails.length) {
-      emailsTab.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No emails extracted yet.</div>';
+      emailsTab.innerHTML = `
+        <div class="we-empty-state">
+          <svg class="we-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          No emails extracted yet.
+        </div>
+      `;
       return;
     }
-    let html = `<table class="data-table w-full"><thead><tr><th>#</th><th>Email</th><th>Action</th></tr></thead><tbody>`;
+
+    let html = `<table class="we-data-table"><thead><tr><th>#</th><th>Email</th><th>Action</th></tr></thead><tbody>`;
     emails.forEach((e, idx) => {
       html += `
-        <tr class="result-row">
+        <tr class="we-data-row">
           <td class="text-slate-400 text-xs">${idx+1}</td>
           <td class="font-mono text-sm break-all">${e}</td>
-          <td><button class="copy-btn text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition-all" data-value="${e}">Copy</button></td>
+          <td><button class="we-copy-btn" data-value="${e}">Copy</button></td>
         </tr>
       `;
     });
@@ -93,16 +95,24 @@ tabBtns.forEach(btn => {
   function renderPhones() {
     const phones = currentData.phones || [];
     if (!phones.length) {
-      phonesTab.innerHTML = '<div class="text-sm text-slate-500 text-center py-12">No phone numbers extracted yet.</div>';
+      phonesTab.innerHTML = `
+        <div class="we-empty-state">
+          <svg class="we-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+          </svg>
+          No phone numbers extracted yet.
+        </div>
+      `;
       return;
     }
-    let html = `<table class="data-table w-full"><thead><tr><th>#</th><th>Phone</th><th>Action</th></tr></thead><tbody>`;
+
+    let html = `<table class="we-data-table"><thead><tr><th>#</th><th>Phone</th><th>Action</th></tr></thead><tbody>`;
     phones.forEach((p, idx) => {
       html += `
-        <tr class="result-row">
+        <tr class="we-data-row">
           <td class="text-slate-400 text-xs">${idx+1}</td>
           <td class="font-mono text-sm break-all">${p}</td>
-          <td><button class="copy-btn text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition-all" data-value="${p}">Copy</button></td>
+          <td><button class="we-copy-btn" data-value="${p}">Copy</button></td>
         </tr>
       `;
     });
@@ -112,7 +122,7 @@ tabBtns.forEach(btn => {
   }
 
   function attachCopyEvents() {
-    document.querySelectorAll('#websiteEmailsTab .copy-btn, #websitePhonesTab .copy-btn').forEach(btn => {
+    document.querySelectorAll('#websiteEmailsTab .we-copy-btn, #websitePhonesTab .we-copy-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         navigator.clipboard.writeText(btn.dataset.value).then(() => {
           btn.textContent = '✓';
@@ -122,6 +132,7 @@ tabBtns.forEach(btn => {
     });
   }
 
+  // ===== UI আপডেট =====
   function updateUI(data) {
     currentData = data;
     const total = (data.emails?.length || 0) + (data.phones?.length || 0);
@@ -129,12 +140,13 @@ tabBtns.forEach(btn => {
     resultMeta.textContent = `Found ${data.emails?.length || 0} emails and ${data.phones?.length || 0} phones`;
     copyAllBtn.disabled = total === 0;
     exportCsvBtn.disabled = total === 0;
-    // Re-render active tab
+
+    // বর্তমান ট্যাব অনুযায়ী রেন্ডার
     if (activeTab === 'emails') renderEmails();
     else renderPhones();
   }
 
-  // ========== Show status ==========
+  // ===== স্ট্যাটাস মেসেজ =====
   function showStatus(msg, type = 'info') {
     statusDiv.textContent = msg;
     statusDiv.classList.remove('hidden', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700', 'bg-blue-50', 'text-blue-700');
@@ -144,7 +156,7 @@ tabBtns.forEach(btn => {
     setTimeout(() => statusDiv.classList.add('hidden'), 5000);
   }
 
-  // ========== API Call (টোকেন সহ) ==========
+  // ===== এপিআই কল (স্ক্র্যাপিং) =====
   async function handleWebsiteScrape() {
     const url = urlInput.value.trim();
     if (!url) {
@@ -167,14 +179,13 @@ tabBtns.forEach(btn => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`   // ✅ টোকেন যোগ করা হলো
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ url, limit, depth, force, includeSubdomains })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Scraping failed');
 
-      // Simulate progress (backend may not provide real-time)
       progressBar.style.width = '100%';
       progressText.textContent = '100%';
       progressLabel.textContent = 'Done!';
@@ -193,7 +204,7 @@ tabBtns.forEach(btn => {
     }
   }
 
-  // ========== Export ==========
+  // ===== কপি অল ও এক্সপোর্ট =====
   copyAllBtn.addEventListener('click', function() {
     const all = [...(currentData.emails || []), ...(currentData.phones || [])];
     if (!all.length) return;
@@ -222,14 +233,12 @@ tabBtns.forEach(btn => {
     URL.revokeObjectURL(url);
   }
 
-  // ========== Event listeners ==========
+  // ===== ইভেন্ট লিসেনার =====
   scrapeBtn.addEventListener('click', handleWebsiteScrape);
-
-  // Enter key on URL input
   urlInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleWebsiteScrape();
   });
 
-  // ========== Init ==========
+  // ===== ইনিশিয়ালাইজ =====
   updateUI({ emails: [], phones: [] });
 })();
