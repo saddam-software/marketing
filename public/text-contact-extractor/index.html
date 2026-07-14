@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Website Contact Extractor · Pro</title>
+    <title>Bulk Text Extractor · Pro</title>
 
-    <!-- Tailwind CSS (শুধু ইউটিলিটি) -->
+    <!-- Tailwind CSS (শুধু প্রয়োজনীয় ইউটিলিটি) -->
     <script src="https://cdn.tailwindcss.com">
     </script>
-    <!-- External CSS -->
+    <!-- External CSS (সংশোধিত) -->
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-    <div id="websiteContactExtractor" class="extractor-card">
+    <div id="bulkTextExtractor" class="extractor-card">
 
-        <!-- ===== HEADER (ডার্ক) ===== -->
+        <!-- ===== HEADER ===== -->
         <div class="extractor-header">
             <h1>
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
-                Website Contact Extractor
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                Bulk Text Extractor
             </h1>
             <div class="header-badge">
                 <span class="status-dot"></span>
@@ -30,89 +30,128 @@
         <!-- ===== BODY: Input Section ===== -->
         <div class="extractor-body">
 
-            <!-- URL Input + Scrape Button -->
-            <div class="input-row">
-                <div class="url-input-wrapper">
-                    <svg class="url-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
-                    <input type="url" id="websiteUrl" placeholder="https://example.com" />
+            <!-- Left: Text Input -->
+            <div class="input-group">
+                <div class="input-header">
+                    <label>✏️ Paste Text</label>
+                    <span class="counter" id="charCount">0 characters</span>
                 </div>
-                <button id="websiteScrapeBtn" class="btn-primary">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                    Start Scraping
-                </button>
+                <textarea id="textInput" rows="4" placeholder="Paste your text here..."></textarea>
+                <button id="extractTextBtn" class="btn-primary">Extract Text</button>
             </div>
 
-            <!-- Settings Row -->
-            <div class="settings-row">
-                <div class="setting-group">
-                    <label for="websiteLimit">Limit:</label>
-                    <input type="number" id="websiteLimit" value="100" min="1" max="10000" />
+            <!-- Right: File Upload -->
+            <div class="input-group">
+                <div class="input-header">
+                    <label>📂 Upload File</label>
+                    <span class="counter" id="wordCount">0 words</span>
                 </div>
-                <div class="setting-group">
-                    <label for="websiteDepth">Depth:</label>
-                    <input type="number" id="websiteDepth" value="1" min="1" max="3" />
+                <div id="dropZone" class="drop-zone">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <p>Drag & drop or click</p>
+                    <span class="text-[10px] text-slate-400">.txt, .csv, .log</span>
+                    <input type="file" id="fileInput" accept=".txt,.csv,.log" class="file-input" />
                 </div>
-                <label class="setting-check">
-                    <input type="checkbox" id="forceWebsiteScrape" />
-                    <span>Ignore Cache</span>
-                </label>
-                <label class="setting-check">
-                    <input type="checkbox" id="includeSubdomains" />
-                    <span>Subdomains</span>
-                </label>
+                <div id="fileInfo" class="file-info" style="display:none;">
+                    <span id="fileName" class="truncate"></span>
+                    <span id="fileSize" class="text-slate-400"></span>
+                    <button id="fileClearBtn" class="clear-btn">✕</button>
+                </div>
+                <button id="processFileBtn" class="btn-secondary" disabled>Process File</button>
             </div>
-
-            <!-- Status -->
-            <div id="websiteStatus" class="status-box"></div>
 
         </div>
 
         <!-- ===== PROGRESS BAR ===== -->
-        <div id="websiteProgressContainer" class="progress-container">
+        <div id="processingContainer" class="progress-container">
             <div class="progress-label">
-                <span id="websiteProgressLabel" class="font-semibold">Scraping...</span>
-                <span id="websiteProgressText" class="font-bold text-blue-600">0%</span>
+                <span id="processingLabel" class="font-semibold">Processing...</span>
+                <span id="processingPercent" class="font-bold text-blue-600">0%</span>
             </div>
             <div class="progress-track">
-                <div id="websiteProgressBar" class="progress-fill"></div>
+                <div id="processingProgress" class="progress-fill"></div>
             </div>
         </div>
 
-        <!-- ===== RESULTS TOOLBAR ===== -->
-        <div class="results-toolbar">
-            <div class="toolbar-left">
-                <button class="tab-btn active" data-tab="emails">📧 Emails</button>
-                <button class="tab-btn" data-tab="phones">📱 Phones</button>
-                <span class="badge-count" id="websiteResultCount">0 items</span>
+        <!-- ===== ANALYTICS BAR ===== -->
+        <div class="analytics-bar">
+            <div class="analytics-item">
+                <span class="dot blue"></span>
+                <span class="label">Total</span>
+                <span class="value" id="totalFound">0</span>
             </div>
-            <div class="toolbar-right">
-                <span id="websiteResultMeta" class="meta-text">Ready to scrape</span>
-                <button id="websiteCopyAllBtn" class="btn-tool" disabled>Copy All</button>
-                <button id="websiteExportCsv" class="btn-tool" disabled>CSV</button>
+            <div class="analytics-item">
+                <span class="dot amber"></span>
+                <span class="label">Duplicates</span>
+                <span class="value" id="duplicatesRemoved">0</span>
+            </div>
+            <div class="analytics-item">
+                <span class="dot green"></span>
+                <span class="label">Emails</span>
+                <span class="value" id="validEmails">0</span>
+            </div>
+            <div class="analytics-item">
+                <span class="dot purple"></span>
+                <span class="label">Phones</span>
+                <span class="value" id="validPhones">0</span>
             </div>
         </div>
 
-        <!-- ===== TAB CONTENT (Table) ===== -->
-        <div class="table-wrap">
-            <!-- Emails Tab -->
-            <div id="websiteEmailsTab" class="tab-content active">
-                <div class="empty-state">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                    No emails extracted yet.
+        <!-- ===== RESULTS ===== -->
+        <div class="results-section">
+
+            <!-- Toolbar -->
+            <div class="results-toolbar">
+                <div class="toolbar-left">
+                    <span class="badge-count" id="resultCount">0 items</span>
+                    <select id="filterType" class="filter-select">
+                        <option value="all">All</option>
+                        <option value="email">Emails</option>
+                        <option value="phone">Phones</option>
+                    </select>
+                    <input type="text" id="searchInput" placeholder="Search..." class="search-input" />
+                </div>
+                <div class="toolbar-right">
+                    <button id="copyAllBtn" class="btn-tool">Copy All</button>
+                    <button id="exportCsvBtn" class="btn-tool">CSV</button>
+                    <button id="exportJsonBtn" class="btn-tool">JSON</button>
                 </div>
             </div>
-            <!-- Phones Tab -->
-            <div id="websitePhonesTab" class="tab-content hidden">
-                <div class="empty-state">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                    No phone numbers extracted yet.
+
+            <!-- Table -->
+            <div class="table-wrap">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Contact</th>
+                            <th>Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody">
+                        <tr class="empty-row">
+                            <td colspan="4">No data extracted yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-bar">
+                <span id="paginationInfo">Showing 0-0 of 0</span>
+                <div class="pagination-buttons">
+                    <button id="prevPageBtn" disabled>← Prev</button>
+                    <span id="pageIndicator" class="page-num">1</span>
+                    <button id="nextPageBtn" disabled>Next →</button>
                 </div>
             </div>
+
         </div>
 
     </div>
 
-    <!-- JavaScript -->
+    <!-- JavaScript (অপরিবর্তিত) -->
     <script src="script.js"></script>
 </body>
 </html>
