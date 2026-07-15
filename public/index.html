@@ -442,6 +442,8 @@
 
             <!-- ===== API SETTINGS TAB ===== -->
             <div id="api-settingsTab" class="tab-content hidden tab-panel space-y-6">
+
+                <!-- First Row: Email API + SMS API -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Email API -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -521,7 +523,8 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <!-- Second Row: Call API + Text Extraction API -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Call API -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
@@ -581,48 +584,144 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                    <!-- Website Scraping API -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
-                            Website Scraping API
-                        </h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key (optional)</label>
-                                <input type="password" id="websiteApiKey" placeholder="API Key if required" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all font-mono text-xs" />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Base URL (if custom)</label>
-                                <input type="url" id="websiteApiBaseUrl" placeholder="https://api.example.com/scrape" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all" />
-                            </div>
-                            <button id="saveWebsiteApiBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Website API</button>
-                        </div>
-                    </div>
+                <!-- ===== NEW: Intelligence & Scraping APIs (3 cards in a row) ===== -->
+                <div class="col-span-1 lg:col-span-2 mt-2">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">Intelligence & Scraping APIs</h3>
 
-                    <!-- Location-based Search API -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            Location-based Search API
-                        </h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key (optional)</label>
-                                <input type="password" id="locationApiKey" placeholder="API Key if required" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all font-mono text-xs" />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-slate-700 mb-2">Base URL (if custom)</label>
-                                <input type="url" id="locationApiBaseUrl" placeholder="https://api.example.com/location" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all" />
-                            </div>
-                            <button id="saveLocationApiBtn" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Location API</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-            <!-- ===== AUDIT LOGS TAB — অভিন্ন কার্ড ডিজাইন ===== -->
+                        <!-- Website Scraping -->
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                            <h4 class="text-md font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+                                Website Scraping
+                            </h4>
+                            <div class="space-y-3 flex-1">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Provider</label>
+                                    <select id="scrapeProviderSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                                        <option value="scraperapi">ScraperAPI</option>
+                                        <option value="scrapingbee">ScrapingBee</option>
+                                        <option value="scrapingant">ScrapingAnt</option>
+                                        <option value="zenrows">ZenRows</option>
+                                        <option value="crawlbase">Crawlbase</option>
+                                        <option value="proxycrawl">ProxyCrawl</option>
+                                        <option value="brightdata">Bright Data</option>
+                                        <option value="oxylabs">Oxylabs</option>
+                                        <option value="apify">Apify</option>
+                                        <option value="serpapi">SerpApi</option>
+                                        <option value="smartproxy">SmartProxy</option>
+                                        <option value="custom">Custom Provider</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">API Key</label>
+                                    <input type="password" id="scrapeApiKeyInput" placeholder="Enter API Key" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-xs" />
+                                </div>
+                            </div>
+                            <button id="saveScrapeApiBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 mt-4 rounded-lg transition-all text-sm">Save Scraping API</button>
+
+                            <div class="mt-4 pt-3 border-t border-slate-100">
+                                <p class="text-[10px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">Get API Keys:</p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <a href="https://www.scraperapi.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">ScraperAPI</a>
+                                    <a href="https://www.scrapingbee.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">ScrapingBee</a>
+                                    <a href="https://scrapingant.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">ScrapingAnt</a>
+                                    <a href="https://www.zenrows.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">ZenRows</a>
+                                    <a href="https://brightdata.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Bright Data</a>
+                                    <a href="https://apify.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Apify</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phone Verification -->
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                            <h4 class="text-md font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                Phone Verification
+                            </h4>
+                            <div class="space-y-3 flex-1">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Provider</label>
+                                    <select id="phoneVerifyProviderSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                                        <option value="twilio">Twilio Lookup</option>
+                                        <option value="numverify">Numverify</option>
+                                        <option value="abstractapi">Abstract API</option>
+                                        <option value="apilayer">APILayer</option>
+                                        <option value="veriphone">Veriphone</option>
+                                        <option value="neutrino">Neutrino API</option>
+                                        <option value="trestle">Trestle</option>
+                                        <option value="numlookupapi">NumLookupAPI</option>
+                                        <option value="custom">Custom Provider</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">API Key / Token</label>
+                                    <input type="password" id="phoneVerifyApiKeyInput" placeholder="Enter API Key" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none font-mono text-xs" />
+                                </div>
+                            </div>
+                            <button id="savePhoneVerifyApiBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 mt-4 rounded-lg transition-all text-sm">Save Phone API</button>
+
+                            <div class="mt-4 pt-3 border-t border-slate-100">
+                                <p class="text-[10px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">Get API Keys:</p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <a href="https://numverify.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Numverify</a>
+                                    <a href="https://www.abstractapi.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Abstract API</a>
+                                    <a href="https://apilayer.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">APILayer</a>
+                                    <a href="https://veriphone.io/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Veriphone</a>
+                                    <a href="https://trestleiq.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Trestle</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email Verification -->
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                            <h4 class="text-md font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                Email Verification
+                            </h4>
+                            <div class="space-y-3 flex-1">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Provider</label>
+                                    <select id="emailVerifyProviderSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                                        <option value="hunter">Hunter.io</option>
+                                        <option value="neverbounce">NeverBounce</option>
+                                        <option value="zerobounce">ZeroBounce</option>
+                                        <option value="emailable">Emailable</option>
+                                        <option value="mailboxlayer">MailboxLayer</option>
+                                        <option value="verifybee">VerifyBee</option>
+                                        <option value="emaillistverify">EmailListVerify</option>
+                                        <option value="debounce">Debounce</option>
+                                        <option value="bouncer">Bouncer</option>
+                                        <option value="custom">Custom Provider</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">API Key</label>
+                                    <input type="password" id="emailVerifyApiKeyInput" placeholder="Enter API Key" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-xs" />
+                                </div>
+                            </div>
+                            <button id="saveEmailVerifyApiBtn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 mt-4 rounded-lg transition-all text-sm">Save Email API</button>
+
+                            <div class="mt-4 pt-3 border-t border-slate-100">
+                                <p class="text-[10px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">Get API Keys:</p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <a href="https://hunter.io/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Hunter</a>
+                                    <a href="https://neverbounce.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">NeverBounce</a>
+                                    <a href="https://www.zerobounce.net/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">ZeroBounce</a>
+                                    <a href="https://emailable.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Emailable</a>
+                                    <a href="https://debounce.io/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Debounce</a>
+                                    <a href="https://usebouncer.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Bouncer</a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> <!-- end grid -->
+                </div> <!-- end Intelligence & Scraping APIs block -->
+
+            </div> <!-- end api-settingsTab -->
+
+            <!-- ===== AUDIT LOGS TAB ===== -->
             <div id="audit-logsTab" class="tab-content hidden tab-panel space-y-6">
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
 
