@@ -271,58 +271,77 @@
   }
 
   // ===== মূল স্ক্র্যাপিং এপিআই কল =====
-  async function handleWebsiteScrape() {
-    const url = urlInput.value.trim();
-    if (!url) {
-      showStatus('Please enter a valid URL', 'error');
-      return;
-    }
-    const limit = parseInt(limitInput.value, 10) || 100;
-    const depth = parseInt(depthInput.value, 10) || 1;
-    const force = forceCheck.checked;
-    const includeSubdomains = subdomainCheck.checked;
+  
+  // public/website-contact-extractor/script.js (সংশোধিত অংশ)
 
-    scrapeBtn.disabled = true;
-    progressContainer.classList.remove('hidden');
-    progressBar.style.width = '0%';
-    progressText.textContent = '0%';
-    progressLabel.textContent = 'Analyzing context & scraping...';
-
-    try {
-      const response = await fetch('/api/finder-api/website-secret', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        // action প্যারামিটার পাঠানো হচ্ছে না, তাই ব্যাকএন্ড বুঝতে পারবে এটি স্ক্র্যাপিং রিকোয়েস্ট
-        body: JSON.stringify({ url, limit, depth, force, includeSubdomains })
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Scraping failed');
-
-      progressBar.style.width = '100%';
-      progressText.textContent = '100%';
-      progressLabel.textContent = 'Done!';
-
-      if (result.success && result.data) {
-        updateUI({ emails: result.data.emails || [], phones: result.data.phones || [] });
-        showStatus(`Extraction complete. Intelligent parsing applied.`, 'success');
-      } else {
-        // পুরনো ক্যাশ স্ট্রাকচারের জন্য ফলব্যাক
-        updateUI({ 
-          emails: (result.emails || []).map(e => ({email: e, domain: `@${e.split('@')[1]||'unknown'}`})), 
-          phones: (result.phones || []).map(p => ({phone: p, country: 'Unknown'})) 
-        });
-        showStatus(`Scraped items successfully`, 'success');
-      }
-    } catch (err) {
-      showStatus('Error: ' + err.message, 'error');
-    } finally {
-      scrapeBtn.disabled = false;
-      setTimeout(() => progressContainer.classList.add('hidden'), 1500);
-    }
+async function handleWebsiteScrape() {
+  const url = urlInput.value.trim();
+  if (!url) {
+    showStatus('Please enter a valid URL', 'error');
+    return;
   }
+  const limit = parseInt(limitInput.value, 10) || 100;
+  const depth = parseInt(depthInput.value, 10) || 1;
+  const force = forceCheck.checked;
+  const includeSubdomains = subdomainCheck.checked;
+
+  scrapeBtn.disabled = true;
+  progressContainer.classList.remove('hidden');
+  progressBar.style.width = '0%';
+  progressText.textContent = '0%';
+  progressLabel.textContent = 'Analyzing context & scraping...';
+
+  try {
+    const response = await fetch('/api/finder-api/website-secret', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ url, limit, depth, force, includeSubdomains })
+    });
+
+    // ✨ ফিক্স: JSON পার্স করার আগেই চেক করছি রেসপন্স ঠিক আছে কিনা
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = 'Scraping failed';
+      
+      try {
+        // যদি ব্যাকএন্ড থেকে JSON এরর পাঠানো হয়
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error || errorMessage;
+      } catch (e) {
+        // যদি ব্যাকএন্ড থেকে HTML এরর (যেমন 503 Service Unavailable) আসে
+        errorMessage = `Server Error (${response.status}): Service Unavailable or Target Blocked.`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    // রেসপন্স OK হলেই কেবল JSON পার্স হবে
+    const result = await response.json();
+
+    progressBar.style.width = '100%';
+    progressText.textContent = '100%';
+    progressLabel.textContent = 'Done!';
+
+    if (result.success && result.data) {
+      updateUI({ emails: result.data.emails || [], phones: result.data.phones || [] });
+      showStatus(`Extraction complete. Intelligent parsing applied.`, 'success');
+    } else {
+      updateUI({ 
+        emails: (result.emails || []).map(e => ({email: e, domain: `@${e.split('@')[1]||'unknown'}`})), 
+        phones: (result.phones || []).map(p => ({phone: p, country: 'Unknown'})) 
+      });
+      showStatus(`Scraped items successfully`, 'success');
+    }
+  } catch (err) {
+    // এখন আর JSON এরর আসবে না, সরাসরি সুন্দর মেসেজ দেখাবে
+    showStatus('Error: ' + err.message, 'error');
+  } finally {
+    scrapeBtn.disabled = false;
+    setTimeout(() => progressContainer.classList.add('hidden'), 1500);
+  }
+}
 
   // ===== কপি অল ও এক্সপোর্ট (নতুন অবজেক্ট স্ট্রাকচার অনুযায়ী) =====
   copyAllBtn.addEventListener('click', function() {
