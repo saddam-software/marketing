@@ -1,7 +1,7 @@
 // functions/api/finder-api/website-secret.js
 // ============================================================ 
 //  Website URL Extractor & Intelligence Verification API
-//  Fully Dynamic Configuration - Now reads from Dashboard
+//  Fully Dynamic Configuration + CPU Optimizer for Heavy Sites
 // ============================================================
 
 import { KVMANAGER } from '../../helpers/kv-manager.js';
@@ -46,7 +46,7 @@ export async function onRequestPost(context) {
   // ============================================================
   const kv = new KVMANAGER(env.SECRETS_KV || null);
   
-  // 🔴 Load Scraper API Key dynamically from database
+  // Load Scraper API Key dynamically from database
   const scrapeConfig = await kv.getJSON('api_config:website_scraping') || { provider: 'scraperapi', apiKey: '' };
   const SCRAPER_API_KEY = scrapeConfig.apiKey || '';
   
@@ -54,20 +54,18 @@ export async function onRequestPost(context) {
   // ROUTER: VERIFICATION ACTIONS vs EXTRACTOR ACTION
   // ============================================================
   
-  // কলাম-লেভেল ইমেইল ভেরিফিকেশন অ্যাকশন (KV পাস করা হয়েছে)
   if (body.action === 'verify_emails') {
     const results = await handleEmailVerification(body.emails || [], kv);
     return jsonResponse({ success: true, data: results }, 200, corsHeaders);
   }
 
-  // peri-level ফোন ভেরিফিকেশন অ্যাকশন (KV পাস করা হয়েছে)
   if (body.action === 'verify_phones') {
     const results = await handlePhoneVerification(body.phones || [], kv);
     return jsonResponse({ success: true, data: results }, 200, corsHeaders);
   }
 
   // ============================================================
-  // DEEP SCRAPING ENGINE (WITH GOOGLE BYPASS LOGIC)
+  // DEEP SCRAPING ENGINE
   // ============================================================
   let { url, limit = 100, depth = 1, force = false } = body;
   if (!url) return jsonResponse({ success: false, error: 'URL required' }, 400, corsHeaders);
@@ -77,16 +75,12 @@ export async function onRequestPost(context) {
 
   const cacheKey = `cache:website:${url}:depth${depth}:limit${limit}`;
 
-  // ক্যাশ চেক
   if (!force) {
     const cached = await kv.getJSON(cacheKey);
     if (cached && cached.emails && cached.phones) {
       return jsonResponse({
         success: true,
-        data: {
-          emails: cached.emails.slice(0, limit),
-          phones: cached.phones.slice(0, limit),
-        },
+        data: { emails: cached.emails.slice(0, limit), phones: cached.phones.slice(0, limit) },
         cached: true,
       }, 200, corsHeaders);
     }
@@ -100,7 +94,6 @@ export async function onRequestPost(context) {
   const isGoogleSearch = url.includes('google.com/search');
   const targetDepth = isGoogleSearch ? 2 : depth;
 
-  // রিকার্সিভ স্ক্র্যাপিং ফাংশন
   async function scrapePage(pageUrl, currentDepth) {
     if (currentDepth > targetDepth) return;
     if (visited.has(pageUrl)) return;
@@ -111,12 +104,15 @@ export async function onRequestPost(context) {
     try {
       const html = await fetchWithRetry(pageUrl, SCRAPER_API_KEY);
       
-      // এডভান্সড ইমেইল ইন্টেলিজেন্স (Obfuscation Healing Engine applied on HTML)
-      const healedHtml = autoHealObfuscation(html);
+      // 🔴 FIX: CPU OPTIMIZER - Strip heavy scripts/styles to prevent 503 Crash
+      const cleanHtml = html.replace(/<script[\s\S]*?<\/script>/gi, '')
+                            .replace(/<style[\s\S]*?<\/style>/gi, '')
+                            .replace(/<svg[\s\S]*?<\/svg>/gi, '');
+
+      const healedHtml = autoHealObfuscation(cleanHtml);
       const isCurrentPageGoogle = pageUrl.includes('google.com');
 
       if (isCurrentPageGoogle) {
-        // গুগল সার্চ পেজ থেকে রেজাল্ট লিঙ্কগুলো বের করার লজিক
         let extractedLinks = [];
         const googleLinkRegex = /href="\/url\?q=([^"&]+)/gi;
         let match;
@@ -140,17 +136,14 @@ export async function onRequestPost(context) {
 
         extractedLinks = [...new Set(extractedLinks)];
 
-        // সার্চ রেজাল্টের লিঙ্কগুলোর ভেতরে ঢুকে ডেটা স্ক্র্যাপ করা (Depth 2 Action)
         for (const link of extractedLinks) {
           if (allEmails.length >= limit && allPhones.length >= limit) break;
           await scrapePage(link, currentDepth + 1);
         }
       } else {
-        // সাধারণ পৃষ্ঠা থেকে ইমেইল এবং ফোন এক্সট্রাক্ট করা
         const domainName = new URL(pageUrl).hostname.replace('www.', '');
         const tld = domainName.split('.').pop() || 'com';
 
-        // ইমেইল এক্সট্রাকশন এবং ডোমেইন ক্যাটাগরি তৈরি
         const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
         const emails = (healedHtml.match(emailRegex) || []).map(e => e.toLowerCase());
         emails.forEach(email => {
@@ -158,7 +151,6 @@ export async function onRequestPost(context) {
           allEmails.push({ email: email, domain: `@${dom}` });
         });
         
-        // গ্লোবাল ফোন ইন্টেলিজেন্স ও স্ট্র্যাটেজিক পার্সিং
         const phoneRegex = /(?:\+?\d{1,4}[-.\s]?)?\(?\d{2,5}\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}/g;
         const rawPhones = healedHtml.match(phoneRegex) || [];
         rawPhones.forEach(phoneStr => {
@@ -171,15 +163,13 @@ export async function onRequestPost(context) {
     } catch (err) {
       console.error(`Failed to scrape ${pageUrl}:`, err.message);
       if (isGoogleSearch && currentDepth === 1) {
-        errorMsg = "Google blocked the request. ScraperAPI Proxy failed or key expired.";
+        errorMsg = "Request blocked. Proxy failed or key expired.";
       }
     }
   }
 
-  // স্ক্র্যাপিং প্রসেস শুরু
   await scrapePage(url, 1);
 
-  // ইউনিক ফিল্টারিং (অবজেক্ট ভিত্তিক ডি-ডুপ্লিকেশন)
   const uniqueEmails = Array.from(new Map(allEmails.map(item => [item.email, item])).values()).slice(0, limit);
   const uniquePhones = Array.from(new Map(allPhones.map(item => [item.phone, item])).values()).slice(0, limit);
 
@@ -187,33 +177,16 @@ export async function onRequestPost(context) {
      return jsonResponse({ success: false, error: errorMsg }, 403, corsHeaders);
   }
 
-  // নতুন স্ট্রাকচার্ড ফরম্যাটে KV ক্যাশ সেভ করা
-  await kv.putJSON(cacheKey, {
-    emails: uniqueEmails,
-    phones: uniquePhones,
-    scrapedAt: new Date().toISOString(),
-  }, { expirationTtl: 86400 });
+  await kv.putJSON(cacheKey, { emails: uniqueEmails, phones: uniquePhones, scrapedAt: new Date().toISOString() }, { expirationTtl: 86400 });
 
-  // ফ্রন্টএন্ডের script.js এর প্রত্যাশিত ফরম্যাটে রেসপন্স পাঠানো
-  return jsonResponse({
-    success: true,
-    data: {
-      emails: uniqueEmails,
-      phones: uniquePhones
-    },
-    cached: false,
-  }, 200, corsHeaders);
+  return jsonResponse({ success: true, data: { emails: uniqueEmails, phones: uniquePhones }, cached: false }, 200, corsHeaders);
 }
 
 // ============================================================
-// STRATEGIC HELPER FUNCTIONS
+// HELPER FUNCTIONS
 // ============================================================
-
 function jsonResponse(data, status = 200, headers = {}) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...headers, 'Content-Type': 'application/json' },
-  });
+  return new Response(JSON.stringify(data), { status, headers: { ...headers, 'Content-Type': 'application/json' }});
 }
 
 function validateUrl(url) {
@@ -229,8 +202,9 @@ function validateUrl(url) {
 
 async function fetchWithRetry(url, apiKey = "", retries = 2) {
   let fetchUrl = url;
-  // Use proxy for ALL requests if key is provided
-  if (apiKey) {
+  
+  // 🔴 FIX: Now routes ALL requests through ScraperAPI (if key provided) to bypass 403/503 blocks
+  if (apiKey !== "") {
     fetchUrl = `http://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(url)}`;
   }
 
@@ -238,9 +212,8 @@ async function fetchWithRetry(url, apiKey = "", retries = 2) {
     try {
       const response = await fetch(fetchUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ...',
-          'Accept': 'text/html,application/xhtml+xml,...',
-          'Accept-Language': 'en-US,en;q=0.5',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         },
         signal: AbortSignal.timeout(20000),
       });
@@ -254,60 +227,32 @@ async function fetchWithRetry(url, apiKey = "", retries = 2) {
   }
 }
 
-// Advanced Email Intelligence: Obfuscation Healing Engine
 function autoHealObfuscation(text) {
   if (!text) return '';
-  return text
-    .replace(/\s*[\[\(\{]at[\]\)\}]\s*/gi, '@')   
-    .replace(/\s*_\s*at\s*_\s*/gi, '@')           
-    .replace(/\s*[\[\(\{]dot[\]\)\}]\s*/gi, '.')  
-    .replace(/\s*_\s*dot\s*_\s*/gi, '.');
+  return text.replace(/\s*[\[\(\{]at[\]\)\}]\s*/gi, '@').replace(/\s*_\s*at\s*_\s*/gi, '@').replace(/\s*[\[\(\{]dot[\]\)\}]\s*/gi, '.').replace(/\s*_\s*dot\s*_\s*/gi, '.');
 }
 
-// Global Phone Intelligence & Strategic Parsing Engine
 function normalizeAndDetectCountry(phoneStr, context) {
   let cleaned = phoneStr.replace(/[\s\-\(\)\.]/g, '');
-  
-  if (cleaned.startsWith('+')) {
-    return { phone: cleaned, country: 'International Recognized' };
-  }
+  if (cleaned.startsWith('+')) return { phone: cleaned, country: 'International Recognized' };
 
   const tld = context.tld.toLowerCase();
   const pageText = context.text;
 
-  // ১. Bangladesh Context
   if (tld === 'bd' || pageText.includes('Bangladesh') || pageText.includes('বাংলাদেশ')) {
-    if (cleaned.startsWith('01') && cleaned.length === 11) {
-      return { phone: '+88' + cleaned, country: 'Bangladesh' };
-    } else if (cleaned.startsWith('1') && cleaned.length === 10) {
-      return { phone: '+880' + cleaned, country: 'Bangladesh' };
-    }
+    if (cleaned.startsWith('01') && cleaned.length === 11) return { phone: '+88' + cleaned, country: 'Bangladesh' };
+    else if (cleaned.startsWith('1') && cleaned.length === 10) return { phone: '+880' + cleaned, country: 'Bangladesh' };
   }
-
-  // ২. UK Context
   if (tld === 'uk' || pageText.includes('United Kingdom') || pageText.includes('London')) {
-    if (cleaned.startsWith('0') && cleaned.length === 11) {
-      return { phone: '+44' + cleaned.slice(1), country: 'United Kingdom' };
-    }
+    if (cleaned.startsWith('0') && cleaned.length === 11) return { phone: '+44' + cleaned.slice(1), country: 'United Kingdom' };
   }
-
-  // ৩. USA Context
   if (tld === 'us' || tld === 'com' || pageText.includes('United States') || pageText.includes('USA')) {
-    if (cleaned.length === 10) {
-      return { phone: '+1' + cleaned, country: 'USA' };
-    }
+    if (cleaned.length === 10) return { phone: '+1' + cleaned, country: 'USA' };
   }
-
   return { phone: phoneStr, country: 'Unknown / Manual Review Required' };
 }
 
-// ============================================================
-// DYNAMIC VERIFICATION FUNCTIONS (Read from KV)
-// ============================================================
-
-// প্লাগেবল ইমেইল ভেরিফায়ার গেটওয়ে (ডাইনামিক কনফিগ)
 async function handleEmailVerification(emails, kv) {
-  // ডাটাবেস থেকে ডাইনামিক API লোড করা
   const config = await kv.getJSON('api_config:email_verification') || { provider: 'hunter', apiKey: '' };
   const provider = config.provider || 'hunter';
   const credentials = config.apiKey || '';
@@ -318,30 +263,19 @@ async function handleEmailVerification(emails, kv) {
         const url = `https://api.hunter.io/v2/email-verifier?email=${encodeURIComponent(email)}&api_key=${credentials}`;
         const res = await fetch(url);
         const resData = await res.json();
-        
-        return {
-          email: email,
-          status: resData.data?.result === 'deliverable' ? 'Verified' : 'Undeliverable',
-          meta: resData.data?.score ? `Confidence: ${resData.data.score}%` : 'Hunter.io API'
-        };
+        return { email: email, status: resData.data?.result === 'deliverable' ? 'Verified' : 'Undeliverable', meta: resData.data?.score ? `Confidence: ${resData.data.score}%` : 'Hunter.io API' };
       }
-      return { email: email, status: 'Unverified', meta: 'Provider Not Configured or Key Missing' };
-    } catch (e) {
-      return { email: email, status: 'Error', meta: e.message };
-    }
+      return { email: email, status: 'Unverified', meta: 'Provider Not Configured' };
+    } catch (e) { return { email: email, status: 'Error', meta: e.message }; }
   });
-
   return Promise.all(tasks);
 }
 
-// প্লাগেবল ফোন ভেরিফায়ার গেটওয়ে (ডাইনামিক কনফিগ)
 async function handlePhoneVerification(phones, kv) {
-  // ডাটাবেস থেকে ডাইনামিক API লোড করা
   const config = await kv.getJSON('api_config:phone_verification') || { provider: 'twilio', apiKey: '' };
   const provider = config.provider || 'twilio';
   const credentials = config.apiKey || '';
   
-  // Twilio এর ক্ষেত্রে API Key তে SID এবং Token সাধারণত 'SID:TOKEN' ফরম্যাটে সেভ করতে হবে ড্যাশবোর্ড থেকে
   const credParts = credentials.split(':');
   const accountSid = credParts[0] || '';
   const authToken = credParts[1] || '';
@@ -351,29 +285,17 @@ async function handlePhoneVerification(phones, kv) {
       if (provider === 'twilio' && accountSid && authToken) {
         const url = `https://lookups.twilio.com/v2/PhoneNumbers/${encodeURIComponent(phone)}?Fields=line_type_intelligence`;
         const basicAuth = btoa(`${accountSid}:${authToken}`);
-        
-        const res = await fetch(url, {
-          headers: { 'Authorization': `Basic ${basicAuth}` }
-        });
+        const res = await fetch(url, { headers: { 'Authorization': `Basic ${basicAuth}` } });
         const resData = await res.json();
 
         if (res.status === 200 && resData.valid) {
           const carrier = resData.line_type_intelligence?.carrier_name || 'Active';
           const type = resData.line_type_intelligence?.type || 'Unknown';
-          return {
-            phone: phone,
-            status: 'Valid',
-            meta: `${carrier} (${type})`
-          };
-        } else {
-          return { phone: phone, status: 'Invalid', meta: 'Twilio Blocked/Invalid' };
-        }
+          return { phone: phone, status: 'Valid', meta: `${carrier} (${type})` };
+        } else { return { phone: phone, status: 'Invalid', meta: 'Twilio Blocked/Invalid' }; }
       }
-      return { phone: phone, status: 'Unverified', meta: 'Provider Not Configured or Key Missing' };
-    } catch (e) {
-      return { phone: phone, status: 'Error', meta: e.message };
-    }
+      return { phone: phone, status: 'Unverified', meta: 'Provider Not Configured' };
+    } catch (e) { return { phone: phone, status: 'Error', meta: e.message }; }
   });
-
   return Promise.all(tasks);
 }
