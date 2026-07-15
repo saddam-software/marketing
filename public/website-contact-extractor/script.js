@@ -22,17 +22,18 @@
   const exportCsvBtn = document.getElementById('websiteExportCsv');
 
   // ===== স্টেট =====
+  // এখন ডেটা স্ট্রাকচার হবে অবজেক্টের অ্যারে। যেমন: { email: 'x@y.com', domain: '@y.com', status: '', meta: '' }
   let currentData = { emails: [], phones: [] };
   let activeTab = 'emails';
 
   // ===== টোকেন জেনারেশন (ব্যাকএন্ডের সাথে সামঞ্জস্যপূর্ণ) =====
   const tokenPayload = {
     username: "developer_user",
-    exp: Date.now() + (365 * 24 * 60 * 60 * 1000) // ১ বছর মেয়াদ
+    exp: Date.now() + (365 * 24 * 60 * 60 * 1000)
   };
   const token = btoa(JSON.stringify(tokenPayload));
 
-  // ===== ট্যাব সুইচিং (সঠিক সিলেক্টর) =====
+  // ===== ট্যাব সুইচিং =====
   const tabBtns = document.querySelectorAll('.we-tab-btn');
   const tabPanels = {
     emails: emailsTab,
@@ -41,17 +42,14 @@
 
   tabBtns.forEach(btn => {
     btn.addEventListener('click', function() {
-      const tab = this.dataset.tab; // 'emails' বা 'phones'
+      const tab = this.dataset.tab;
       activeTab = tab;
 
-      // সব বাটন থেকে active ক্লাস সরান
       tabBtns.forEach(b => b.classList.remove('active'));
       this.classList.add('active');
 
-      // সব প্যানেল লুকান
       Object.values(tabPanels).forEach(panel => panel.classList.add('hidden'));
 
-      // নির্বাচিত প্যানেল দেখান
       if (tab === 'emails') {
         tabPanels.emails.classList.remove('hidden');
         renderEmails();
@@ -62,67 +60,119 @@
     });
   });
 
-  // ===== রেন্ডার ফাংশন =====
+  // ===== হেল্পার ফাংশন: ডেটা গ্রুপিং =====
+  function groupBy(array, key) {
+    return array.reduce((result, currentValue) => {
+      const groupKey = currentValue[key] || 'Unknown';
+      (result[groupKey] = result[groupKey] || []).push(currentValue);
+      return result;
+    }, {});
+  }
+
+  // ===== রেন্ডার ফাংশন: Emails (Category-Wise Columns) =====
   function renderEmails() {
     const emails = currentData.emails || [];
     if (!emails.length) {
-      emailsTab.innerHTML = `
-        <div class="we-empty-state">
-          <svg class="we-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-          No emails extracted yet.
-        </div>
-      `;
+      emailsTab.innerHTML = getEmptyStateHTML('No emails extracted yet.');
       return;
     }
 
-    let html = `<table class="we-data-table"><thead><tr><th>#</th><th>Email</th><th>Action</th></tr></thead><tbody>`;
-    emails.forEach((e, idx) => {
+    const groupedEmails = groupBy(emails, 'domain');
+    let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; padding: 0.5rem;">`;
+
+    for (const [domain, items] of Object.entries(groupedEmails)) {
       html += `
-        <tr class="we-data-row">
-          <td class="text-slate-400 text-xs">${idx+1}</td>
-          <td class="font-mono text-sm break-all">${e}</td>
-          <td><button class="we-copy-btn" data-value="${e}">Copy</button></td>
-        </tr>
+        <div style="border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow: hidden; background: #fff;">
+          <div style="background: #f8fafc; padding: 0.6rem 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0;">
+            <strong style="font-size: 0.75rem; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
+              <span style="background: #e2e8f0; padding: 0.1rem 0.4rem; border-radius: 999px;">${items.length}</span> ${domain}
+            </strong>
+            <button class="we-btn-tool we-verify-btn" data-type="emails" data-group="${domain}">Verify</button>
+          </div>
+          <div style="max-height: 250px; overflow-y: auto;">
+            <table class="we-data-table">
+              <tbody>
+                ${items.map((item, idx) => `
+                  <tr class="we-data-row">
+                    <td class="font-mono text-sm break-all" style="width: 60%;">${item.email}</td>
+                    <td style="font-size: 0.65rem; color: ${item.status === 'Verified' ? '#059669' : (item.status === 'Error' || item.status === 'Undeliverable' ? '#dc2626' : '#64748b')};">
+                      ${item.status ? `<strong>${item.status}</strong><br><span style="font-size:0.55rem; color:#94a3b8;">${item.meta || ''}</span>` : '<span style="color:#cbd5e1;">Unverified</span>'}
+                    </td>
+                    <td style="text-align: right;"><button class="we-copy-btn" data-value="${item.email}">Copy</button></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
       `;
-    });
-    html += `</tbody></table>`;
+    }
+    
+    html += `</div>`;
     emailsTab.innerHTML = html;
     attachCopyEvents();
+    attachVerifyEvents();
   }
 
+  // ===== রেন্ডার ফাংশন: Phones (Country-Wise Columns) =====
   function renderPhones() {
     const phones = currentData.phones || [];
     if (!phones.length) {
-      phonesTab.innerHTML = `
-        <div class="we-empty-state">
-          <svg class="we-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-          </svg>
-          No phone numbers extracted yet.
-        </div>
-      `;
+      phonesTab.innerHTML = getEmptyStateHTML('No phone numbers extracted yet.');
       return;
     }
 
-    let html = `<table class="we-data-table"><thead><tr><th>#</th><th>Phone</th><th>Action</th></tr></thead><tbody>`;
-    phones.forEach((p, idx) => {
+    const groupedPhones = groupBy(phones, 'country');
+    let html = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; padding: 0.5rem;">`;
+
+    for (const [country, items] of Object.entries(groupedPhones)) {
       html += `
-        <tr class="we-data-row">
-          <td class="text-slate-400 text-xs">${idx+1}</td>
-          <td class="font-mono text-sm break-all">${p}</td>
-          <td><button class="we-copy-btn" data-value="${p}">Copy</button></td>
-        </tr>
+        <div style="border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow: hidden; background: #fff;">
+          <div style="background: #f8fafc; padding: 0.6rem 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0;">
+            <strong style="font-size: 0.75rem; color: #1e293b; display: flex; align-items: center; gap: 0.4rem;">
+              <span style="background: #e2e8f0; padding: 0.1rem 0.4rem; border-radius: 999px;">${items.length}</span> ${country}
+            </strong>
+            <button class="we-btn-tool we-verify-btn" data-type="phones" data-group="${country}">Verify</button>
+          </div>
+          <div style="max-height: 250px; overflow-y: auto;">
+            <table class="we-data-table">
+              <tbody>
+                ${items.map((item, idx) => `
+                  <tr class="we-data-row">
+                    <td class="font-mono text-sm break-all" style="width: 60%;">${item.phone}</td>
+                    <td style="font-size: 0.65rem; color: ${item.status === 'Valid' ? '#059669' : (item.status === 'Error' || item.status === 'Invalid' ? '#dc2626' : '#64748b')};">
+                      ${item.status ? `<strong>${item.status}</strong><br><span style="font-size:0.55rem; color:#94a3b8;">${item.meta || ''}</span>` : '<span style="color:#cbd5e1;">Unverified</span>'}
+                    </td>
+                    <td style="text-align: right;"><button class="we-copy-btn" data-value="${item.phone}">Copy</button></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
       `;
-    });
-    html += `</tbody></table>`;
+    }
+    
+    html += `</div>`;
     phonesTab.innerHTML = html;
     attachCopyEvents();
+    attachVerifyEvents();
   }
 
+  function getEmptyStateHTML(message) {
+    return `
+      <div class="we-empty-state">
+        <svg class="we-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        ${message}
+      </div>
+    `;
+  }
+
+  // ===== ইভেন্ট লিসেনার: কপি ও ভেরিফাই =====
   function attachCopyEvents() {
-    document.querySelectorAll('#websiteEmailsTab .we-copy-btn, #websitePhonesTab .we-copy-btn').forEach(btn => {
+    document.querySelectorAll('.we-copy-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         navigator.clipboard.writeText(btn.dataset.value).then(() => {
           btn.textContent = '✓';
@@ -132,21 +182,85 @@
     });
   }
 
-  // ===== UI আপডেট =====
+  function attachVerifyEvents() {
+    document.querySelectorAll('.we-verify-btn').forEach(btn => {
+      btn.addEventListener('click', async function() {
+        const type = this.dataset.type; // 'emails' or 'phones'
+        const group = this.dataset.group;
+        
+        // বাটন লোডিং স্টেট
+        const originalText = this.textContent;
+        this.textContent = 'Verifying...';
+        this.disabled = true;
+
+        // যে ডেটাগুলো ভেরিফাই করতে হবে তা ফিল্টার করা
+        let payloadItems = [];
+        if (type === 'emails') {
+          payloadItems = currentData.emails.filter(e => e.domain === group).map(e => e.email);
+        } else {
+          payloadItems = currentData.phones.filter(p => p.country === group).map(p => p.phone);
+        }
+
+        try {
+          const actionName = type === 'emails' ? 'verify_emails' : 'verify_phones';
+          const payload = { action: actionName };
+          if (type === 'emails') payload.emails = payloadItems;
+          else payload.phones = payloadItems;
+
+          const response = await fetch('/api/finder-api/website-secret', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+          });
+          
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Verification failed');
+
+          if (result.success && result.data) {
+            // রেজাল্ট অনুযায়ী মূল স্টেট আপডেট করা
+            result.data.forEach(verifiedItem => {
+              if (type === 'emails') {
+                const target = currentData.emails.find(e => e.email === verifiedItem.email);
+                if (target) { target.status = verifiedItem.status; target.meta = verifiedItem.meta; }
+              } else {
+                const target = currentData.phones.find(p => p.phone === verifiedItem.phone);
+                if (target) { target.status = verifiedItem.status; target.meta = verifiedItem.meta; }
+              }
+            });
+            showStatus(`${group} verification complete!`, 'success');
+            
+            // রেন্ডার আপডেট
+            if (type === 'emails') renderEmails();
+            else renderPhones();
+          }
+        } catch (err) {
+          showStatus('Verification Error: ' + err.message, 'error');
+          this.textContent = originalText;
+          this.disabled = false;
+        }
+      });
+    });
+  }
+
+  // ===== UI আপডেট ও স্ট্যাটাস মেসেজ =====
   function updateUI(data) {
     currentData = data;
-    const total = (data.emails?.length || 0) + (data.phones?.length || 0);
+    const emailCount = data.emails?.length || 0;
+    const phoneCount = data.phones?.length || 0;
+    const total = emailCount + phoneCount;
+    
     resultCount.textContent = `${total} items`;
-    resultMeta.textContent = `Found ${data.emails?.length || 0} emails and ${data.phones?.length || 0} phones`;
+    resultMeta.textContent = `Found ${emailCount} emails and ${phoneCount} phones`;
     copyAllBtn.disabled = total === 0;
     exportCsvBtn.disabled = total === 0;
 
-    // বর্তমান ট্যাব অনুযায়ী রেন্ডার
     if (activeTab === 'emails') renderEmails();
     else renderPhones();
   }
 
-  // ===== স্ট্যাটাস মেসেজ =====
   function showStatus(msg, type = 'info') {
     statusDiv.textContent = msg;
     statusDiv.classList.remove('hidden', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700', 'bg-blue-50', 'text-blue-700');
@@ -156,7 +270,7 @@
     setTimeout(() => statusDiv.classList.add('hidden'), 5000);
   }
 
-  // ===== এপিআই কল (স্ক্র্যাপিং) =====
+  // ===== মূল স্ক্র্যাপিং এপিআই কল =====
   async function handleWebsiteScrape() {
     const url = urlInput.value.trim();
     if (!url) {
@@ -172,7 +286,7 @@
     progressContainer.classList.remove('hidden');
     progressBar.style.width = '0%';
     progressText.textContent = '0%';
-    progressLabel.textContent = 'Connecting...';
+    progressLabel.textContent = 'Analyzing context & scraping...';
 
     try {
       const response = await fetch('/api/finder-api/website-secret', {
@@ -181,32 +295,40 @@
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
+        // action প্যারামিটার পাঠানো হচ্ছে না, তাই ব্যাকএন্ড বুঝতে পারবে এটি স্ক্র্যাপিং রিকোয়েস্ট
         body: JSON.stringify({ url, limit, depth, force, includeSubdomains })
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Scraping failed');
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Scraping failed');
 
       progressBar.style.width = '100%';
       progressText.textContent = '100%';
       progressLabel.textContent = 'Done!';
 
-      if (data.success) {
-        updateUI({ emails: data.emails || [], phones: data.phones || [] });
-        showStatus(`Scraped ${data.emails?.length || 0} emails and ${data.phones?.length || 0} phones`, 'success');
+      if (result.success && result.data) {
+        updateUI({ emails: result.data.emails || [], phones: result.data.phones || [] });
+        showStatus(`Extraction complete. Intelligent parsing applied.`, 'success');
       } else {
-        showStatus(data.error || 'Scraping failed', 'error');
+        // পুরনো ক্যাশ স্ট্রাকচারের জন্য ফলব্যাক
+        updateUI({ 
+          emails: (result.emails || []).map(e => ({email: e, domain: `@${e.split('@')[1]||'unknown'}`})), 
+          phones: (result.phones || []).map(p => ({phone: p, country: 'Unknown'})) 
+        });
+        showStatus(`Scraped items successfully`, 'success');
       }
     } catch (err) {
       showStatus('Error: ' + err.message, 'error');
     } finally {
       scrapeBtn.disabled = false;
-      setTimeout(() => progressContainer.classList.add('hidden'), 1000);
+      setTimeout(() => progressContainer.classList.add('hidden'), 1500);
     }
   }
 
-  // ===== কপি অল ও এক্সপোর্ট =====
+  // ===== কপি অল ও এক্সপোর্ট (নতুন অবজেক্ট স্ট্রাকচার অনুযায়ী) =====
   copyAllBtn.addEventListener('click', function() {
-    const all = [...(currentData.emails || []), ...(currentData.phones || [])];
+    const emailStrings = (currentData.emails || []).map(e => e.email);
+    const phoneStrings = (currentData.phones || []).map(p => p.phone);
+    const all = [...emailStrings, ...phoneStrings];
     if (!all.length) return;
     navigator.clipboard.writeText(all.join('\n')).then(() => {
       showStatus(`Copied ${all.length} items to clipboard`, 'success');
@@ -217,9 +339,11 @@
     const emails = currentData.emails || [];
     const phones = currentData.phones || [];
     if (!emails.length && !phones.length) return;
-    let csv = 'Type,Contact\n';
-    emails.forEach(e => csv += `Email,"${e}"\n`);
-    phones.forEach(p => csv += `Phone,"${p}"\n`);
+    
+    let csv = 'Type,Contact,Category,Status,Meta\n';
+    emails.forEach(e => csv += `Email,"${e.email}","${e.domain}","${e.status||'Unverified'}","${e.meta||''}"\n`);
+    phones.forEach(p => csv += `Phone,"${p.phone}","${p.country}","${p.status||'Unverified'}","${p.meta||''}"\n`);
+    
     downloadFile(csv, `website_scrape_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
   });
 
