@@ -229,8 +229,8 @@ function validateUrl(url) {
 
 async function fetchWithRetry(url, apiKey = "", retries = 2) {
   let fetchUrl = url;
-  // যদি গুগলের লিংক হয়, তবে রিকোয়েস্টটি ScraperAPI প্রক্সির মাধ্যমে ঘুরিয়ে পাঠানো হবে
-  if (url.includes('google.com') && apiKey !== "") {
+  // Use proxy for ALL requests if key is provided
+  if (apiKey) {
     fetchUrl = `http://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(url)}`;
   }
 
@@ -238,8 +238,8 @@ async function fetchWithRetry(url, apiKey = "", retries = 2) {
     try {
       const response = await fetch(fetchUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ...',
+          'Accept': 'text/html,application/xhtml+xml,...',
           'Accept-Language': 'en-US,en;q=0.5',
         },
         signal: AbortSignal.timeout(20000),
