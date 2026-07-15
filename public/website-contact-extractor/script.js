@@ -22,11 +22,10 @@
   const exportCsvBtn = document.getElementById('websiteExportCsv');
 
   // ===== স্টেট =====
-  // এখন ডেটা স্ট্রাকচার হবে অবজেক্টের অ্যারে। যেমন: { email: 'x@y.com', domain: '@y.com', status: '', meta: '' }
   let currentData = { emails: [], phones: [] };
   let activeTab = 'emails';
 
-  // ===== টোকেন জেনারেশন (ব্যাকএন্ডের সাথে সামঞ্জস্যপূর্ণ) =====
+  // ===== টোকেন জেনারেশন =====
   const tokenPayload = {
     username: "developer_user",
     exp: Date.now() + (365 * 24 * 60 * 60 * 1000)
@@ -60,7 +59,7 @@
     });
   });
 
-  // ===== হেল্পার ফাংশন: ডেটা গ্রুপিং =====
+  // ===== হেল্পার ফাংশন =====
   function groupBy(array, key) {
     return array.reduce((result, currentValue) => {
       const groupKey = currentValue[key] || 'Unknown';
@@ -69,7 +68,7 @@
     }, {});
   }
 
-  // ===== রেন্ডার ফাংশন: Emails (Category-Wise Columns) =====
+  // ===== রেন্ডার ফাংশন: Emails =====
   function renderEmails() {
     const emails = currentData.emails || [];
     if (!emails.length) {
@@ -114,7 +113,7 @@
     attachVerifyEvents();
   }
 
-  // ===== রেন্ডার ফাংশন: Phones (Country-Wise Columns) =====
+  // ===== রেন্ডার ফাংশন: Phones =====
   function renderPhones() {
     const phones = currentData.phones || [];
     if (!phones.length) {
@@ -185,15 +184,13 @@
   function attachVerifyEvents() {
     document.querySelectorAll('.we-verify-btn').forEach(btn => {
       btn.addEventListener('click', async function() {
-        const type = this.dataset.type; // 'emails' or 'phones'
+        const type = this.dataset.type;
         const group = this.dataset.group;
         
-        // বাটন লোডিং স্টেট
         const originalText = this.textContent;
         this.textContent = 'Verifying...';
         this.disabled = true;
 
-        // যে ডেটাগুলো ভেরিফাই করতে হবে তা ফিল্টার করা
         let payloadItems = [];
         if (type === 'emails') {
           payloadItems = currentData.emails.filter(e => e.domain === group).map(e => e.email);
@@ -220,7 +217,6 @@
           if (!response.ok) throw new Error(result.error || 'Verification failed');
 
           if (result.success && result.data) {
-            // রেজাল্ট অনুযায়ী মূল স্টেট আপডেট করা
             result.data.forEach(verifiedItem => {
               if (type === 'emails') {
                 const target = currentData.emails.find(e => e.email === verifiedItem.email);
@@ -232,7 +228,6 @@
             });
             showStatus(`${group} verification complete!`, 'success');
             
-            // রেন্ডার আপডেট
             if (type === 'emails') renderEmails();
             else renderPhones();
           }
@@ -245,7 +240,7 @@
     });
   }
 
-  // ===== UI আপডেট ও স্ট্যাটাস মেসেজ =====
+  // ===== UI আপডেট =====
   function updateUI(data) {
     currentData = data;
     const emailCount = data.emails?.length || 0;
@@ -270,7 +265,9 @@
     setTimeout(() => statusDiv.classList.add('hidden'), 5000);
   }
 
-  // ===== মূল স্ক্র্যাপিং এপিআই কল =====
+  // ======================================================
+  // ===== মূল স্ক্র্যাপিং এপিআই কল (পরিবর্তিত অংশ) =====
+  // ======================================================
   async function handleWebsiteScrape() {
     const url = urlInput.value.trim();
     if (!url) {
@@ -289,17 +286,30 @@
     progressLabel.textContent = 'Analyzing context & scraping...';
 
     try {
+      // ----- পরিবর্তিত অংশ শুরু -----
       const response = await fetch('/api/finder-api/website-secret', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        // action প্যারামিটার পাঠানো হচ্ছে না, তাই ব্যাকএন্ড বুঝতে পারবে এটি স্ক্র্যাপিং রিকোয়েস্ট
         body: JSON.stringify({ url, limit, depth, force, includeSubdomains })
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Scraping failed');
+
+      let result;
+      const contentType = response.headers.get("content-type");
+      // সার্ভার যদি JSON না পাঠায়, তাহলে সুন্দর এরর মেসেজ দেখান
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        result = await response.json();
+      } else {
+        // HTTP স্ট্যাটাস কোডও মেসেজে যোগ করা হলো
+        throw new Error(`Server returned an error (HTTP ${response.status}). The website might be too heavy or is blocking the scraper.`);
+      }
+
+      if (!response.ok) {
+        throw new Error(result.error || `Scraping failed with status ${response.status}`);
+      }
+      // ----- পরিবর্তিত অংশ শেষ -----
 
       progressBar.style.width = '100%';
       progressText.textContent = '100%';
@@ -309,7 +319,7 @@
         updateUI({ emails: result.data.emails || [], phones: result.data.phones || [] });
         showStatus(`Extraction complete. Intelligent parsing applied.`, 'success');
       } else {
-        // পুরনো ক্যাশ স্ট্রাকচারের জন্য ফলব্যাক
+        // ফলব্যাক
         updateUI({ 
           emails: (result.emails || []).map(e => ({email: e, domain: `@${e.split('@')[1]||'unknown'}`})), 
           phones: (result.phones || []).map(p => ({phone: p, country: 'Unknown'})) 
@@ -317,6 +327,7 @@
         showStatus(`Scraped items successfully`, 'success');
       }
     } catch (err) {
+      // এখন এরর মেসেজ ক্লিন এবং ইউজার‑বান্ধব
       showStatus('Error: ' + err.message, 'error');
     } finally {
       scrapeBtn.disabled = false;
@@ -324,7 +335,7 @@
     }
   }
 
-  // ===== কপি অল ও এক্সপোর্ট (নতুন অবজেক্ট স্ট্রাকচার অনুযায়ী) =====
+  // ===== কপি অল ও এক্সপোর্ট =====
   copyAllBtn.addEventListener('click', function() {
     const emailStrings = (currentData.emails || []).map(e => e.email);
     const phoneStrings = (currentData.phones || []).map(p => p.phone);
