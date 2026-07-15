@@ -289,22 +289,17 @@
     progressLabel.textContent = 'Analyzing context & scraping...';
 
     try {
-const response = await fetch('/api/finder-api/website-secret', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-  body: JSON.stringify({ url, limit, depth, force, includeSubdomains })
-});
-
-let result;
-// চেক করা হচ্ছে সার্ভার HTML পাঠালো নাকি আসল JSON পাঠালো
-const contentType = response.headers.get("content-type");
-if (contentType && contentType.indexOf("application/json") !== -1) {
-  result = await response.json();
-} else {
-  throw new Error(`Server returned an error (HTTP ${response.status}). The website might be too heavy or is blocking the scraper.`);
-}
-
-if (!response.ok) throw new Error(result.error || 'Scraping failed');
+      const response = await fetch('/api/finder-api/website-secret', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        // action প্যারামিটার পাঠানো হচ্ছে না, তাই ব্যাকএন্ড বুঝতে পারবে এটি স্ক্র্যাপিং রিকোয়েস্ট
+        body: JSON.stringify({ url, limit, depth, force, includeSubdomains })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Scraping failed');
 
       progressBar.style.width = '100%';
       progressText.textContent = '100%';
