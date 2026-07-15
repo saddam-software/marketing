@@ -4,7 +4,7 @@ compatibility_date = "2024-11-01"
 
 # ===== KV Namespace (Optional) =====
 kv_namespaces = [
-  { binding = "SECRETS_KV", id = "YOUR_KV_NAMESPACE_ID", preview_id = "YOUR_KV_PREVIEW_ID" }
+  { binding = "SECRETS_KV", id = "f40157147a7a439089ed557417104df8", preview_id = "f40157147a7a439089ed557417104df8" }
 ]
 
 # ===== D1 Database Binding =====
@@ -72,11 +72,10 @@ KASPR_API_KEY = "YOUR_KASPR_API_KEY"
 # ----- Email/SMS Marketing -----
 BREVO_API_KEY = "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"
 
-# Production KV Binding
 [[env.production.kv_namespaces]]
 binding = "SECRETS_KV"
-id = "YOUR_KV_NAMESPACE_ID"
-preview_id = "YOUR_KV_PREVIEW_ID"
+id = "f40157147a7a439089ed557417104df8"
+preview_id = "f40157147a7a439089ed557417104df8"
 
 # Production D1 Binding
 [[env.production.d1_databases]]
