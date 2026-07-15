@@ -1,244 +1,132 @@
-// public/website-contact-extractor/script.js
-(function() {
-  'use strict';
+/**
+ * ============================================================================
+ * Frontend Script: Website Contact Extractor
+ * Purpose: Handles UI interactions, API calls to the Cloudflare Worker, 
+ *          and dynamic rendering of scraped data.
+ * ============================================================================
+ */
 
-  // ===== DOM রেফারেন্স =====
-  const urlInput = document.getElementById('websiteUrl');
-  const limitInput = document.getElementById('websiteLimit');
-  const depthInput = document.getElementById('websiteDepth');
-  const forceCheck = document.getElementById('forceWebsiteScrape');
-  const subdomainCheck = document.getElementById('includeSubdomains');
-  const scrapeBtn = document.getElementById('websiteScrapeBtn');
-  const statusDiv = document.getElementById('websiteStatus');
-  const progressContainer = document.getElementById('websiteProgressContainer');
-  const progressBar = document.getElementById('websiteProgressBar');
-  const progressText = document.getElementById('websiteProgressText');
-  const progressLabel = document.getElementById('websiteProgressLabel');
-  const resultCount = document.getElementById('websiteResultCount');
-  const resultMeta = document.getElementById('websiteResultMeta');
-  const emailsTab = document.getElementById('websiteEmailsTab');
-  const phonesTab = document.getElementById('websitePhonesTab');
-  const copyAllBtn = document.getElementById('websiteCopyAllBtn');
-  const exportCsvBtn = document.getElementById('websiteExportCsv');
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. DOM Elements Selection
+    const extractForm = document.getElementById('extract-form');
+    const urlInput = document.getElementById('target-url');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const resultsContainer = document.getElementById('results-container');
+    const emailTableBody = document.getElementById('email-results-body');
+    const phoneTableBody = document.getElementById('phone-results-body');
+    const scanStats = document.getElementById('scan-stats');
 
-  // ===== স্টেট =====
-  let currentData = { emails: [], phones: [] };
-  let activeTab = 'emails';
+    // IMPORTANT: Replace this with your actual Cloudflare Worker URL
+    const BACKEND_API_URL = 'https://YOUR_WORKER_SUBDOMAIN.workers.dev/api/scrape/website';
 
-  // ===== টোকেন জেনারেশন (ব্যাকএন্ডের সাথে সামঞ্জস্যপূর্ণ) =====
-  const tokenPayload = {
-    username: "developer_user",
-    exp: Date.now() + (365 * 24 * 60 * 60 * 1000) // ১ বছর মেয়াদ
-  };
-  const token = btoa(JSON.stringify(tokenPayload));
+    // 2. Form Submit Event Listener
+    extractForm.addEventListener('submit', async (event) => {
+        event.preventDefault(); // Prevent default page reload
+        
+        const targetUrl = urlInput.value.trim();
+        if (!targetUrl) {
+            alert('Please enter a valid website URL.');
+            return;
+        }
 
-  // ===== ট্যাব সুইচিং (সঠিক সিলেক্টর) =====
-  const tabBtns = document.querySelectorAll('.we-tab-btn');
-  const tabPanels = {
-    emails: emailsTab,
-    phones: phonesTab
-  };
+        // Prepare UI for loading
+        showLoading(true);
+        clearPreviousResults();
 
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-      const tab = this.dataset.tab; // 'emails' বা 'phones'
-      activeTab = tab;
+        try {
+            // 3. API Call to Backend
+            const response = await fetch(BACKEND_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    url: targetUrl,
+                    limit: 20, // Customize scraping limit if needed
+                    depth: 2   // Customize crawl depth if needed
+                })
+            });
 
-      // সব বাটন থেকে active ক্লাস সরান
-      tabBtns.forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
+            const result = await response.json();
 
-      // সব প্যানেল লুকান
-      Object.values(tabPanels).forEach(panel => panel.classList.add('hidden'));
+            if (result.success) {
+                // 4. Render Data
+                renderResults(result.data);
+            } else {
+                throw new Error(result.error || 'Failed to extract data.');
+            }
 
-      // নির্বাচিত প্যানেল দেখান
-      if (tab === 'emails') {
-        tabPanels.emails.classList.remove('hidden');
-        renderEmails();
-      } else if (tab === 'phones') {
-        tabPanels.phones.classList.remove('hidden');
-        renderPhones();
-      }
+        } catch (error) {
+            console.error('Extraction Error:', error);
+            alert(`Error: ${error.message}. Please check your backend connection or URL.`);
+        } finally {
+            showLoading(false);
+        }
     });
-  });
 
-  // ===== রেন্ডার ফাংশন =====
-  function renderEmails() {
-    const emails = currentData.emails || [];
-    if (!emails.length) {
-      emailsTab.innerHTML = `
-        <div class="we-empty-state">
-          <svg class="we-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-          No emails extracted yet.
-        </div>
-      `;
-      return;
+    /**
+     * ============================================================
+     * Helper Functions for UI & Rendering
+     * ============================================================
+     */
+
+    // Toggles the loading spinner/message
+    function showLoading(isLoading) {
+        if (isLoading) {
+            loadingIndicator.style.display = 'block';
+            resultsContainer.style.display = 'none';
+        } else {
+            loadingIndicator.style.display = 'none';
+        }
     }
 
-    let html = `<table class="we-data-table"><thead><tr><th>#</th><th>Email</th><th>Action</th></tr></thead><tbody>`;
-    emails.forEach((e, idx) => {
-      html += `
-        <tr class="we-data-row">
-          <td class="text-slate-400 text-xs">${idx+1}</td>
-          <td class="font-mono text-sm break-all">${e}</td>
-          <td><button class="we-copy-btn" data-value="${e}">Copy</button></td>
-        </tr>
-      `;
-    });
-    html += `</tbody></table>`;
-    emailsTab.innerHTML = html;
-    attachCopyEvents();
-  }
-
-  function renderPhones() {
-    const phones = currentData.phones || [];
-    if (!phones.length) {
-      phonesTab.innerHTML = `
-        <div class="we-empty-state">
-          <svg class="we-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-          </svg>
-          No phone numbers extracted yet.
-        </div>
-      `;
-      return;
+    // Clears old table data before a new search
+    function clearPreviousResults() {
+        emailTableBody.innerHTML = '';
+        phoneTableBody.innerHTML = '';
+        scanStats.innerHTML = '';
     }
 
-    let html = `<table class="we-data-table"><thead><tr><th>#</th><th>Phone</th><th>Action</th></tr></thead><tbody>`;
-    phones.forEach((p, idx) => {
-      html += `
-        <tr class="we-data-row">
-          <td class="text-slate-400 text-xs">${idx+1}</td>
-          <td class="font-mono text-sm break-all">${p}</td>
-          <td><button class="we-copy-btn" data-value="${p}">Copy</button></td>
-        </tr>
-      `;
-    });
-    html += `</tbody></table>`;
-    phonesTab.innerHTML = html;
-    attachCopyEvents();
-  }
+    // Populates the DOM with the scraped data
+    function renderResults(data) {
+        const { emails, phones, pagesScanned } = data;
 
-  function attachCopyEvents() {
-    document.querySelectorAll('#websiteEmailsTab .we-copy-btn, #websitePhonesTab .we-copy-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        navigator.clipboard.writeText(btn.dataset.value).then(() => {
-          btn.textContent = '✓';
-          setTimeout(() => btn.textContent = 'Copy', 1500);
-        });
-      });
-    });
-  }
+        // Update Stats
+        scanStats.innerHTML = `<strong>Scan Complete:</strong> Scanned ${pagesScanned} pages. Found ${emails.length} emails and ${phones.length} phone numbers.`;
 
-  // ===== UI আপডেট =====
-  function updateUI(data) {
-    currentData = data;
-    const total = (data.emails?.length || 0) + (data.phones?.length || 0);
-    resultCount.textContent = `${total} items`;
-    resultMeta.textContent = `Found ${data.emails?.length || 0} emails and ${data.phones?.length || 0} phones`;
-    copyAllBtn.disabled = total === 0;
-    exportCsvBtn.disabled = total === 0;
+        // Render Emails
+        if (emails.length > 0) {
+            emails.forEach(email => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${email.value}</td>
+                    <td><span class="badge category-${email.category.toLowerCase()}">${email.category}</span></td>
+                    <td>${email.confidenceScore}%</td>
+                    <td><a href="${email.source}" target="_blank" rel="noopener noreferrer">Source</a></td>
+                `;
+                emailTableBody.appendChild(row);
+            });
+        } else {
+            emailTableBody.innerHTML = '<tr><td colspan="4" class="text-center">No emails found.</td></tr>';
+        }
 
-    // বর্তমান ট্যাব অনুযায়ী রেন্ডার
-    if (activeTab === 'emails') renderEmails();
-    else renderPhones();
-  }
+        // Render Phones
+        if (phones.length > 0) {
+            phones.forEach(phone => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${phone.value}</td>
+                    <td><span class="badge category-${phone.category.replace('/', '-').toLowerCase()}">${phone.category}</span></td>
+                    <td>${phone.confidenceScore}%</td>
+                    <td><a href="${phone.source}" target="_blank" rel="noopener noreferrer">Source</a></td>
+                `;
+                phoneTableBody.appendChild(row);
+            });
+        } else {
+            phoneTableBody.innerHTML = '<tr><td colspan="4" class="text-center">No phone numbers found.</td></tr>';
+        }
 
-  // ===== স্ট্যাটাস মেসেজ =====
-  function showStatus(msg, type = 'info') {
-    statusDiv.textContent = msg;
-    statusDiv.classList.remove('hidden', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700', 'bg-blue-50', 'text-blue-700');
-    if (type === 'success') statusDiv.classList.add('bg-green-50', 'text-green-700');
-    else if (type === 'error') statusDiv.classList.add('bg-red-50', 'text-red-700');
-    else statusDiv.classList.add('bg-blue-50', 'text-blue-700');
-    setTimeout(() => statusDiv.classList.add('hidden'), 5000);
-  }
-
-  // ===== এপিআই কল (স্ক্র্যাপিং) =====
-  async function handleWebsiteScrape() {
-    const url = urlInput.value.trim();
-    if (!url) {
-      showStatus('Please enter a valid URL', 'error');
-      return;
+        // Show the results container
+        resultsContainer.style.display = 'block';
     }
-    const limit = parseInt(limitInput.value, 10) || 100;
-    const depth = parseInt(depthInput.value, 10) || 1;
-    const force = forceCheck.checked;
-    const includeSubdomains = subdomainCheck.checked;
-
-    scrapeBtn.disabled = true;
-    progressContainer.classList.remove('hidden');
-    progressBar.style.width = '0%';
-    progressText.textContent = '0%';
-    progressLabel.textContent = 'Connecting...';
-
-    try {
-      const response = await fetch('/api/finder-api/website-secret', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ url, limit, depth, force, includeSubdomains })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Scraping failed');
-
-      progressBar.style.width = '100%';
-      progressText.textContent = '100%';
-      progressLabel.textContent = 'Done!';
-
-      if (data.success) {
-        updateUI({ emails: data.emails || [], phones: data.phones || [] });
-        showStatus(`Scraped ${data.emails?.length || 0} emails and ${data.phones?.length || 0} phones`, 'success');
-      } else {
-        showStatus(data.error || 'Scraping failed', 'error');
-      }
-    } catch (err) {
-      showStatus('Error: ' + err.message, 'error');
-    } finally {
-      scrapeBtn.disabled = false;
-      setTimeout(() => progressContainer.classList.add('hidden'), 1000);
-    }
-  }
-
-  // ===== কপি অল ও এক্সপোর্ট =====
-  copyAllBtn.addEventListener('click', function() {
-    const all = [...(currentData.emails || []), ...(currentData.phones || [])];
-    if (!all.length) return;
-    navigator.clipboard.writeText(all.join('\n')).then(() => {
-      showStatus(`Copied ${all.length} items to clipboard`, 'success');
-    });
-  });
-
-  exportCsvBtn.addEventListener('click', function() {
-    const emails = currentData.emails || [];
-    const phones = currentData.phones || [];
-    if (!emails.length && !phones.length) return;
-    let csv = 'Type,Contact\n';
-    emails.forEach(e => csv += `Email,"${e}"\n`);
-    phones.forEach(p => csv += `Phone,"${p}"\n`);
-    downloadFile(csv, `website_scrape_${new Date().toISOString().slice(0,10)}.csv`, 'text/csv');
-  });
-
-  function downloadFile(content, name, mime) {
-    const blob = new Blob([content], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ===== ইভেন্ট লিসেনার =====
-  scrapeBtn.addEventListener('click', handleWebsiteScrape);
-  urlInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleWebsiteScrape();
-  });
-
-  // ===== ইনিশিয়ালাইজ =====
-  updateUI({ emails: [], phones: [] });
-})();
+});
