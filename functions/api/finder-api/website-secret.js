@@ -1,32 +1,10 @@
 // functions/api/finder-api/website-secret.js
 // ============================================================ 
 //  Website URL Extractor & Intelligence Verification API
+//  Fully Dynamic Configuration - Now reads from Dashboard
 // ============================================================
 
 import { KVMANAGER } from '../../helpers/kv-manager.js';
-
-// ============================================================
-// 1. STRATEGIC PROVIDER CONFIGURATION (প্লাগেবল আর্কিটেকচার)
-// ============================================================
-const PROVIDER_CONFIG = {
-  email: {
-    current: 'hunter', // বিকল্প: 'zero_bounce', 'abstract', ইত্যাদি
-    keys: {
-      hunter: 'YOUR_HUNTER_IO_API_KEY', // আপনার Hunter.io API Key এখানে দিন
-      zero_bounce: 'YOUR_ZERO_BOUNCE_API_KEY'
-    }
-  },
-  phone: {
-    current: 'twilio', // বিকল্প: 'numverify', 'infobip', ইত্যাদি
-    keys: {
-      twilio: {
-        accountSid: 'YOUR_TWILIO_ACCOUNT_SID', // আপনার Twilio Account SID
-        authToken: 'YOUR_TWILIO_AUTH_TOKEN'    // আপনার Twilio Auth Token
-      },
-      numverify: 'YOUR_NUMVERIFY_API_KEY'
-    }
-  }
-};
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -64,18 +42,27 @@ export async function onRequestPost(context) {
   const body = await request.json().catch(() => ({}));
   
   // ============================================================
+  // INIT KV & LOAD DYNAMIC CONFIGS
+  // ============================================================
+  const kv = new KVMANAGER(env.SECRETS_KV || null);
+  
+  // 🔴 Load Scraper API Key dynamically from database
+  const scrapeConfig = await kv.getJSON('api_config:website_scraping') || { provider: 'scraperapi', apiKey: '' };
+  const SCRAPER_API_KEY = scrapeConfig.apiKey || '';
+  
+  // ============================================================
   // ROUTER: VERIFICATION ACTIONS vs EXTRACTOR ACTION
   // ============================================================
   
-  // কলাম-লেভেল ইমেইল ভেরিফিকেশন অ্যাকশন
+  // কলাম-লেভেল ইমেইল ভেরিফিকেশন অ্যাকশন (KV পাস করা হয়েছে)
   if (body.action === 'verify_emails') {
-    const results = await handleEmailVerification(body.emails || []);
+    const results = await handleEmailVerification(body.emails || [], kv);
     return jsonResponse({ success: true, data: results }, 200, corsHeaders);
   }
 
-  // peri-level ফোন ভেরিফিকেশন অ্যাকশন
+  // peri-level ফোন ভেরিফিকেশন অ্যাকশন (KV পাস করা হয়েছে)
   if (body.action === 'verify_phones') {
-    const results = await handlePhoneVerification(body.phones || []);
+    const results = await handlePhoneVerification(body.phones || [], kv);
     return jsonResponse({ success: true, data: results }, 200, corsHeaders);
   }
 
@@ -88,7 +75,6 @@ export async function onRequestPost(context) {
   url = validateUrl(url);
   if (!url) return jsonResponse({ success: false, error: 'Invalid URL format' }, 400, corsHeaders);
 
-  const kv = new KVMANAGER(env.SECRETS_KV || null);
   const cacheKey = `cache:website:${url}:depth${depth}:limit${limit}`;
 
   // ক্যাশ চেক
@@ -114,9 +100,6 @@ export async function onRequestPost(context) {
   const isGoogleSearch = url.includes('google.com/search');
   const targetDepth = isGoogleSearch ? 2 : depth;
 
-  // 🔴 ScraperAPI Key - গুগলের ব্লক বাইপাস করার জন্য সচল রাখা হয়েছে
-  const SCRAPER_API_KEY = "6b62554e526e983093013e8c48ea8ce9"; 
-
   // রিকার্সিভ স্ক্র্যাপিং ফাংশন
   async function scrapePage(pageUrl, currentDepth) {
     if (currentDepth > targetDepth) return;
@@ -128,7 +111,7 @@ export async function onRequestPost(context) {
     try {
       const html = await fetchWithRetry(pageUrl, SCRAPER_API_KEY);
       
-      // এডভান্সড ইমেইল ইন্টელিজেন্স (Obfuscation Healing Engine applied on HTML)
+      // এডভান্সড ইমেইল ইন্টেলিজেন্স (Obfuscation Healing Engine applied on HTML)
       const healedHtml = autoHealObfuscation(html);
       const isCurrentPageGoogle = pageUrl.includes('google.com');
 
@@ -318,14 +301,20 @@ function normalizeAndDetectCountry(phoneStr, context) {
   return { phone: phoneStr, country: 'Unknown / Manual Review Required' };
 }
 
-// প্লাগেবল ইমেইল ভেরিফায়ার গেটওয়ে (Hunter.io API)
-async function handleEmailVerification(emails) {
-  const provider = PROVIDER_CONFIG.email.current;
-  const credentials = PROVIDER_CONFIG.email.keys[provider];
+// ============================================================
+// DYNAMIC VERIFICATION FUNCTIONS (Read from KV)
+// ============================================================
+
+// প্লাগেবল ইমেইল ভেরিফায়ার গেটওয়ে (ডাইনামিক কনফিগ)
+async function handleEmailVerification(emails, kv) {
+  // ডাটাবেস থেকে ডাইনামিক API লোড করা
+  const config = await kv.getJSON('api_config:email_verification') || { provider: 'hunter', apiKey: '' };
+  const provider = config.provider || 'hunter';
+  const credentials = config.apiKey || '';
   
   const tasks = emails.map(async (email) => {
     try {
-      if (provider === 'hunter') {
+      if (provider === 'hunter' && credentials) {
         const url = `https://api.hunter.io/v2/email-verifier?email=${encodeURIComponent(email)}&api_key=${credentials}`;
         const res = await fetch(url);
         const resData = await res.json();
@@ -336,7 +325,7 @@ async function handleEmailVerification(emails) {
           meta: resData.data?.score ? `Confidence: ${resData.data.score}%` : 'Hunter.io API'
         };
       }
-      return { email: email, status: 'Unverified', meta: 'Provider Not Configured' };
+      return { email: email, status: 'Unverified', meta: 'Provider Not Configured or Key Missing' };
     } catch (e) {
       return { email: email, status: 'Error', meta: e.message };
     }
@@ -345,17 +334,21 @@ async function handleEmailVerification(emails) {
   return Promise.all(tasks);
 }
 
-// প্লাগেবল ফোন ভেরিফায়ার গেটওয়ে (Twilio Lookup API)
-async function handlePhoneVerification(phones) {
-  const provider = PROVIDER_CONFIG.phone.current;
-  const credentials = PROVIDER_CONFIG.phone.keys[provider];
-
+// প্লাগেবল ফোন ভেরিফায়ার গেটওয়ে (ডাইনামিক কনফিগ)
+async function handlePhoneVerification(phones, kv) {
+  // ডাটাবেস থেকে ডাইনামিক API লোড করা
+  const config = await kv.getJSON('api_config:phone_verification') || { provider: 'twilio', apiKey: '' };
+  const provider = config.provider || 'twilio';
+  const credentials = config.apiKey || '';
+  
+  // Twilio এর ক্ষেত্রে API Key তে SID এবং Token সাধারণত 'SID:TOKEN' ফরম্যাটে সেভ করতে হবে ড্যাশবোর্ড থেকে
+  const credParts = credentials.split(':');
+  const accountSid = credParts[0] || '';
+  const authToken = credParts[1] || '';
+  
   const tasks = phones.map(async (phone) => {
     try {
-      if (provider === 'twilio') {
-        const accountSid = credentials.accountSid;
-        const authToken = credentials.authToken;
-        
+      if (provider === 'twilio' && accountSid && authToken) {
         const url = `https://lookups.twilio.com/v2/PhoneNumbers/${encodeURIComponent(phone)}?Fields=line_type_intelligence`;
         const basicAuth = btoa(`${accountSid}:${authToken}`);
         
@@ -376,7 +369,7 @@ async function handlePhoneVerification(phones) {
           return { phone: phone, status: 'Invalid', meta: 'Twilio Blocked/Invalid' };
         }
       }
-      return { phone: phone, status: 'Unverified', meta: 'Provider Not Configured' };
+      return { phone: phone, status: 'Unverified', meta: 'Provider Not Configured or Key Missing' };
     } catch (e) {
       return { phone: phone, status: 'Error', meta: e.message };
     }
