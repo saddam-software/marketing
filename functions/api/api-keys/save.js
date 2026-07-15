@@ -1,4 +1,4 @@
-import { KVMANAGER } from '../../../helpers/kv-manager.js';
+import { KVMANAGER } from '../../helpers/kv-manager.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
