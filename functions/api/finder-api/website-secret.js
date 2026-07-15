@@ -1,354 +1,201 @@
-/**
- * ============================================================================
- * Enterprise-Grade AI-Powered Contact Intelligence System
- * File: website-secret.js (Cloudflare Worker Backend)
- * Features: Centralized KV API, Anti-Bot Bypass, Global Phone Normalization, 
- *           Email Obfuscation Healing, Smart Crawler Scoring.
- * ============================================================================
- */
+// functions/api/finder-api/website-secret.js
+// ============================================================ 
+//  Website URL Extractor API (Updated with Proxy Bypass Logic)
+// ============================================================
 
-export default {
-    async fetch(request, env, ctx) {
-        const url = new URL(request.url);
+import { KVMANAGER } from '../../helpers/kv-manager.js';
 
-        // CORS Headers
-        const corsHeaders = {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        };
+export async function onRequestPost(context) {
+  const { request, env } = context;
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
 
-        if (request.method === 'OPTIONS') {
-            return new Response(null, { headers: corsHeaders });
-        }
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
-        // 1. Centralized Dynamic API Configuration Loader (Zero-Code Update)
-        async function loadDynamicConfig() {
-            try {
-                const configData = await env.SECRETS_KV.get('API_CONFIGS', 'json');
-                return configData || {
-                    scraping: { key: '', baseUrl: '' },
-                    emailVerify: { key: '', baseUrl: '' },
-                    phoneVerify: { key: '', baseUrl: '' },
-                    ocr: { key: '', baseUrl: '' },
-                    ai: { key: '', baseUrl: '' }
-                };
-            } catch (error) {
-                console.error("KV Load Error:", error);
-                return {};
-            }
-        }
+  function getAuthToken(req) {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+    return authHeader.slice(7);
+  }
 
-        // Router
-        if (url.pathname === '/api/scrape/website' && request.method === 'POST') {
-            try {
-                const body = await request.json();
-                const targetUrl = body.url;
-                const limit = body.limit || 100;
-                const depth = body.depth || 1;
-
-                if (!targetUrl) {
-                    return new Response(JSON.stringify({ success: false, error: "Target URL is required" }), {
-                        status: 400,
-                        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-                    });
-                }
-
-                const apiConfig = await loadDynamicConfig();
-                const result = await processScrapingJob(targetUrl, depth, limit, apiConfig);
-
-                return new Response(JSON.stringify({ success: true, data: result }), {
-                    status: 200,
-                    headers: { 'Content-Type': 'application/json', ...corsHeaders }
-                });
-
-            } catch (error) {
-                return new Response(JSON.stringify({ success: false, error: error.message }), {
-                    status: 500,
-                    headers: { 'Content-Type': 'application/json', ...corsHeaders }
-                });
-            }
-        }
-
-        return new Response(JSON.stringify({ success: false, error: "Endpoint not found" }), {
-            status: 404,
-            headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        });
-    }
-};
-
-/**
- * ============================================================
- * Core Scraping Engine & Document Mining
- * ============================================================
- */
-async function processScrapingJob(startUrl, maxDepth, limit, apiConfig) {
-    const visited = new Set();
-    const queue = [{ url: cleanUrl(startUrl), depth: 1, score: 100 }];
-    
-    let allEmails = new Map(); // using Map for deduplication
-    let allPhones = new Map();
-
-    while (queue.length > 0 && visited.size < limit) {
-        // Sort queue based on smart path scoring (highest score first)
-        queue.sort((a, b) => b.score - a.score);
-        const current = queue.shift();
-
-        if (visited.has(current.url)) continue;
-        visited.add(current.url);
-
-        try {
-            const htmlContent = await fetchWithAntiBot(current.url, apiConfig);
-            
-            // Extract Contacts
-            const extractedEmails = extractAndHealEmails(htmlContent, current.url);
-            const extractedPhones = extractAndNormalizePhones(htmlContent, current.url);
-
-            extractedEmails.forEach(e => {
-                if (!allEmails.has(e.value)) allEmails.set(e.value, e);
-            });
-            
-            extractedPhones.forEach(p => {
-                if (!allPhones.has(p.value)) allPhones.set(p.value, p);
-            });
-
-            // Smart Crawler: Extract and score internal links if within depth
-            if (current.depth < maxDepth) {
-                const newLinks = extractLinks(htmlContent, current.url);
-                for (const link of newLinks) {
-                    if (!visited.has(link)) {
-                        queue.push({ 
-                            url: link, 
-                            depth: current.depth + 1, 
-                            score: calculatePathScore(link) 
-                        });
-                    }
-                }
-            }
-        } catch (error) {
-            console.error(`Failed to scrape ${current.url}:`, error.message);
-        }
-    }
-
-    return {
-        emails: Array.from(allEmails.values()),
-        phones: Array.from(allPhones.values()),
-        pagesScanned: visited.size,
-        scannedUrls: Array.from(visited)
-    };
-}
-
-/**
- * ============================================================
- * 2. Robust Universal URL & Anti-Bot Bypass
- * ============================================================
- */
-async function fetchWithAntiBot(targetUrl, apiConfig) {
-    // Dynamic Header Rotation to bypass basic WAF/Cloudflare
-    const userAgents = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36"
-    ];
-    
-    const randomUA = userAgents[Math.floor(Math.random() * userAgents.length)];
-    const headers = {
-        'User-Agent': randomUA,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Cache-Control': 'max-age=0'
-    };
-
-    // If an external Scraping API (like ScraperAPI) is configured in KV
-    let fetchUrl = targetUrl;
-    if (apiConfig.scraping && apiConfig.scraping.baseUrl && apiConfig.scraping.key) {
-        fetchUrl = `${apiConfig.scraping.baseUrl}?api_key=${apiConfig.scraping.key}&url=${encodeURIComponent(targetUrl)}&render=true`;
-    }
-
-    const response = await fetch(fetchUrl, { headers, redirect: 'follow' });
-    
-    if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
-    }
-    
-    return await response.text();
-}
-
-function cleanUrl(rawUrl) {
+  function verifyToken(token) {
     try {
-        const urlObj = new URL(rawUrl);
-        // Remove heavy tracking/search parameters to avoid duplication
-        urlObj.search = '';
-        urlObj.hash = '';
-        return urlObj.toString();
-    } catch (e) {
-        return rawUrl;
+      const payload = JSON.parse(atob(token));
+      if (payload.exp < Date.now()) return null;
+      return payload;
+    } catch { return null; }
+  }
+
+  const token = getAuthToken(request);
+  if (!token) return jsonResponse({ success: false, error: 'Missing authentication token' }, 401, corsHeaders);
+  
+  const payload = verifyToken(token);
+  if (!payload) return jsonResponse({ success: false, error: 'Invalid or expired token' }, 401, corsHeaders);
+
+  const body = await request.json().catch(() => ({}));
+  let { url, limit = 100, depth = 1, force = false, includeSubdomains = false } = body;
+
+  if (!url) return jsonResponse({ success: false, error: 'URL required' }, 400, corsHeaders);
+  url = validateUrl(url);
+  if (!url) return jsonResponse({ success: false, error: 'Invalid URL' }, 400, corsHeaders);
+
+  const kv = new KVMANAGER(env.SECRETS_KV || null);
+  const cacheKey = `cache:website:${url}:depth${depth}:limit${limit}`;
+
+  if (!force) {
+    const cached = await kv.getJSON(cacheKey);
+    if (cached && cached.emails && cached.phones) {
+      return jsonResponse({
+        success: true,
+        emails: cached.emails.slice(0, limit),
+        phones: cached.phones.slice(0, limit),
+        cached: true,
+      }, 200, corsHeaders);
     }
-}
+  }
 
-/**
- * ============================================================
- * 4. Global Phone Intelligence (Multi-Format Normalization)
- * ============================================================
- */
-function extractAndNormalizePhones(text, sourceUrl) {
-    const results = [];
-    // Catch various formats: +1 (234) 567-8901, +880 1818-206268, 01711-223344
-    const phoneRegex = /(?:(?:\+|00)\d{1,3}[\s-]?)?(?:\(?\d{1,4}\)?[\s-]?)?[\d\s-]{7,15}\d/g;
-    const matches = text.match(phoneRegex) || [];
-    
-    const tld = detectCountryFromUrl(sourceUrl);
+  let allEmails = [];
+  let allPhones = [];
+  let errorMsg = null;
+  const visited = new Set();
+  
+  const isGoogleSearch = url.includes('google.com/search');
+  const targetDepth = isGoogleSearch ? 2 : depth;
 
-    for (let raw of matches) {
-        let clean = raw.replace(/[^\d+]/g, '');
+  // 🔴 গুরুত্বপূর্ণ: গুগলের ব্লক বাইপাস করতে এখানে আপনার ScraperAPI এর ফ্রি API Key দিন
+  // আপনি scraperapi.com এ ফ্রিতে একাউন্ট খুলে এপিআই কি (API Key) পেতে পারেন
+  const SCRAPER_API_KEY = "6b62554e526e983093013e8c48ea8ce9"; // উদাহরণ: "1a2b3c4d5e6f7g8h9i0j"
+
+  async function scrapePage(pageUrl, currentDepth) {
+    if (currentDepth > targetDepth) return;
+    if (visited.has(pageUrl)) return;
+    visited.add(pageUrl);
+
+    if (allEmails.length >= limit && allPhones.length >= limit) return;
+
+    try {
+      const html = await fetchWithRetry(pageUrl, SCRAPER_API_KEY);
+      const isCurrentPageGoogle = pageUrl.includes('google.com');
+
+      if (isCurrentPageGoogle) {
+        let extractedLinks = [];
         
-        // Skip obvious fake numbers (e.g., sequential, too short)
-        if (clean.length < 8 || clean.length > 15) continue;
-        
-        // AI Geo-Context Fallback (Auto Country Code Injection)
-        if (!clean.startsWith('+')) {
-            if (clean.startsWith('00')) {
-                clean = '+' + clean.substring(2);
-            } else if (clean.startsWith('0') && tld) {
-                // Remove local zero and append country code
-                clean = tld.code + clean.substring(1);
-            } else if (tld) {
-                // Prepend country code if no local zero
-                clean = tld.code + clean;
+        const googleLinkRegex = /href="\/url\?q=([^"&]+)/gi;
+        let match;
+        while ((match = googleLinkRegex.exec(html)) !== null) {
+          try {
+            const decodedUrl = decodeURIComponent(match[1]);
+            if (!decodedUrl.includes('google.com') && !decodedUrl.includes('youtube.com')) {
+              extractedLinks.push(decodedUrl);
             }
+          } catch (e) {}
         }
 
-        results.push({
-            value: clean,
-            source: sourceUrl,
-            category: detectPhoneCategory(clean),
-            confidenceScore: calculateConfidence(clean, 'phone')
-        });
-    }
-    return results;
-}
-
-function detectCountryFromUrl(urlStr) {
-    const map = {
-        '.bd': { code: '+880', country: 'Bangladesh' },
-        '.uk': { code: '+44', country: 'United Kingdom' },
-        '.us': { code: '+1', country: 'USA' },
-        '.au': { code: '+61', country: 'Australia' },
-        '.in': { code: '+91', country: 'India' }
-    };
-    for (const [ext, data] of Object.entries(map)) {
-        if (urlStr.includes(ext)) return data;
-    }
-    return null;
-}
-
-function detectPhoneCategory(phoneStr) {
-    // Categorize for UI columns (Country-Wise)
-    if (phoneStr.startsWith('+880')) return 'Bangladesh';
-    if (phoneStr.startsWith('+1')) return 'USA/Canada';
-    if (phoneStr.startsWith('+44')) return 'UK';
-    return 'Global';
-}
-
-/**
- * ============================================================
- * 5. Advanced Email Intelligence & Obfuscation Healing
- * ============================================================
- */
-function extractAndHealEmails(text, sourceUrl) {
-    const results = [];
-    
-    // Obfuscation Healing
-    // Replaces: info [at] domain dot com -> info@domain.com
-    let healedText = text
-        .replace(/\s*(?:\[at\]|\(at\)|\[@\]|@| at )\s*/gi, '@')
-        .replace(/\s*(?:\[dot\]|\(dot\)|\[\.\]|\.| dot )\s*/gi, '.');
-
-    const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
-    const matches = healedText.match(emailRegex) || [];
-
-    for (let email of matches) {
-        email = email.toLowerCase().trim();
-        
-        // Filter out obvious image extensions and false positives
-        if (email.match(/\.(png|jpg|jpeg|gif|css|js|svg)$/)) continue;
-        if (email.length > 60) continue;
-
-        results.push({
-            value: email,
-            source: sourceUrl,
-            category: detectEmailCategory(email),
-            confidenceScore: calculateConfidence(email, 'email')
-        });
-    }
-    return results;
-}
-
-function detectEmailCategory(email) {
-    const prefix = email.split('@')[0].toLowerCase();
-    if (['hr', 'career', 'jobs'].includes(prefix)) return 'HR';
-    if (['ceo', 'founder', 'director'].includes(prefix)) return 'Management';
-    if (['support', 'help', 'care'].includes(prefix)) return 'Support';
-    if (['sales', 'marketing', 'info', 'hello', 'contact'].includes(prefix)) return 'General';
-    return 'Personal';
-}
-
-/**
- * ============================================================
- * 6. Intelligent Crawler: Smart Path Scoring
- * ============================================================
- */
-function calculatePathScore(urlStr) {
-    let score = 10;
-    const lowerUrl = urlStr.toLowerCase();
-    
-    // High Priority Paths
-    const highPriority = ['contact', 'about', 'support', 'team', 'reach', 'locations'];
-    const lowPriority = ['blog', 'tag', 'category', 'login', 'cart', 'checkout'];
-
-    for (const keyword of highPriority) {
-        if (lowerUrl.includes(keyword)) score += 50;
-    }
-    for (const keyword of lowPriority) {
-        if (lowerUrl.includes(keyword)) score -= 20;
-    }
-    return score;
-}
-
-function extractLinks(html, baseUrl) {
-    const links = new Set();
-    const hrefRegex = /href=["']([^"']+)["']/gi;
-    let match;
-    
-    const baseDomain = new URL(baseUrl).hostname;
-
-    while ((match = hrefRegex.exec(html)) !== null) {
-        try {
-            let linkUrl = new URL(match[1], baseUrl);
-            
-            // Stay within same domain / handle SPA structure internally
-            if (linkUrl.hostname.includes(baseDomain)) {
-                linkUrl.hash = ''; // Remove fragments targeting same page
-                links.add(linkUrl.toString());
+        const directLinkRegex = /href="(https?:\/\/[^"]+)"/gi;
+        while ((match = directLinkRegex.exec(html)) !== null) {
+          try {
+            if (!match[1].includes('google.com') && !match[1].includes('youtube.com')) {
+              extractedLinks.push(match[1]);
             }
-        } catch (e) {
-            // Ignore malformed URLs
+          } catch (e) {}
         }
+
+        extractedLinks = [...new Set(extractedLinks)];
+
+        for (const link of extractedLinks) {
+          if (allEmails.length >= limit && allPhones.length >= limit) break;
+          await scrapePage(link, currentDepth + 1);
+        }
+      } else {
+        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+        const emails = (html.match(emailRegex) || []).map(e => e.toLowerCase());
+        
+        const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g;
+        const rawPhones = html.match(phoneRegex) || [];
+        const phones = rawPhones.map(p => p.trim().replace(/[^\d+]/g, '')).filter(p => p.length >= 10);
+
+        allEmails.push(...emails);
+        allPhones.push(...phones);
+      }
+    } catch (err) {
+      console.error(`Failed to scrape ${pageUrl}:`, err.message);
+      if (isGoogleSearch && currentDepth === 1) {
+        errorMsg = "Google blocked the request. A Scraping API/Proxy is required to bypass this.";
+      }
     }
-    return Array.from(links);
+  }
+
+  await scrapePage(url, 1);
+
+  allEmails = [...new Set(allEmails)].slice(0, limit);
+  allPhones = [...new Set(allPhones)].slice(0, limit);
+
+  if (isGoogleSearch && allEmails.length === 0 && allPhones.length === 0 && errorMsg) {
+     return jsonResponse({ success: false, error: errorMsg }, 403, corsHeaders);
+  }
+
+  await kv.putJSON(cacheKey, {
+    emails: allEmails,
+    phones: allPhones,
+    scrapedAt: new Date().toISOString(),
+  }, { expirationTtl: 86400 });
+
+  return jsonResponse({
+    success: true,
+    emails: allEmails,
+    phones: allPhones,
+    cached: false,
+  }, 200, corsHeaders);
 }
 
-/**
- * Data Integrity: AI Confidence Scoring stub
- */
-function calculateConfidence(value, type) {
-    if (type === 'email') {
-        return value.includes('.com') || value.includes('.org') || value.includes('.net') ? 95 : 85;
+// ========== Helpers ==========
+
+function validateUrl(url) {
+  if (typeof url !== 'string') return null;
+  url = url.trim();
+  if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+    return parsed.toString();
+  } catch { return null; }
+}
+
+async function fetchWithRetry(url, apiKey = "", retries = 2) {
+  // যদি গুগলের লিংক হয় এবং এপিআই কি দেওয়া থাকে, তবে রিকোয়েস্ট প্রক্সির মাধ্যমে যাবে
+  let fetchUrl = url;
+  if (url.includes('google.com') && apiKey !== "") {
+    fetchUrl = `http://api.scraperapi.com?api_key=${apiKey}&url=${encodeURIComponent(url)}`;
+  }
+
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const response = await fetch(fetchUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
+        signal: AbortSignal.timeout(20000), // প্রক্সির জন্য টাইমআউট বাড়ানো হয়েছে
+      });
+      if (response.status === 403 || response.status === 429) throw new Error('Blocked by anti-bot');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.text();
+    } catch (err) {
+      if (i === retries) throw err;
+      await new Promise(r => setTimeout(r, 1000 * (i + 1)));
     }
-    if (type === 'phone') {
-        return value.startsWith('+') && value.length > 10 ? 98 : 75;
-    }
-    return 50;
+  }
+}
+
+function jsonResponse(data, status = 200, headers = {}) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...headers, 'Content-Type': 'application/json' },
+  });
 }
