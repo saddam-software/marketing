@@ -54,7 +54,6 @@
   const smsRemaining = document.getElementById('smsRemaining');
   const smsLimit = document.getElementById('smsLimit');
 
-  // ===== নতুন API এলিমেন্ট =====
   const callProviderSelect = document.getElementById('callProviderSelect');
   const callApiKey = document.getElementById('callApiKey');
   const callApiBaseUrl = document.getElementById('callApiBaseUrl');
@@ -69,13 +68,18 @@
   const textApiBaseUrl = document.getElementById('textApiBaseUrl');
   const saveTextApiBtn = document.getElementById('saveTextApiBtn');
 
-  const websiteApiKey = document.getElementById('websiteApiKey');
-  const websiteApiBaseUrl = document.getElementById('websiteApiBaseUrl');
-  const saveWebsiteApiBtn = document.getElementById('saveWebsiteApiBtn');
+  // ===== Advanced Scraping & Verification API Elements =====
+  const scrapeProviderSelect = document.getElementById('scrapeProviderSelect');
+  const scrapeApiKeyInput = document.getElementById('scrapeApiKeyInput');
+  const saveScrapeApiBtn = document.getElementById('saveScrapeApiBtn');
 
-  const locationApiKey = document.getElementById('locationApiKey');
-  const locationApiBaseUrl = document.getElementById('locationApiBaseUrl');
-  const saveLocationApiBtn = document.getElementById('saveLocationApiBtn');
+  const phoneVerifyProviderSelect = document.getElementById('phoneVerifyProviderSelect');
+  const phoneVerifyApiKeyInput = document.getElementById('phoneVerifyApiKeyInput');
+  const savePhoneVerifyApiBtn = document.getElementById('savePhoneVerifyApiBtn');
+
+  const emailVerifyProviderSelect = document.getElementById('emailVerifyProviderSelect');
+  const emailVerifyApiKeyInput = document.getElementById('emailVerifyApiKeyInput');
+  const saveEmailVerifyApiBtn = document.getElementById('saveEmailVerifyApiBtn');
 
   // Audit Logs
   const auditLogsBody = document.getElementById('auditLogsBody');
@@ -466,7 +470,6 @@
       smsLimit.textContent = formatNum(sms.data.limit);
       smsStats.classList.remove('hidden');
     }
-    // Call API stats
     const call = await apiCall('/api-keys/stats?apiName=call');
     if (call.success && call.data) {
       callUsed.textContent = formatNum(call.data.used);
@@ -476,6 +479,7 @@
     }
   }
 
+  // ========== SAVE FUNCTIONS ==========
   async function handleSaveBrevo() {
     const key = brevoApiKey.value.trim();
     const sender = brevoSenderEmail.value.trim();
@@ -524,9 +528,6 @@
     }
   }
 
-  // ===== নতুন চারটি API সেভ ফাংশন =====
-
-  // Call API
   async function handleSaveCall() {
     const provider = callProviderSelect.value;
     const key = callApiKey.value.trim();
@@ -557,7 +558,6 @@
     }
   }
 
-  // Text API
   async function handleSaveText() {
     const key = textApiKey.value.trim();
     const baseUrl = textApiBaseUrl.value.trim();
@@ -578,45 +578,72 @@
     }
   }
 
-  // Website API
-  async function handleSaveWebsite() {
-    const key = websiteApiKey.value.trim();
-    const baseUrl = websiteApiBaseUrl.value.trim();
-    setLoading(saveWebsiteApiBtn, true);
+  // 1. Website Scraping API
+  async function handleSaveScrapingApi() {
+    const provider = scrapeProviderSelect.value;
+    const key = scrapeApiKeyInput.value.trim();
+    if (!key) { alert('অনুগ্রহ করে Scraping API Key প্রদান করুন।'); return; }
+    
+    setLoading(saveScrapeApiBtn, true);
     const res = await apiCall('/api-keys/save', 'POST', {
-      apiName: 'website',
-      apiKey: key || 'not_required',
-      baseUrl: baseUrl || ''
+      apiName: 'website_scraping',
+      provider: provider,
+      apiKey: key
     });
-    setLoading(saveWebsiteApiBtn, false);
+    setLoading(saveScrapeApiBtn, false);
+    
     if (res.success) {
-      websiteApiKey.value = '';
-      websiteApiBaseUrl.value = '';
-      addActivity('🔑 Website API key', 'Saved');
-      alert('Website API configuration saved successfully');
+      scrapeApiKeyInput.value = '';
+      addActivity('🔑 Scraping API', `Saved Provider: ${provider}`);
+      alert(`${provider.toUpperCase()} API Key সফলভাবে সেভ হয়েছে!`);
     } else {
-      alert(res.error || 'সেভ করতে ব্যর্থ');
+      alert(res.error || 'সেভ করতে ব্যর্থ হয়েছে।');
     }
   }
 
-  // Location API
-  async function handleSaveLocation() {
-    const key = locationApiKey.value.trim();
-    const baseUrl = locationApiBaseUrl.value.trim();
-    setLoading(saveLocationApiBtn, true);
+  // 2. Phone Verification API
+  async function handleSavePhoneVerifyApi() {
+    const provider = phoneVerifyProviderSelect.value;
+    const key = phoneVerifyApiKeyInput.value.trim();
+    if (!key) { alert('অনুগ্রহ করে Phone Verification API Key প্রদান করুন।'); return; }
+    
+    setLoading(savePhoneVerifyApiBtn, true);
     const res = await apiCall('/api-keys/save', 'POST', {
-      apiName: 'location',
-      apiKey: key || 'not_required',
-      baseUrl: baseUrl || ''
+      apiName: 'phone_verification',
+      provider: provider,
+      apiKey: key
     });
-    setLoading(saveLocationApiBtn, false);
+    setLoading(savePhoneVerifyApiBtn, false);
+    
     if (res.success) {
-      locationApiKey.value = '';
-      locationApiBaseUrl.value = '';
-      addActivity('🔑 Location API key', 'Saved');
-      alert('Location API configuration saved successfully');
+      phoneVerifyApiKeyInput.value = '';
+      addActivity('🔑 Phone Verify API', `Saved Provider: ${provider}`);
+      alert(`${provider.toUpperCase()} API Key সফলভাবে সেভ হয়েছে!`);
     } else {
-      alert(res.error || 'সেভ করতে ব্যর্থ');
+      alert(res.error || 'সেভ করতে ব্যর্থ হয়েছে।');
+    }
+  }
+
+  // 3. Email Verification API
+  async function handleSaveEmailVerifyApi() {
+    const provider = emailVerifyProviderSelect.value;
+    const key = emailVerifyApiKeyInput.value.trim();
+    if (!key) { alert('অনুগ্রহ করে Email Verification API Key প্রদান করুন।'); return; }
+    
+    setLoading(saveEmailVerifyApiBtn, true);
+    const res = await apiCall('/api-keys/save', 'POST', {
+      apiName: 'email_verification',
+      provider: provider,
+      apiKey: key
+    });
+    setLoading(saveEmailVerifyApiBtn, false);
+    
+    if (res.success) {
+      emailVerifyApiKeyInput.value = '';
+      addActivity('🔑 Email Verify API', `Saved Provider: ${provider}`);
+      alert(`${provider.toUpperCase()} API Key সফলভাবে সেভ হয়েছে!`);
+    } else {
+      alert(res.error || 'সেভ করতে ব্যর্থ হয়েছে।');
     }
   }
 
@@ -704,12 +731,13 @@
 
   saveBrevoApiBtn.addEventListener('click', handleSaveBrevo);
   saveSmsApiBtn.addEventListener('click', handleSaveSms);
+  saveCallApiBtn.addEventListener('click', handleSaveCall);
+  saveTextApiBtn.addEventListener('click', handleSaveText);
 
-  // নতুন চারটি API সেভ বাটনের ইভেন্ট
-  if (saveCallApiBtn) saveCallApiBtn.addEventListener('click', handleSaveCall);
-  if (saveTextApiBtn) saveTextApiBtn.addEventListener('click', handleSaveText);
-  if (saveWebsiteApiBtn) saveWebsiteApiBtn.addEventListener('click', handleSaveWebsite);
-  if (saveLocationApiBtn) saveLocationApiBtn.addEventListener('click', handleSaveLocation);
+  // Advanced API Save Events
+  if (saveScrapeApiBtn) saveScrapeApiBtn.addEventListener('click', handleSaveScrapingApi);
+  if (savePhoneVerifyApiBtn) savePhoneVerifyApiBtn.addEventListener('click', handleSavePhoneVerifyApi);
+  if (saveEmailVerifyApiBtn) saveEmailVerifyApiBtn.addEventListener('click', handleSaveEmailVerifyApi);
 
   refreshAuditLogsBtn.addEventListener('click', loadAuditLogs);
   applyAuditFiltersBtn.addEventListener('click', applyFilters);
