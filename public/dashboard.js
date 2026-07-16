@@ -81,6 +81,11 @@
   const emailVerifyApiKeyInput = document.getElementById('emailVerifyApiKeyInput');
   const saveEmailVerifyApiBtn = document.getElementById('saveEmailVerifyApiBtn');
 
+  // ===== NEW: Google Search API (SerpApi) =====
+  const searchProviderSelect = document.getElementById('searchProviderSelect');
+  const searchApiKeyInput = document.getElementById('searchApiKeyInput');
+  const saveSearchApiBtn = document.getElementById('saveSearchApiBtn');
+
   // Audit Logs
   const auditLogsBody = document.getElementById('auditLogsBody');
   const auditLogsCount = document.getElementById('auditLogsCount');
@@ -578,6 +583,29 @@
     }
   }
 
+  // ===== NEW: Google Search API (SerpApi) =====
+  async function handleSaveSearchApi() {
+    const provider = searchProviderSelect.value;
+    const key = searchApiKeyInput.value.trim();
+    if (!key) { alert('অনুগ্রহ করে Google Search API Key প্রদান করুন।'); return; }
+    
+    setLoading(saveSearchApiBtn, true);
+    const res = await apiCall('/api-keys/save', 'POST', {
+      apiName: 'google_search_api',
+      provider: provider,
+      apiKey: key
+    });
+    setLoading(saveSearchApiBtn, false);
+    
+    if (res.success) {
+      searchApiKeyInput.value = '';
+      addActivity('🔑 Google Search API', `Saved Provider: ${provider}`);
+      alert(`${provider.toUpperCase()} API Key সফলভাবে সেভ হয়েছে!`);
+    } else {
+      alert(res.error || 'সেভ করতে ব্যর্থ হয়েছে।');
+    }
+  }
+
   // 1. Website Scraping API
   async function handleSaveScrapingApi() {
     const provider = scrapeProviderSelect.value;
@@ -738,6 +766,9 @@
   if (saveScrapeApiBtn) saveScrapeApiBtn.addEventListener('click', handleSaveScrapingApi);
   if (savePhoneVerifyApiBtn) savePhoneVerifyApiBtn.addEventListener('click', handleSavePhoneVerifyApi);
   if (saveEmailVerifyApiBtn) saveEmailVerifyApiBtn.addEventListener('click', handleSaveEmailVerifyApi);
+
+  // NEW: Google Search API Save Event
+  if (saveSearchApiBtn) saveSearchApiBtn.addEventListener('click', handleSaveSearchApi);
 
   refreshAuditLogsBtn.addEventListener('click', loadAuditLogs);
   applyAuditFiltersBtn.addEventListener('click', applyFilters);
