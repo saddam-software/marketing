@@ -427,75 +427,69 @@ async function handleGoogleSearchWithSerpAPI(
 // FEATURE 5: SCRAPERAPI WITH GEO-TARGETING
 // FEATURE 6: SELECTIVE RENDERING OPTIMIZATION
 // ============================================================
-async function fetchWithScraperAPI(
-  url,
-  provider,
-  apiKey,
-  isGoogleSearch = false
-) {
+// website-secret.js (পরিবর্তিত অংশ)
+
+async function fetchWithScraperAPI(url, provider, apiKey, isGoogleSearch = false) {
   if (!apiKey) {
-    // Fallback to direct fetch if no API key
     return await directFetch(url);
   }
 
   try {
     let fetchUrl = '';
 
+    // ===== ডায়নামিক সাইট শনাক্ত করা =====
+    const isDynamicSite = 
+      url.includes('chaturbate.com') ||
+      url.includes('livejasmin.com') ||
+      url.includes('bongacams.com') ||
+      url.includes('stripchat.com') ||
+      url.includes('myfreecams.com') ||
+      url.includes('camsoda.com') ||
+      url.includes('streamate.com') ||
+      url.includes('imlive.com') ||
+      // অথবা URL-এ 'react', 'vue', 'angular' থাকলে
+      /react|vue|angular|nextjs|gatsby/i.test(url);
+
     if (provider === 'scraperapi') {
-      // Feature 5: Geo-targeting for ScraperAPI
       let params = {
         api_key: apiKey,
         url: url,
+        // ===== গুরুত্বপূর্ণ: ডায়নামিক সাইটের জন্য render সক্রিয় =====
+        render: isDynamicSite ? 'true' : (isGoogleSearch ? 'true' : 'false'),
+        premium: (isDynamicSite || isGoogleSearch) ? 'true' : 'false',
+        country_code: 'us',
+        // টাইমআউট বাড়ানো (৩০ সেকেন্ড)
+        timeout: '30000',
       };
 
-      // Feature 6: Selective Rendering Optimization
-      // Use premium for Google searches, render for JS-heavy sites
-      if (isGoogleSearch) {
-        params.premium = 'true';
-      } else {
-        // Detect if rendering might be needed based on URL patterns
-        const shouldRender =
-          url.includes('react') ||
-          url.includes('vue') ||
-          url.includes('angular') ||
-          url.includes('nextjs');
-        if (shouldRender) {
-          params.render = 'true';
-        } else {
-          params.render = 'false';
-        }
+      // অতিরিক্ত: AJAX কন্টেন্টের জন্য wait_for সেকেন্ড
+      if (isDynamicSite) {
+        params.wait_for = '5000'; // ৫ সেকেন্ড অপেক্ষা
       }
-
-      // Add geo-targeting
-      params.country_code = 'us';
 
       const queryString = new URLSearchParams(params).toString();
       fetchUrl = `http://api.scraperapi.com?${queryString}`;
-    } else if (provider === 'scrapingbee') {
-      fetchUrl = `https://app.scrapingbee.com/api/v1/?api_key=${apiKey}&url=${encodeURIComponent(
-        url
-      )}&render_js=false&premium_proxy=true`;
-    } else if (provider === 'brightdata') {
-      fetchUrl = `http://proxy.provider.com?url=${encodeURIComponent(
-        url
-      )}&api_key=${apiKey}`;
-    } else {
-      // Fallback to direct fetch
+    } 
+    else if (provider === 'scrapingbee') {
+      // ScrapingBee-তে render JS সহজ
+      fetchUrl = `https://app.scrapingbee.com/api/v1/?api_key=${apiKey}&url=${encodeURIComponent(url)}&render_js=${isDynamicSite ? 'true' : 'false'}&premium_proxy=true&wait_for=5000`;
+    } 
+    else {
       return await directFetch(url);
     }
 
     const response = await fetch(fetchUrl, {
       headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
       },
-      signal: AbortSignal.timeout(15000),
+      // টাইমআউট ৩০ সেকেন্ড
+      signal: AbortSignal.timeout(30000),
     });
 
     if (response.status === 403 || response.status === 429) {
-      throw new Error('API Provider blocked the request');
+      throw new Error(`ScraperAPI blocked: ${response.status}`);
     }
 
     if (!response.ok) {
@@ -504,7 +498,7 @@ async function fetchWithScraperAPI(
 
     return await response.text();
   } catch (err) {
-    console.warn(`ScraperAPI failed, falling back to direct fetch: ${err.message}`);
+    console.warn(`ScraperAPI failed: ${err.message}. Falling back to direct fetch.`);
     return await directFetch(url);
   }
 }
