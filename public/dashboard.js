@@ -69,6 +69,10 @@
   const saveTextApiBtn = document.getElementById('saveTextApiBtn');
 
   // ===== Advanced Scraping & Verification API Elements =====
+  const searchProviderSelect = document.getElementById('searchProviderSelect');
+  const searchApiKeyInput = document.getElementById('searchApiKeyInput');
+  const saveSearchApiBtn = document.getElementById('saveSearchApiBtn');
+
   const scrapeProviderSelect = document.getElementById('scrapeProviderSelect');
   const scrapeApiKeyInput = document.getElementById('scrapeApiKeyInput');
   const saveScrapeApiBtn = document.getElementById('saveScrapeApiBtn');
@@ -80,11 +84,6 @@
   const emailVerifyProviderSelect = document.getElementById('emailVerifyProviderSelect');
   const emailVerifyApiKeyInput = document.getElementById('emailVerifyApiKeyInput');
   const saveEmailVerifyApiBtn = document.getElementById('saveEmailVerifyApiBtn');
-
-  // ===== NEW: Google Search API (SerpApi) =====
-  const searchProviderSelect = document.getElementById('searchProviderSelect');
-  const searchApiKeyInput = document.getElementById('searchApiKeyInput');
-  const saveSearchApiBtn = document.getElementById('saveSearchApiBtn');
 
   // Audit Logs
   const auditLogsBody = document.getElementById('auditLogsBody');
@@ -583,7 +582,7 @@
     }
   }
 
-  // ===== NEW: Google Search API (SerpApi) =====
+  // 0. Google Search API (SerpApi)
   async function handleSaveSearchApi() {
     const provider = searchProviderSelect.value;
     const key = searchApiKeyInput.value.trim();
@@ -763,12 +762,10 @@
   saveTextApiBtn.addEventListener('click', handleSaveText);
 
   // Advanced API Save Events
+  if (saveSearchApiBtn) saveSearchApiBtn.addEventListener('click', handleSaveSearchApi);
   if (saveScrapeApiBtn) saveScrapeApiBtn.addEventListener('click', handleSaveScrapingApi);
   if (savePhoneVerifyApiBtn) savePhoneVerifyApiBtn.addEventListener('click', handleSavePhoneVerifyApi);
   if (saveEmailVerifyApiBtn) saveEmailVerifyApiBtn.addEventListener('click', handleSaveEmailVerifyApi);
-
-  // NEW: Google Search API Save Event
-  if (saveSearchApiBtn) saveSearchApiBtn.addEventListener('click', handleSaveSearchApi);
 
   refreshAuditLogsBtn.addEventListener('click', loadAuditLogs);
   applyAuditFiltersBtn.addEventListener('click', applyFilters);
