@@ -59,19 +59,13 @@ export async function onRequestPost(context) {
     const kv = new KVMANAGER(env.SECRETS_KV || null);
 
     // Load all API configurations from KV (no hardcoded keys)
-    const scrapeConfig = await kv.getJSON('api_config:website_scraping') || {
-      provider: 'scraperapi',
-      apiKey: '',
-    };
-    const phoneVerifyConfig = await kv.getJSON('api_config:phone_verification') || {
-      provider: 'twilio',
-      apiKey: '',
-    };
-    const emailVerifyConfig = await kv.getJSON('api_config:email_verification') || {
-      provider: 'hunter',
-      apiKey: '',
-    };
+    const searchConfig = await kv.getJSON('api_config:google_search_api') || { provider: 'serpapi', apiKey: '' };
+    const scrapeConfig = await kv.getJSON('api_config:website_scraping') || { provider: 'scraperapi', apiKey: '' };
+    const phoneVerifyConfig = await kv.getJSON('api_config:phone_verification') || { provider: 'twilio', apiKey: '' };
+    const emailVerifyConfig = await kv.getJSON('api_config:email_verification') || { provider: 'hunter', apiKey: '' };
 
+    const SEARCH_PROVIDER = searchConfig.provider || 'serpapi';
+    const SEARCH_API_KEY = searchConfig.apiKey || '';
     const SCRAPER_PROVIDER = scrapeConfig.provider || 'scraperapi';
     const SCRAPER_API_KEY = scrapeConfig.apiKey || '';
     const PHONE_VERIFY_PROVIDER = phoneVerifyConfig.provider || 'twilio';
@@ -147,6 +141,8 @@ export async function onRequestPost(context) {
       depth,
       SCRAPER_PROVIDER,
       SCRAPER_API_KEY,
+      SEARCH_PROVIDER,
+      SEARCH_API_KEY,
       kv
     );
 
@@ -217,6 +213,8 @@ async function performAdvancedScraping(
   depth,
   scraperProvider,
   scraperApiKey,
+  searchProvider,
+  searchApiKey,
   kv
 ) {
   let allEmails = [];
@@ -226,11 +224,11 @@ async function performAdvancedScraping(
   const isGoogleSearch = url.includes('google.com/search');
 
   // Feature 2: SerpAPI Interception for Google Search
-  if (isGoogleSearch && scraperProvider === 'serpapi') {
+  if (isGoogleSearch && searchProvider === 'serpapi') {
     const { emails, phones } = await handleGoogleSearchWithSerpAPI(
       url,
       limit,
-      scraperApiKey,
+      searchApiKey,
       depth,
       kv
     );
@@ -363,7 +361,7 @@ async function handleGoogleSearchWithSerpAPI(
 
       for (const batch of batches) {
         const batchResults = await Promise.all(
-          batch.map((link) => scrapePageWithSerpAPI(link))
+          batch.map((link) => scrapePageWithSerpAPI(link, serpApiKey))
         );
 
         for (const batchResult of batchResults) {
@@ -406,12 +404,14 @@ async function handleGoogleSearchWithSerpAPI(
     return { emails: [], phones: [] };
   }
 
-  async function scrapePageWithSerpAPI(pageUrl) {
+  async function scrapePageWithSerpAPI(pageUrl, apiKey) {
     try {
+      // Use the same SerpAPI key for scraping (some providers allow both)
+      // But we'll use ScraperAPI if available, else fallback to direct
       const html = await fetchWithScraperAPI(
         pageUrl,
         'scraperapi',
-        serpApiKey,
+        apiKey, // using serpapi key as fallback
         false
       );
       const extracted = extractFromHTML(html, pageUrl);
