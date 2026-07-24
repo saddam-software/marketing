@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email & SMS Marketing Pro · Admin</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+    </script>
+    <!-- CryptoJS (for Gravatar / hashing) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js">
+    </script>
+
+    <!-- Global Styles -->
+    <link rel="stylesheet" href="/style.css" />
+
+    <style>
+        /* ===== BASE OVERRIDES ===== */
+        body {
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        .spinner-sm {
+            width: 18px;
+            height: 18px;
+            border-width: 2px;
+        }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== BEAUTIFUL TAB BUTTONS ===== */
+        .tab-button {
+            position: relative;
+            padding: 0.65rem 1.4rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #64748b;
+            border-radius: 1rem;
+            background: transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+            letter-spacing: 0.2px;
+        }
+
+        .tab-button .tab-icon {
+            font-size: 1.2rem;
+            line-height: 1;
+            transition: transform 0.2s ease;
+        }
+
+        .tab-button:hover {
+            color: #0f172a;
+            background: #f1f5f9;
+            transform: translateY(-1px);
+        }
+
+        .tab-button:hover .tab-icon {
+            transform: scale(1.15);
+        }
+
+        .tab-button.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            box-shadow: 0 8px 24px -6px rgba(37, 99, 235, 0.40), 0 2px 8px -2px rgba(37, 99, 235, 0.20);
+            transform: translateY(-2px);
+        }
+
+        .tab-button.active .tab-icon {
+            transform: scale(1.1);
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 1rem;
+            background: inherit;
+            z-index: -1;
+            filter: blur(12px);
+            opacity: 0.35;
+            animation: glowPulse 2.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes glowPulse {
+            0% {
+                opacity: 0.20;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0.45;
+                transform: scale(1.04);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .tab-button {
+                padding: 0.5rem 0.9rem;
+                font-size: 0.75rem;
+                gap: 0.3rem;
+                border-radius: 0.75rem;
+            }
+            .tab-button .tab-icon {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tab-button {
+                padding: 0.4rem 0.65rem;
+                font-size: 0.65rem;
+                gap: 0.2rem;
+                border-radius: 0.6rem;
+            }
+            .tab-button .tab-icon {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* ===== UNIFIED TAB CONTENT WRAPPER — SAME WIDTH FOR ALL ===== */
+        .tab-panel {
+            max-width: 76rem;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+            padding: 0 1.25rem;
+        }
+
+        /* ===== OTHER COMPONENT STYLES ===== */
+        .stat-card {
+            @apply bg-white p-5 rounded-xl shadow-sm border border-slate-200 transition-all hover:shadow-md hover:-translate-y-0.5;
+        }
+        .stat-card .stat-icon {
+            @apply w-10 h-10 rounded-full flex items-center justify-center text-white text-lg;
+        }
+        .stat-card .stat-value {
+            @apply text-2xl font-bold;
+        }
+        .stat-card .stat-label {
+            @apply text-xs text-slate-500 font-semibold uppercase tracking-wider;
+        }
+        .data-table {
+            @apply w-full text-sm;
+        }
+        .data-table thead {
+            @apply bg-slate-50;
+        }
+        .data-table thead th {
+            @apply px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200;
+        }
+        .data-table tbody td {
+            @apply px-4 py-3 border-b border-slate-100 text-slate-700;
+        }
+        .data-table tbody tr:hover {
+            @apply bg-slate-50/80;
+        }
+        .status-badge {
+            @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+        }
+        .status-badge.success {
+            @apply bg-emerald-100 text-emerald-700;
+        }
+        .status-badge.failed {
+            @apply bg-red-100 text-red-700;
+        }
+        .status-badge.pending {
+            @apply bg-amber-100 text-amber-700;
+        }
+        .status-badge.info {
+            @apply bg-blue-100 text-blue-700;
+        }
+        .progress-bar-fill {
+            transition: width 0.4s ease;
+        }
+        .table-scroll {
+            max-height: 480px;
+            overflow-y: auto;
+        }
+        .table-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .table-scroll::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        .sticky-top-24 {
+            position: sticky;
+            top: 96px;
+            z-index: 30;
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        .email-editor-toolbar {
+            @apply flex flex-wrap gap-1 p-2 bg-slate-50 border border-slate-200 rounded-t-lg border-b-0;
+        }
+        .email-editor-toolbar button {
+            @apply px-2.5 py-1 text-xs font-medium rounded hover:bg-slate-200 transition-all text-slate-600;
+        }
+        .email-editor-content {
+            @apply w-full border border-slate-200 rounded-b-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y font-mono text-xs min-h-[160px];
+        }
+        .sms-counter {
+            @apply text-xs font-medium;
+        }
+        .sms-counter.danger {
+            @apply text-red-600;
+        }
+        .sms-counter.warning {
+            @apply text-amber-600;
+        }
+        .sms-counter.safe {
+            @apply text-emerald-600;
+        }
+        .char-progress {
+            @apply h-1.5 w-full bg-slate-200 rounded-full overflow-hidden mt-1;
+        }
+        .char-progress .char-progress-fill {
+            @apply h-full rounded-full transition-all duration-300;
+        }
+        @media (max-width: 768px) {
+            .tab-panel {
+                padding: 0 0.75rem;
+            }
+            .stat-card .stat-value {
+                @apply text-xl;
+            }
+        }
+
+        /* ===== FIX FOR AUDIT LOGS TABLE — PREVENT OVERFLOW ===== */
+        .audit-table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .audit-table-wrapper table {
+            min-width: 700px;
+            /* ensures horizontal scroll on small screens */;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+
+    <!-- ===== LOGIN PAGE ===== -->
+    <div id="loginPage" class="fixed inset-0 bg-gradient-to-br from-blue-600 to-blue-900 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md fade-in">
+            <div class="text-center mb-8">
+                <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-blue-600">Marketing Pro</h1>
+                <p class="text-slate-500 text-sm mt-1">Email &amp; SMS Marketing Platform</p>
+            </div>
+
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Username</label>
+                    <input type="text" id="loginUsername" placeholder="Enter your username" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" required />
+                </div>
+                <div id="loginError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700"></div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
+                    Sign In
+                </button>
+            </form>
+            <p class="text-center text-xs text-slate-500 mt-6">Default: admin / admin123</p>
+        </div>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="dashboardPage" class="hidden min-h-screen bg-slate-50">
+
+        <!-- HEADER -->
+        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold text-blue-600 leading-tight">Marketing Pro</h1>
+                        <p class="text-[10px] sm:text-xs text-slate-500 leading-tight">Email &amp; SMS Platform</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="userBadge" class="text-sm px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full font-medium">—</span>
+                    <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-all">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+            <!-- ===== TABS ===== -->
+            <div class="flex flex-wrap gap-1.5 border-b border-slate-200 mb-6 pb-1.5 overflow-x-auto">
+                <button class="tab-button active" data-tab="dashboard">
+                    <span class="tab-icon">📊</span> Dashboard
+                </button>
+                <button class="tab-button" data-tab="scraper">
+                    <span class="tab-icon">🔍</span> Scraper
+                </button>
+                <button class="tab-button" data-tab="campaign">
+                    <span class="tab-icon">🚀</span> Campaigns
+                </button>
+                <button class="tab-button" data-tab="api-settings">
+                    <span class="tab-icon">⚙️</span> API Settings
+                </button>
+                <button class="tab-button" data-tab="audit-logs">
+                    <span class="tab-icon">📋</span> Audit Logs
+                </button>
+            </div>
+
+            <!-- ============================================================
+            TAB CONTENT — all use .tab-panel for consistent width
+            ============================================================ -->
+
+            <!-- ===== DASHBOARD TAB ===== -->
+            <div id="dashboardTab" class="tab-content tab-panel space-y-6">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Emails Extracted Today</p>
+                                <p class="text-2xl font-bold text-blue-600" id="statEmailsToday">0</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-lg">✉️</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Emails Sent Today</p>
+                                <p class="text-2xl font-bold text-emerald-600" id="statEmailsSent">0</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-lg">📤</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">SMS Sent Today</p>
+                                <p class="text-2xl font-bold text-purple-600" id="statSmsSent">0</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-lg">📱</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Contacts</p>
+                                <p class="text-2xl font-bold text-cyan-600" id="statTotalContacts">0</p>
+                            </div>
+                            <div class="w-10 h-10 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600 text-lg">👥</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart + Brevo Remaining -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-800 mb-4">📈 7-Day Activity</h2>
+                        <canvas id="analyticsChart" height="80"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-center items-center">
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Brevo Remaining</p>
+                        <p class="text-4xl font-bold text-indigo-600" id="statBrevoRemaining">0</p>
+                        <p class="text-xs text-slate-400 mt-1">of 300 daily limit</p>
+                        <div class="w-full mt-3 bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div id="brevoUsageBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-semibold text-slate-800 mb-4">🕐 Recent Events</h2>
+                    <div id="recentActivities" class="space-y-3 max-h-64 overflow-y-auto">
+                        <div class="text-sm text-slate-500 text-center py-6">No activity yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== SCRAPER TAB ===== -->
+            <div id="scraperTab" class="tab-content hidden tab-panel space-y-6">
+                <div id="bulkTextExtractorContainer"></div>
+                <div id="websiteExtractorContainer"></div>
+                <div id="locationSearchContainer"></div>
+            </div>
+
+            <!-- ===== CAMPAIGNS TAB ===== -->
+            <div id="campaignTab" class="tab-content hidden tab-panel space-y-6">
+                <div id="emailCampaignContainer"></div>
+                <div id="smsCampaignContainer"></div>
+                <div id="callCampaignContainer"></div>
+            </div>
+
+            <!-- ===== API SETTINGS TAB ===== -->
+            <div id="api-settingsTab" class="tab-content hidden tab-panel space-y-6">
+
+                <!-- First Row: Email API + SMS API -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Email API -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            Email API
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Provider</label>
+                                <select id="emailProviderSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                                    <option value="brevo">Brevo (Sendinblue)</option>
+                                    <option value="sendgrid">SendGrid</option>
+                                    <option value="mailgun">Mailgun</option>
+                                    <option value="custom">Custom SMTP</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key</label>
+                                <input type="password" id="brevoApiKey" placeholder="Your Email API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-xs" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Sender Email</label>
+                                <input type="email" id="brevoSenderEmail" placeholder="noreply@yourdomain.com" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+                            </div>
+                            <button id="saveBrevoApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Email API</button>
+                            <div id="brevoStats" class="hidden p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div><p class="text-2xl font-bold text-blue-600" id="brevoUsed">0</p><p class="text-xs text-slate-500">Sent</p></div>
+                                    <div><p class="text-2xl font-bold text-emerald-600" id="brevoRemaining">300</p><p class="text-xs text-slate-500">Remaining</p></div>
+                                    <div><p class="text-2xl font-bold text-slate-600" id="brevoLimit">300</p><p class="text-xs text-slate-500">Limit</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SMS API -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                            SMS API
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Provider</label>
+                                <select id="smsProviderSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all">
+                                    <option value="twilio">Twilio</option>
+                                    <option value="vonage">Vonage (Nexmo)</option>
+                                    <option value="africastalking">Africa's Talking</option>
+                                    <option value="custom">Custom HTTP API</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key / Token</label>
+                                <input type="password" id="smsApiKey" placeholder="Your SMS API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all font-mono text-xs" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Base URL</label>
+                                <input type="url" id="smsApiBaseUrl" placeholder="https://api.twilio.com/2010-04-01" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Default Sender ID</label>
+                                <input type="text" id="smsDefaultSender" placeholder="YourBrand" maxlength="11" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                                <p class="text-[10px] text-slate-400 mt-1">Max 11 alphanumeric characters</p>
+                            </div>
+                            <button id="saveSmsApiBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save SMS API</button>
+                            <div id="smsStats" class="hidden p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div><p class="text-2xl font-bold text-purple-600" id="smsUsed">0</p><p class="text-xs text-slate-500">Sent</p></div>
+                                    <div><p class="text-2xl font-bold text-emerald-600" id="smsRemaining">100</p><p class="text-xs text-slate-500">Remaining</p></div>
+                                    <div><p class="text-2xl font-bold text-slate-600" id="smsLimit">100</p><p class="text-xs text-slate-500">Limit</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Second Row: Call API + Text Extraction API -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Call API -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            Call API
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Provider</label>
+                                <select id="callProviderSelect" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all">
+                                    <option value="twilio">Twilio</option>
+                                    <option value="custom">Custom HTTP API</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key / Token</label>
+                                <input type="password" id="callApiKey" placeholder="Your Call API Key" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all font-mono text-xs" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Base URL</label>
+                                <input type="url" id="callApiBaseUrl" placeholder="https://api.twilio.com/2010-04-01" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Default Caller ID</label>
+                                <input type="text" id="callDefaultCallerId" placeholder="+1234567890" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all" />
+                                <p class="text-[10px] text-slate-400 mt-1">E.164 format</p>
+                            </div>
+                            <button id="saveCallApiBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Call API</button>
+                            <div id="callStats" class="hidden p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                <p class="text-xs text-slate-600 mb-2 font-semibold">Today's Usage</p>
+                                <div class="grid grid-cols-3 gap-2 text-center">
+                                    <div><p class="text-2xl font-bold text-purple-600" id="callUsed">0</p><p class="text-xs text-slate-500">Calls</p></div>
+                                    <div><p class="text-2xl font-bold text-emerald-600" id="callRemaining">100</p><p class="text-xs text-slate-500">Remaining</p></div>
+                                    <div><p class="text-2xl font-bold text-slate-600" id="callLimit">100</p><p class="text-xs text-slate-500">Limit</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Text Extraction API -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            Text Extraction API
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">API Key (optional)</label>
+                                <input type="password" id="textApiKey" placeholder="Leave empty if not required" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-xs" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Base URL (if custom)</label>
+                                <input type="url" id="textApiBaseUrl" placeholder="https://api.example.com/extract" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" />
+                            </div>
+                            <button id="saveTextApiBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition-all">Save Text API</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== NEW: Intelligence & Scraping APIs (3 cards in a row) ===== -->
+                <div class="col-span-1 lg:col-span-2 mt-2">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">Intelligence & Scraping APIs</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                        <!-- Website Scraping -->
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                            <h4 class="text-md font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+                                Website Scraping
+                            </h4>
+                            <div class="space-y-3 flex-1">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Provider</label>
+                                    <select id="scrapeProviderSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                                        <option value="scraperapi">ScraperAPI</option>
+                                        <option value="scrapingbee">ScrapingBee</option>
+                                        <option value="scrapingant">ScrapingAnt</option>
+                                        <option value="zenrows">ZenRows</option>
+                                        <option value="crawlbase">Crawlbase</option>
+                                        <option value="proxycrawl">ProxyCrawl</option>
+                                        <option value="brightdata">Bright Data</option>
+                                        <option value="oxylabs">Oxylabs</option>
+                                        <option value="apify">Apify</option>
+                                        <option value="serpapi">SerpApi</option>
+                                        <option value="smartproxy">SmartProxy</option>
+                                        <option value="custom">Custom Provider</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">API Key</label>
+                                    <input type="password" id="scrapeApiKeyInput" placeholder="Enter API Key" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none font-mono text-xs" />
+                                </div>
+                            </div>
+                            <button id="saveScrapeApiBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 mt-4 rounded-lg transition-all text-sm">Save Scraping API</button>
+
+                            <div class="mt-4 pt-3 border-t border-slate-100">
+                                <p class="text-[10px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">Get API Keys:</p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <a href="https://www.scraperapi.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">ScraperAPI</a>
+                                    <a href="https://www.scrapingbee.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">ScrapingBee</a>
+                                    <a href="https://scrapingant.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">ScrapingAnt</a>
+                                    <a href="https://www.zenrows.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">ZenRows</a>
+                                    <a href="https://brightdata.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Bright Data</a>
+                                    <a href="https://apify.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Apify</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phone Verification -->
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                            <h4 class="text-md font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                Phone Verification
+                            </h4>
+                            <div class="space-y-3 flex-1">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Provider</label>
+                                    <select id="phoneVerifyProviderSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                                        <option value="twilio">Twilio Lookup</option>
+                                        <option value="numverify">Numverify</option>
+                                        <option value="abstractapi">Abstract API</option>
+                                        <option value="apilayer">APILayer</option>
+                                        <option value="veriphone">Veriphone</option>
+                                        <option value="neutrino">Neutrino API</option>
+                                        <option value="trestle">Trestle</option>
+                                        <option value="numlookupapi">NumLookupAPI</option>
+                                        <option value="custom">Custom Provider</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">API Key / Token</label>
+                                    <input type="password" id="phoneVerifyApiKeyInput" placeholder="Enter API Key" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none font-mono text-xs" />
+                                </div>
+                            </div>
+                            <button id="savePhoneVerifyApiBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 mt-4 rounded-lg transition-all text-sm">Save Phone API</button>
+
+                            <div class="mt-4 pt-3 border-t border-slate-100">
+                                <p class="text-[10px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">Get API Keys:</p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <a href="https://numverify.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Numverify</a>
+                                    <a href="https://www.abstractapi.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Abstract API</a>
+                                    <a href="https://apilayer.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">APILayer</a>
+                                    <a href="https://veriphone.io/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Veriphone</a>
+                                    <a href="https://trestleiq.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Trestle</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email Verification -->
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                            <h4 class="text-md font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                Email Verification
+                            </h4>
+                            <div class="space-y-3 flex-1">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Provider</label>
+                                    <select id="emailVerifyProviderSelect" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                                        <option value="hunter">Hunter.io</option>
+                                        <option value="neverbounce">NeverBounce</option>
+                                        <option value="zerobounce">ZeroBounce</option>
+                                        <option value="emailable">Emailable</option>
+                                        <option value="mailboxlayer">MailboxLayer</option>
+                                        <option value="verifybee">VerifyBee</option>
+                                        <option value="emaillistverify">EmailListVerify</option>
+                                        <option value="debounce">Debounce</option>
+                                        <option value="bouncer">Bouncer</option>
+                                        <option value="custom">Custom Provider</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">API Key</label>
+                                    <input type="password" id="emailVerifyApiKeyInput" placeholder="Enter API Key" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-xs" />
+                                </div>
+                            </div>
+                            <button id="saveEmailVerifyApiBtn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 mt-4 rounded-lg transition-all text-sm">Save Email API</button>
+
+                            <div class="mt-4 pt-3 border-t border-slate-100">
+                                <p class="text-[10px] font-semibold text-slate-500 mb-2 uppercase tracking-wider">Get API Keys:</p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <a href="https://hunter.io/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Hunter</a>
+                                    <a href="https://neverbounce.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">NeverBounce</a>
+                                    <a href="https://www.zerobounce.net/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">ZeroBounce</a>
+                                    <a href="https://emailable.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Emailable</a>
+                                    <a href="https://debounce.io/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Debounce</a>
+                                    <a href="https://usebouncer.com/" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] rounded transition-all">Bouncer</a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div> <!-- end grid -->
+                </div> <!-- end Intelligence & Scraping APIs block -->
+
+            </div> <!-- end api-settingsTab -->
+
+            <!-- ===== AUDIT LOGS TAB ===== -->
+            <div id="audit-logsTab" class="tab-content hidden tab-panel space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+
+                    <!-- Filter Bar -->
+                    <div class="p-4 border-b border-slate-200 bg-slate-50/80">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="flex items-center gap-2">
+                                <label for="auditDateFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">📅 Date</label>
+                                <input type="date" id="auditDateFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white" />
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="auditActionFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">🎯 Action</label>
+                                <select id="auditActionFilter" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white">
+                                    <option value="all">All</option>
+                                    <option value="SCRAPE_EMAILS">Scrape Emails</option>
+                                    <option value="SCRAPE_PHONES">Scrape Phones</option>
+                                    <option value="SEND_EMAILS">Send Email</option>
+                                    <option value="SEND_SMS">Send SMS</option>
+                                    <option value="LOGIN_SUCCESS">Login</option>
+                                    <option value="LOGOUT">Logout</option>
+                                    <option value="API_KEY_UPDATED">API Key Update</option>
+                                    <option value="CONTACTS_IMPORT">Import Contacts</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2 flex-1 min-w-[140px]">
+                                <label for="auditSearchFilter" class="text-xs font-medium text-slate-600 whitespace-nowrap">🔍 Search</label>
+                                <input type="text" id="auditSearchFilter" placeholder="Search user or details…" class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white flex-1" />
+                            </div>
+                            <div class="flex gap-2 ml-auto">
+                                <button id="applyAuditFiltersBtn" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">Apply</button>
+                                <button id="resetAuditFiltersBtn" class="px-4 py-1.5 bg-slate-300 hover:bg-slate-400 text-slate-700 text-xs font-medium rounded-lg transition-all">Reset</button>
+                                <button id="exportAuditCsvBtn" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table with scroll & overflow fix -->
+                    <div class="overflow-x-auto table-scroll">
+                        <table class="data-table" style="min-width: 700px;">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Details</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditLogsBody">
+                                <tr><td colspan="5" class="text-center text-slate-500 py-8">Loading logs…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="p-3 border-t border-slate-200 bg-slate-50/80 text-xs text-slate-500 flex items-center justify-between">
+                        <span id="auditLogsCount">0 events</span>
+                        <button id="refreshAuditLogsBtn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all">🔄 Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- GLOBAL JAVASCRIPT -->
+    <!-- ============================================================ -->
+    <script src="/script.js">
+    </script>
+    <script src="/location-contact-search/script.js">
+    </script>
+
+</body>
+</html>
