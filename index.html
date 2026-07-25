@@ -322,8 +322,6 @@
     // ---- Helpers ----
     function formatNumber(raw) {
       // Keep only digits and '+', but PRESERVE the original string for display.
-      // We'll use the cleaned version only for checking, but display original.
-      // However we need a clean number for WA check. We'll store both.
       return raw.replace(/[^0-9+]/g, '').trim();
     }
 
@@ -470,21 +468,64 @@
         // Extract first column: split by comma, semicolon, or tab.
         const numbers = [];
         lines.forEach(line => {
-          let parts = line.split(',');
-          if (parts.length < 2) parts = line.split(';');
-          if (parts.length < 2) parts = line.split('\t');
-          // Take first part, but keep original raw string for display
-          const raw = parts[0] ? parts[0].trim() : line.trim();
+          let firstCol = line;
+          
+          // Try to find the first delimiter (comma, semicolon, or tab)
+          // We need to handle quoted values properly
+          let delimiter = null;
+          let inQuotes = false;
+          let quoteChar = null;
+          
+          // Simple approach: find first unquoted delimiter
+          let i = 0;
+          while (i < line.length) {
+            const ch = line[i];
+            
+            // Handle quotes
+            if ((ch === '"' || ch === "'") && (i === 0 || line[i-1] !== '\\')) {
+              if (!inQuotes) {
+                inQuotes = true;
+                quoteChar = ch;
+              } else if (ch === quoteChar) {
+                inQuotes = false;
+                quoteChar = null;
+              }
+              i++;
+              continue;
+            }
+            
+            // If not in quotes, check for delimiters
+            if (!inQuotes) {
+              if (ch === ',' || ch === ';' || ch === '\t') {
+                delimiter = ch;
+                break;
+              }
+            }
+            i++;
+          }
+          
+          if (delimiter !== null) {
+            // Split by the found delimiter
+            const parts = line.split(delimiter);
+            firstCol = parts[0] ? parts[0].trim() : line.trim();
+          } else {
+            // No delimiter found, use the whole line
+            firstCol = line.trim();
+          }
+          
+          // Remove surrounding quotes from the first column
+          firstCol = firstCol.replace(/^["']|["']$/g, '').trim();
+          
           // Only keep if it looks like a phone number (contains digits or +)
-          if (/[\d+]/.test(raw)) {
-            const cleaned = formatNumber(raw);
+          if (/[\d+]/.test(firstCol)) {
+            const cleaned = formatNumber(firstCol);
             // Store both the cleaned version (for WA check) and the raw display version
-            numbers.push({ raw: raw, cleaned: cleaned });
+            numbers.push({ raw: firstCol, cleaned: cleaned });
           }
         });
 
         if (numbers.length === 0) {
-          alert('No valid phone numbers found in the first column.');
+          alert('No valid phone numbers found in the first column.\n\nPlease make sure your CSV file has phone numbers in the first column.\n\nThe first column should contain numbers like:\n+8801918162415, 8801717427579, etc.');
           return;
         }
 
