@@ -1,639 +1,422 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WhatsApp Contact Scanner · Pro</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f4f6fa;
-      color: #0b1120;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-    }
-    .wa-card {
-      max-width: 1100px;
-      width: 100%;
-      background: #ffffff;
-      border-radius: 2rem;
-      border: 2px solid #0b1120;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35);
-      overflow: hidden;
-    }
-    .wa-header {
-      background: #0b1120;
-      padding: 1.2rem 2rem;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 2px solid #0b1120;
-      gap: 0.75rem;
-    }
-    .wa-header h1 {
-      color: white;
-      font-size: 1.2rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-    .wa-header h1 i { color: #25d366; font-size: 1.5rem; }
-    .header-badge {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      background: #1e293b;
-      padding: 0.25rem 1rem;
-      border-radius: 999px;
-      border: 1px solid #334155;
-    }
-    .header-badge .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #25d366;
-    }
-    .header-badge span {
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .wa-body { padding: 2rem; background: #fafcff; }
-
-    .upload-zone {
-      border: 2px dashed #cbd5e1;
-      border-radius: 1.2rem;
-      padding: 2rem 1.5rem;
-      text-align: center;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-      background: #ffffff;
-      margin-bottom: 1.8rem;
-    }
-    .upload-zone:hover { border-color: #25d366; background: #f0fdf4; }
-    .upload-zone.dragover { border-color: #25d366; background: #ecfdf5; }
-    .upload-zone i { font-size: 2.8rem; color: #25d366; margin-bottom: 0.3rem; }
-    .upload-zone p { font-size: 0.95rem; font-weight: 500; color: #334155; }
-    .upload-zone .hint { font-size: 0.75rem; color: #94a3b8; margin-top: 0.1rem; }
-    .upload-zone input[type="file"] { display: none; }
-
-    .file-info {
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      background: #f1f5f9;
-      padding: 0.6rem 1rem;
-      border-radius: 0.8rem;
-      font-size: 0.85rem;
-      margin-top: -0.8rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-    .file-info .file-name { font-weight: 600; color: #0b1120; }
-    .file-info .file-stats { display: flex; gap: 1.2rem; color: #475569; flex-wrap: wrap; }
-    .file-info .file-stats span { font-weight: 500; }
-    .file-info .clear-btn { background: none; border: none; color: #ef4444; font-size: 1.1rem; cursor: pointer; }
-
-    .controls-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.8rem 1.2rem;
-      margin-bottom: 1.5rem;
-    }
-    .controls-row .sort-group { display: flex; align-items: center; gap: 0.5rem; }
-    .controls-row .sort-group label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #64748b; }
-    .controls-row select {
-      padding: 0.35rem 1.8rem 0.35rem 0.8rem;
-      border: 1px solid #d1d9e6;
-      border-radius: 0.6rem;
-      font-size: 0.8rem;
-      background: white;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23475569' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.6rem center;
-      cursor: pointer;
-      outline: none;
-    }
-    .controls-row select:focus { border-color: #25d366; box-shadow: 0 0 0 3px rgba(37,211,102,0.15); }
-    .controls-row .action-btns { display: flex; gap: 0.5rem; margin-left: auto; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.4rem 1rem;
-      border-radius: 0.6rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      background: #e2e8f0;
-      color: #1e293b;
-      transition: background 0.15s, transform 0.1s;
-    }
-    .btn-primary { background: #25d366; color: white; }
-    .btn-primary:hover { background: #1ebe5d; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-outline { background: transparent; border: 1px solid #d1d9e6; }
-    .btn-outline:hover { background: #f1f5f9; }
-
-    .progress-wrap { display: none; margin-bottom: 1.5rem; }
-    .progress-wrap .progress-label { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 500; color: #334155; }
-    .progress-wrap .track { width: 100%; height: 6px; background: #e2e8f0; border-radius: 999px; margin-top: 0.2rem; overflow: hidden; }
-    .progress-wrap .track .fill { height: 100%; background: #25d366; border-radius: 999px; transition: width 0.3s ease; width: 0%; }
-
-    .summary-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.2rem 2rem;
-      padding: 0.8rem 1.2rem;
-      background: #f1f5f9;
-      border-radius: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .summary-item { display: flex; align-items: baseline; gap: 0.4rem; font-size: 0.8rem; color: #475569; }
-    .summary-item .num { font-weight: 700; font-size: 1.1rem; color: #0b1120; }
-    .summary-item .num.green { color: #10b981; }
-    .summary-item .num.red { color: #ef4444; }
-
-    .table-wrap {
-      max-height: 460px;
-      overflow-y: auto;
-      border-radius: 1rem;
-      border: 1px solid #e2e8f0;
-      background: white;
-    }
-    .table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    .table-wrap thead {
-      background: #f8fafc;
-      border-bottom: 2px solid #e2e8f0;
-      position: sticky;
-      top: 0;
-      z-index: 5;
-    }
-    .table-wrap th { text-align: left; padding: 0.7rem 1rem; font-weight: 600; color: #475569; text-transform: uppercase; font-size: 0.6rem; letter-spacing: 0.4px; }
-    .table-wrap td { padding: 0.6rem 1rem; border-bottom: 1px solid #f1f5f9; color: #1e293b; vertical-align: middle; }
-    .table-wrap tbody tr:hover { background: #fafcff; }
-    .table-wrap .empty-row td { text-align: center; color: #94a3b8; padding: 2.5rem 0; }
-    .table-wrap .wa-badge { display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 600; color: #0b1120; }
-    .table-wrap .wa-badge .icon { color: #25d366; font-size: 1.1rem; }
-    .table-wrap .wa-badge .na { color: #94a3b8; font-size: 0.8rem; }
-    .copy-btn { background: none; border: none; color: #64748b; cursor: pointer; font-size: 0.9rem; transition: color 0.15s; padding: 0 0.2rem; }
-    .copy-btn:hover { color: #0b1120; }
-    .copy-btn.copied { color: #10b981; }
-
-    .table-wrap::-webkit-scrollbar { width: 5px; }
-    .table-wrap::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-    .table-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-    @media (max-width: 768px) {
-      .wa-header { flex-direction: column; align-items: stretch; padding: 1rem; }
-      .wa-body { padding: 1rem; }
-      .controls-row { flex-direction: column; align-items: stretch; }
-      .controls-row .action-btns { margin-left: 0; }
-      .summary-row { flex-direction: column; gap: 0.4rem; }
-    }
-  </style>
-</head>
-<body>
-<div class="wa-card">
-  <div class="wa-header">
-    <h1><i class="fab fa-whatsapp"></i> WhatsApp Scanner</h1>
-    <div class="header-badge"><span class="dot"></span><span>Ready</span></div>
-  </div>
-  <div class="wa-body">
-    <div id="uploadZone" class="upload-zone">
-      <i class="fas fa-cloud-upload-alt"></i>
-      <p>Drop your .csv file here, or click to browse</p>
-      <div class="hint">Supports phone numbers in first column</div>
-      <input type="file" id="fileInput" accept=".csv" />
-    </div>
-
-    <div id="fileInfo" class="file-info">
-      <span class="file-name" id="fileName">contacts.csv</span>
-      <div class="file-stats">
-        <span>📄 <span id="totalCount">0</span> numbers</span>
-        <span>✅ <span id="waCount">0</span> WhatsApp</span>
-        <span>❌ <span id="nonWaCount">0</span> not on WA</span>
-      </div>
-      <button class="clear-btn" id="clearBtn"><i class="fas fa-times"></i></button>
-    </div>
-
-    <div class="controls-row">
-      <div class="sort-group">
-        <label for="sortSelect"><i class="fas fa-sort"></i> Sort</label>
-        <select id="sortSelect">
-          <option value="default">Default (upload)</option>
-          <option value="wa-first">WhatsApp first</option>
-          <option value="nonwa-first">Non-WA first</option>
-          <option value="asc">Number A → Z</option>
-          <option value="desc">Number Z → A</option>
-        </select>
-      </div>
-      <div class="action-btns">
-        <button class="btn btn-primary" id="copyAllBtn" disabled><i class="fas fa-copy"></i> Copy All WA</button>
-        <button class="btn btn-outline" id="copySelectedBtn" disabled><i class="fas fa-check-double"></i> Copy Selected</button>
-        <button class="btn btn-outline" id="resetBtn"><i class="fas fa-undo-alt"></i> Reset</button>
-      </div>
-    </div>
-
-    <div id="progressWrap" class="progress-wrap">
-      <div class="progress-label">
-        <span id="progressLabel">Checking numbers…</span>
-        <span id="progressPercent">0%</span>
-      </div>
-      <div class="track"><div class="fill" id="progressFill"></div></div>
-    </div>
-
-    <div class="summary-row" id="summaryRow">
-      <div class="summary-item">Total <span class="num" id="summaryTotal">0</span></div>
-      <div class="summary-item"><i class="fab fa-whatsapp" style="color:#25d366;"></i> WhatsApp <span class="num green" id="summaryWa">0</span></div>
-      <div class="summary-item"><i class="fas fa-times-circle" style="color:#ef4444;"></i> Not on WA <span class="num red" id="summaryNonWa">0</span></div>
-      <div class="summary-item" style="margin-left:auto;">🕒 <span id="summaryTime">—</span></div>
-    </div>
-
-    <div class="table-wrap" id="tableWrap">
-      <table>
-        <thead><tr><th style="width:30px;">#</th><th>Phone Number</th><th style="width:140px;">WhatsApp</th><th style="width:80px; text-align:center;">Action</th></tr></thead>
-        <tbody id="tableBody"><tr class="empty-row"><td colspan="4">Upload a CSV file to start scanning</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<script>
-  (function() {
-    'use strict';
-
-    const uploadZone = document.getElementById('uploadZone');
-    const fileInput = document.getElementById('fileInput');
-    const fileInfo = document.getElementById('fileInfo');
-    const fileName = document.getElementById('fileName');
-    const totalCount = document.getElementById('totalCount');
-    const waCount = document.getElementById('waCount');
-    const nonWaCount = document.getElementById('nonWaCount');
-    const clearBtn = document.getElementById('clearBtn');
-    const sortSelect = document.getElementById('sortSelect');
-    const copyAllBtn = document.getElementById('copyAllBtn');
-    const copySelectedBtn = document.getElementById('copySelectedBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const progressWrap = document.getElementById('progressWrap');
-    const progressLabel = document.getElementById('progressLabel');
-    const progressPercent = document.getElementById('progressPercent');
-    const progressFill = document.getElementById('progressFill');
-    const summaryTotal = document.getElementById('summaryTotal');
-    const summaryWa = document.getElementById('summaryWa');
-    const summaryNonWa = document.getElementById('summaryNonWa');
-    const summaryTime = document.getElementById('summaryTime');
-    const tableBody = document.getElementById('tableBody');
-
-    let allNumbers = [];
-    let enriched = [];
-    let isProcessing = false;
-
-    function formatNumber(raw) {
-      return raw.replace(/[^0-9+]/g, '').trim();
-    }
-
-    function hasWhatsApp(number) {
-      const sum = number.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-      return (sum % 10) < 7;
-    }
-
-    function renderTable(data) {
-      if (!data || data.length === 0) {
-        tableBody.innerHTML = `<tr class="empty-row"><td colspan="4">No contacts loaded</td></tr>`;
-        return;
-      }
-      let html = '';
-      data.forEach((item, idx) => {
-        const wa = item.hasWhatsApp;
-        const icon = wa ? `<i class="fab fa-whatsapp icon" style="color:#25d366;"></i>` :
-                          `<span class="na"><i class="fas fa-times-circle" style="color:#94a3b8;"></i> No</span>`;
-        const statusLabel = wa ? 'Available' : 'Not available';
-        html += `
-          <tr data-number="${item.display || item.number}" data-wa="${wa}">
-            <td>${idx+1}</td>
-            <td class="phone-cell">${item.display || item.number}</td>
-            <td><span class="wa-badge">${icon} ${statusLabel}</span></td>
-            <td style="text-align:center;">
-              <button class="copy-btn" data-number="${item.display || item.number}" title="Copy number">
-                <i class="fas fa-copy"></i>
-              </button>
-            </td>
-          </tr>
-        `;
-      });
-      tableBody.innerHTML = html;
-
-      document.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const num = this.dataset.number;
-          copyToClipboard(num, this);
-        });
-      });
-    }
-
-    function copyToClipboard(text, btnEl) {
-      if (!text) return;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => showCopiedFeedback(btnEl))
-          .catch(() => fallbackCopy(text, btnEl));
-      } else {
-        fallbackCopy(text, btnEl);
-      }
-    }
-    function fallbackCopy(text, btnEl) {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand('copy'); showCopiedFeedback(btnEl); } catch (e) { alert('Could not copy.'); }
-      document.body.removeChild(ta);
-    }
-    function showCopiedFeedback(btnEl) {
-      if (!btnEl) return;
-      btnEl.classList.add('copied');
-      const icon = btnEl.querySelector('i');
-      if (icon) {
-        const orig = icon.className;
-        icon.className = 'fas fa-check';
-        setTimeout(() => { icon.className = orig; btnEl.classList.remove('copied'); }, 1500);
-      }
-    }
-
-    function copyAllWhatsApp() {
-      const waNumbers = enriched.filter(item => item.hasWhatsApp).map(item => item.display || item.number);
-      if (waNumbers.length === 0) { alert('No WhatsApp numbers found.'); return; }
-      const text = waNumbers.join('\n');
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => alert(`✅ Copied ${waNumbers.length} WhatsApp numbers.`))
-          .catch(() => fallbackCopyAll(text));
-      } else { fallbackCopyAll(text); }
-    }
-    function fallbackCopyAll(text) {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand('copy'); alert(`✅ Copied ${text.split('\n').length} numbers.`); } catch (e) { alert('Could not copy.'); }
-      document.body.removeChild(ta);
-    }
-
-    function copySelected() {
-      const rows = document.querySelectorAll('#tableBody tr:not(.empty-row)');
-      const numbers = [];
-      rows.forEach(row => { const num = row.dataset.number; if (num) numbers.push(num); });
-      if (numbers.length === 0) { alert('No numbers visible.'); return; }
-      const text = numbers.join('\n');
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => alert(`✅ Copied ${numbers.length} numbers.`))
-          .catch(() => fallbackCopyAll(text));
-      } else { fallbackCopyAll(text); }
-    }
-
-    function getSortedData(data, sortType) {
-      const copy = [...data];
-      switch(sortType) {
-        case 'wa-first': return copy.sort((a,b) => (b.hasWhatsApp?1:0) - (a.hasWhatsApp?1:0));
-        case 'nonwa-first': return copy.sort((a,b) => (a.hasWhatsApp?1:0) - (b.hasWhatsApp?1:0));
-        case 'asc': return copy.sort((a,b) => (a.display||a.number).localeCompare(b.display||b.number));
-        case 'desc': return copy.sort((a,b) => (b.display||b.number).localeCompare(a.display||a.number));
-        default: return copy;
-      }
-    }
-    function applySort() {
-      const sorted = getSortedData(enriched, sortSelect.value);
-      renderTable(sorted);
-      updateSummary(sorted);
-    }
-
-    function updateSummary(data) {
-      const total = data.length;
-      const wa = data.filter(item => item.hasWhatsApp).length;
-      const non = total - wa;
-      summaryTotal.textContent = total;
-      summaryWa.textContent = wa;
-      summaryNonWa.textContent = non;
-      totalCount.textContent = total;
-      waCount.textContent = wa;
-      nonWaCount.textContent = non;
-    }
-
-    // ---- Main CSV Parser ----
-    function processFile(file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const text = e.target.result;
-        const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-        if (lines.length === 0) { alert('The CSV file is empty.'); return; }
-
-        const numbers = [];
-        let isFirstLine = true;
-
-        lines.forEach(line => {
-          // Skip header line if it contains "Contact Type" or "Phone"
-          if (isFirstLine && (line.includes('Contact Type') || line.includes('Phone'))) {
-            isFirstLine = false;
-            return;
-          }
-          isFirstLine = false;
-
-          // Extract phone number from line
-          let phoneNumber = extractPhoneNumber(line);
-          
-          if (phoneNumber) {
-            const cleaned = formatNumber(phoneNumber);
-            // Only add if it looks like a valid phone number (has digits)
-            if (cleaned.length >= 7) {
-              numbers.push({ raw: phoneNumber, cleaned: cleaned });
-            }
-          }
-        });
-
-        if (numbers.length === 0) {
-          alert('No valid phone numbers found in the CSV file.\n\nPlease make sure your CSV file has phone numbers in the first column.\n\nExamples: +8801918162415, 8801717427579, etc.');
-          return;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Extractor v8.4 — টেস্ট পেজ</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
-        allNumbers = numbers;
-        startScanning(numbers);
-      };
-      reader.readAsText(file);
-    }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0a0e1a;
+            color: #e2e8f0;
+            padding: 24px 16px;
+            line-height: 1.6;
+        }
 
-    // ---- Extract phone number from a CSV line ----
-    function extractPhoneNumber(line) {
-      // Try to find pattern: Phone,="+8801918162415" or Phone,="8801717427579"
-      // Also handle: Phone,+8801918162415 or Phone,8801717427579
-      
-      // First, check if this line starts with "Phone"
-      if (!line.toLowerCase().includes('phone')) {
-        return null;
-      }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
 
-      // Try to find number pattern after 'Phone' or 'Phone,'
-      // Look for: ="number" or ,"number" or ,number
-      
-      // Pattern 1: Phone,="+8801918162415" - with = and quotes
-      let match = line.match(/Phone[,\s]*="([^"]+)"/i);
-      if (match) return match[1];
-      
-      // Pattern 2: Phone,"+8801918162415" - just quotes
-      match = line.match(/Phone[,\s]*"([^"]+)"/i);
-      if (match) return match[1];
-      
-      // Pattern 3: Phone,+8801918162415 - no quotes
-      match = line.match(/Phone[,\s]*([\+]?[\d]+)/i);
-      if (match) return match[1];
-      
-      // Pattern 4: Look for any number with + or digits after Phone
-      match = line.match(/Phone[,\s]*([\+][\d]+)/i);
-      if (match) return match[1];
-      
-      // Pattern 5: Look for any 7+ digit number in the line after Phone
-      match = line.match(/Phone[,\s]*["]?([\+]?[\d]{7,})/i);
-      if (match) return match[1];
-      
-      return null;
-    }
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #a5b4fc;
+            border-bottom: 3px solid #4f46e5;
+            padding-bottom: 8px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    // ---- Scanning with progress ----
-    function startScanning(numbers) {
-      if (isProcessing) return;
-      isProcessing = true;
-      fileInput.disabled = true;
-      uploadZone.style.pointerEvents = 'none';
+        .badge {
+            font-size: 14px;
+            font-weight: 500;
+            background: #1e293b;
+            color: #94a3b8;
+            padding: 4px 14px;
+            border-radius: 20px;
+        }
 
-      progressWrap.style.display = 'block';
-      progressFill.style.width = '0%';
-      progressPercent.textContent = '0%';
-      progressLabel.textContent = 'Scanning numbers…';
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+        }
 
-      enriched = [];
-      const total = numbers.length;
-      let done = 0;
+        .card {
+            background: #111927;
+            border: 1px solid #1e293b;
+            border-radius: 14px;
+            padding: 18px 20px 20px;
+            transition: border-color 0.2s;
+        }
 
-      function scanNext() {
-        if (done >= total) { finishScan(); return; }
-        const item = numbers[done];
-        const wa = hasWhatsApp(item.cleaned);
-        enriched.push({
-          number: item.cleaned,
-          display: item.raw,
-          hasWhatsApp: wa
-        });
-        done++;
+        .card:hover {
+            border-color: #4f46e5;
+        }
 
-        const pct = Math.round((done/total)*100);
-        progressFill.style.width = pct + '%';
-        progressPercent.textContent = pct + '%';
-        progressLabel.textContent = `Scanning ${done}/${total}`;
+        .card-header {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #818cf8;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+        }
 
-        const tempWa = enriched.filter(i => i.hasWhatsApp).length;
-        waCount.textContent = tempWa;
-        nonWaCount.textContent = done - tempWa;
-        totalCount.textContent = done;
+        .card p,
+        .card li,
+        .card div,
+        .card span,
+        .card td,
+        .card th {
+            font-size: 15px;
+            color: #cbd5e1;
+        }
 
-        const sorted = getSortedData(enriched, sortSelect.value);
-        renderTable(sorted);
-        updateSummary(sorted);
+        .card p {
+            margin: 8px 0;
+        }
 
-        setTimeout(scanNext, 12 + Math.random()*20);
-      }
+        .card ul,
+        .card ol {
+            padding-left: 22px;
+            margin: 8px 0;
+        }
 
-      function finishScan() {
-        isProcessing = false;
-        fileInput.disabled = false;
-        uploadZone.style.pointerEvents = 'auto';
-        progressLabel.textContent = '✅ Done!';
-        progressFill.style.width = '100%';
-        progressPercent.textContent = '100%';
+        .card li {
+            margin: 4px 0;
+        }
 
-        const sorted = getSortedData(enriched, sortSelect.value);
-        renderTable(sorted);
-        updateSummary(sorted);
-        summaryTime.textContent = new Date().toLocaleTimeString();
+        .card table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin: 8px 0;
+        }
 
-        fileInfo.style.display = 'flex';
-        fileName.textContent = fileInput.files[0]?.name || 'contacts.csv';
+        .card th,
+        .card td {
+            border: 1px solid #1e293b;
+            padding: 6px 10px;
+            text-align: left;
+        }
 
-        setTimeout(() => { progressWrap.style.display = 'none'; }, 2000);
-        copyAllBtn.disabled = false;
-        copySelectedBtn.disabled = false;
-      }
+        .card th {
+            background: #0f172a;
+            color: #a5b4fc;
+            font-weight: 500;
+        }
 
-      scanNext();
-    }
+        .card .hidden {
+            display: none;
+        }
 
-    // ---- Reset ----
-    function resetAll() {
-      if (isProcessing) return;
-      allNumbers = [];
-      enriched = [];
-      fileInput.value = '';
-      fileInfo.style.display = 'none';
-      progressWrap.style.display = 'none';
-      progressFill.style.width = '0%';
-      progressPercent.textContent = '0%';
-      summaryTotal.textContent = '0';
-      summaryWa.textContent = '0';
-      summaryNonWa.textContent = '0';
-      summaryTime.textContent = '—';
-      totalCount.textContent = '0';
-      waCount.textContent = '0';
-      nonWaCount.textContent = '0';
-      copyAllBtn.disabled = true;
-      copySelectedBtn.disabled = true;
-      tableBody.innerHTML = `<tr class="empty-row"><td colspan="4">Upload a CSV file to start scanning</td></tr>`;
-      uploadZone.style.pointerEvents = 'auto';
-      fileInput.disabled = false;
-    }
+        .card .phone-highlight {
+            background: #1e293b;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #fcd34d;
+        }
 
-    // ---- Event listeners ----
-    uploadZone.addEventListener('click', () => fileInput.click());
-    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-    uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      if (e.dataTransfer.files.length > 0) {
-        const f = e.dataTransfer.files[0];
-        if (f.type === 'text/csv' || f.name.endsWith('.csv')) {
-          fileInput.files = e.dataTransfer.files;
-          processFile(f);
-        } else { alert('Please upload a CSV file.'); }
-      }
-    });
-    fileInput.addEventListener('change', function() {
-      if (this.files.length > 0) processFile(this.files[0]);
-    });
+        .card .comment {
+            color: #64748b;
+            font-style: italic;
+            font-size: 13px;
+            border-left: 3px solid #334155;
+            padding-left: 12px;
+            margin: 6px 0;
+        }
 
-    clearBtn.addEventListener('click', resetAll);
-    sortSelect.addEventListener('change', applySort);
-    copyAllBtn.addEventListener('click', copyAllWhatsApp);
-    copySelectedBtn.addEventListener('click', copySelected);
-    resetBtn.addEventListener('click', resetAll);
+        .summary {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 14px;
+            padding: 16px 20px;
+            margin-top: 28px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    resetAll();
-  })();
-</script>
+        .summary strong {
+            color: #a5b4fc;
+            font-weight: 600;
+        }
+
+        .summary .count {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fcd34d;
+        }
+
+        .note {
+            color: #94a3b8;
+            font-size: 13px;
+            margin-top: 6px;
+            border-top: 1px solid #1e293b;
+            padding-top: 10px;
+        }
+
+        .note code {
+            background: #1e293b;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #e2e8f0;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px 8px;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <h1>
+            <span>🔍 Universal Extractor v8.4</span>
+            <span class="badge">টেস্ট পেজ</span>
+        </h1>
+
+        <!-- সারাংশ -->
+        <div class="summary">
+            <span><strong>মোট নম্বর (লেখায়):</strong> <span class="count" id="totalNumbers">০</span></span>
+            <span><strong>অপারেটর:</strong> <span id="operatorCount">—</span></span>
+            <span><strong>স্ট্যাটাস:</strong> <span id="scanStatus" style="color:#34d399;">✅ রেডি</span></span>
+        </div>
+
+        <div class="grid">
+
+            <!-- ===== ১. সাধারণ টেক্সট ===== -->
+            <div class="card">
+                <div class="card-header">📄 ১. সাধারণ টেক্সট</div>
+                <p>আমার মোবাইল নম্বর: 01712345678</p>
+                <p>অফিস: 01812-345678</p>
+                <p>ব্যক্তিগত: +8801712345678</p>
+                <p>হটলাইন: 8801912345678</p>
+            </div>
+
+            <!-- ===== ২. ডিভ / স্প্যান ===== -->
+            <div class="card">
+                <div class="card-header">📦 ২. div / span</div>
+                <div>যোগাযোগ: <span class="phone-highlight">01987654321</span></div>
+                <div>
+                    <span>সাপোর্ট: </span>
+                    <span style="font-weight:600;">01312345678</span>
+                </div>
+                <div>মোবাইল: <span>014-123-45678</span></div>
+            </div>
+
+            <!-- ===== ৩. লিস্ট ===== -->
+            <div class="card">
+                <div class="card-header">📋 ৩. লিস্ট</div>
+                <ul>
+                    <li>গ্রাহক ১: 01711111111</li>
+                    <li>গ্রাহক ২: 01822222222</li>
+                    <li>গ্রাহক ৩: 01933333333</li>
+                </ul>
+                <ol>
+                    <li>ডেলিভারি: 01644444444</li>
+                    <li>বিলিং: 01555555555</li>
+                </ol>
+            </div>
+
+            <!-- ===== ৪. টেবিল ===== -->
+            <div class="card">
+                <div class="card-header">📊 ৪. টেবিল</div>
+                <table>
+                    <thead>
+                        <tr><th>নাম</th><th>মোবাইল</th><th>অফিস</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>রহিম</td><td>01712345678</td><td>01812345678</td></tr>
+                        <tr><td>করিম</td><td>01912345678</td><td>01312345678</td></tr>
+                        <tr><td>শামীম</td><td>01612345678</td><td>01512345678</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ===== ৫. ডেসক্রিপশন / মেটা ===== -->
+            <div class="card">
+                <div class="card-header">📝 ৫. ডেসক্রিপশন</div>
+                <p><strong>ঠিকানা:</strong> ১২৩, গুলশান, ঢাকা</p>
+                <p><strong>ফোন:</strong> 01798765432</p>
+                <p><strong>ইমেইল:</strong> info@example.com</p>
+                <p><strong>হটলাইন:</strong> +8801812345678</p>
+                <div class="comment">🔹 মন্তব্য: এখানে নম্বর আছে — 01412345678</div>
+            </div>
+
+            <!-- ===== ৬. কমেন্ট সেকশন ===== -->
+            <div class="card">
+                <div class="card-header">💬 ৬. কমেন্ট</div>
+                <div class="comment">📌 জনাব, আমার নম্বর: 01711111111</div>
+                <div class="comment">📌 সাপোর্ট: 01822222222</div>
+                <div class="comment">📌 বিকল্প: 01933333333</div>
+                <div>— <span style="color:#94a3b8;">আমিন</span></div>
+            </div>
+
+            <!-- ===== ৭. হিডেন এলিমেন্ট ===== -->
+            <div class="card">
+                <div class="card-header">👻 ৭. হিডেন এলিমেন্ট</div>
+                <p>দৃশ্যমান টেক্সট: 01712345678</p>
+                <div class="hidden">গোপন নম্বর: 01812345678</div>
+                <div style="display:none;">লুকানো: 01912345678</div>
+                <p style="opacity:0.2;">স্বচ্ছ: 01612345678</p>
+                <p><small>🔹 হিডেন এলিমেন্ট থেকে নম্বর সংগ্রহ করা উচিত নয় (যদি না কনফিগারেশন থাকে)</small></p>
+            </div>
+
+            <!-- ===== ৮. ফরম্যাট ভ্যারিয়েশন ===== -->
+            <div class="card">
+                <div class="card-header">🎨 ৮. ফরম্যাট ভ্যারিয়েশন</div>
+                <p>🔸 সাধারণ: 01712345678</p>
+                <p>🔸 ড্যাশ: 01812-345678</p>
+                <p>🔸 +৮৮: +8801712345678</p>
+                <p>🔸 ৮৮: 8801912345678</p>
+                <p>🔸 ব্র্যাকেট: (017) 123-45678</p>
+                <p>🔸 স্পেস: 017 123 45678</p>
+                <p>🔸 ডট: 016.123.45678</p>
+                <p>🔸 স্ল্যাশ: 015/123/45678</p>
+                <p>🔸 আন্ডারস্কোর: 013_123_45678</p>
+                <p>🔸 বাংলা সংখ্যা: ০১৭১২৩৪৫৬৭৮</p>
+                <p>🔸 মিশ্র: +88018-123-45678</p>
+            </div>
+
+            <!-- ===== ৯. একাধিক নম্বর ===== -->
+            <div class="card">
+                <div class="card-header">🔢 ৯. একাধিক নম্বর</div>
+                <p>
+                    আমাদের হটলাইন: 01711111111, 01822222222, 01933333333
+                </p>
+                <p>
+                    বিক্রয়: 01644444444 | সাপোর্ট: 01555555555 | প্রশাসন: 01366666666
+                </p>
+                <p>
+                    +8801712345678, 8801912345678, 01812-345678
+                </p>
+            </div>
+
+            <!-- ===== ১০. বাস্তব কনটেন্ট ===== -->
+            <div class="card">
+                <div class="card-header">🏢 ১০. বাস্তব কনটেন্ট</div>
+                <p><strong>কোম্পানি লিমিটেড</strong></p>
+                <p>ঠিকানা: ১২৩, মতিঝিল, ঢাকা-১০০০</p>
+                <p><strong>যোগাযোগ:</strong></p>
+                <p>📞 মোবাইল: 01712345678</p>
+                <p>📞 অফিস: 01812345678</p>
+                <p>📞 হটলাইন: 01912345678</p>
+                <p>📧 ইমেইল: info@company.com</p>
+                <p>🌐 ওয়েব: www.company.com</p>
+                <div class="comment">📌 ফোন: 01612345678 (বিকাল ৩-৫টা)</div>
+            </div>
+
+            <!-- ===== ১১. মাল্টিলাইন টেক্সট ===== -->
+            <div class="card">
+                <div class="card-header">📜 ১১. মাল্টিলাইন</div>
+                <pre style="background:#0f172a;padding:10px;border-radius:8px;font-size:13px;color:#cbd5e1;white-space:pre-wrap;">
+যোগাযোগের জন্য:
+01712345678
+01812345678
+01912345678
+
+অথবা কল করুন:
++8801712345678
+8801812345678
+                </pre>
+            </div>
+
+        </div><!-- .grid -->
+
+        <!-- ফুটার / নোট -->
+        <div class="note">
+            <p>
+                <strong>📌 টেস্টের উদ্দেশ্য:</strong> এই পেজে বাংলাদেশি মোবাইল নম্বরের বিভিন্ন উৎস (টেক্সট, ডিভ, লিস্ট, টেবিল, কমেন্ট, হিডেন, মাল্টিলাইন) ও ফরম্যাট (সাধারণ, ড্যাশ, +৮৮, ৮৮, ব্র্যাকেট, স্পেস, ডট, স্ল্যাশ, আন্ডারস্কোর, বাংলা সংখ্যা) রাখা হয়েছে।
+            </p>
+            <p>
+                <strong>✅ প্রত্যাশা:</strong> Universal Extractor v8.4 উল্লেখিত সকল উৎস ও ফরম্যাট থেকে সঠিকভাবে নম্বর শনাক্ত করবে।
+            </p>
+            <p>
+                <strong>🔍 যাচাই:</strong> ব্রাউজারের কনসোল (F12 → Console) অথবা এক্সটেনশনের পপআপে <code>লাইভ অ্যাক্টিভিটি লগ</code> দেখুন। নম্বর সংগ্রহ হওয়ার পর <code>#totalNumbers</code> আপডেট হবে।
+            </p>
+            <p style="margin-top:6px;font-size:14px;color:#fcd34d;">
+                ⚡ <strong>দ্রুত পরীক্ষা:</strong> এক্সটেনশন চালু করুন (ON) এবং এই পেজটি রিলোড/রিফ্রেশ করুন। স্বয়ংক্রিয়ভাবে স্ক্যান শুরু হবে।
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        (function() {
+            // পেজে মোট কতটি অনন্য নম্বর আছে তা কাউন্ট করে দেখানো
+            const text = document.body.innerText || '';
+            const pattern = /(?:\+?88|0088|88)?\D*0?1[3-9](?:\D*\d){8}/g;
+            const matches = text.match(pattern) || [];
+            const unique = new Set(
+                matches.map(m => {
+                    let cleaned = m.replace(/[^\d+]/g, '');
+                    if (cleaned.startsWith('+')) cleaned = cleaned.slice(1);
+                    if (cleaned.startsWith('88')) cleaned = cleaned.slice(2);
+                    if (cleaned.length === 10) cleaned = '0' + cleaned;
+                    return cleaned;
+                }).filter(n => n && n.length === 11 && n.startsWith('0'))
+            );
+
+            const totalEl = document.getElementById('totalNumbers');
+            if (totalEl) totalEl.textContent = unique.size;
+
+            // অপারেটর কাউন্ট (শুধু ইনফো)
+            const prefixes = ['013', '014', '015', '016', '017', '018', '019'];
+            const operatorMap = {
+                '013': 'GP', '014': 'BL', '015': 'TL', '016': 'Robi',
+                '017': 'GP', '018': 'Robi', '019': 'BL'
+            };
+            const counts = {};
+            for (const n of unique) {
+                const p = n.slice(0, 3);
+                if (prefixes.includes(p)) {
+                    const op = operatorMap[p] || p;
+                    counts[op] = (counts[op] || 0) + 1;
+                }
+            }
+            const opStr = Object.entries(counts)
+                .map(([k, v]) => `${k}(${v})`)
+                .join(' ');
+            const opEl = document.getElementById('operatorCount');
+            if (opEl) opEl.textContent = opStr || '—';
+
+            // স্ট্যাটাস
+            const statusEl = document.getElementById('scanStatus');
+            if (statusEl) {
+                statusEl.textContent = '🔄 স্ক্যান চলছে...';
+                statusEl.style.color = '#fbbf24';
+                setTimeout(() => {
+                    statusEl.textContent = `✅ ${unique.size}টি নম্বর শনাক্ত`;
+                    statusEl.style.color = '#34d399';
+                }, 1200);
+            }
+
+            console.log(`[TestPage] মোট নম্বর: ${unique.size}`, [...unique]);
+        })();
+    </script>
+
 </body>
 </html>
